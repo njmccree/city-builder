@@ -7,7 +7,7 @@
 
 | Round | Topic | Status |
 |-------|-------|--------|
-| 1 | Vision & Identity | In progress (Q1–Q2 answered; Q3–Q16 open) |
+| 1 | Vision & Identity | In progress (Q1–Q2 answered, plus follow-up on other influences; Q3–Q16 open) |
 
 ---
 
@@ -33,8 +33,10 @@ region, and preferably the **player can build multiple cities that interact with
 |------|-------------------------|---------------------------------|
 | Cities: Skylines 1 & 2 | Wide creative range in world building; balancing city needs and resources | Shallow **governmental** aspects; little **regional / multi-city** play; no **natural emergence of cultural, economic, and demographic districts**; CS2's companies, routes, transport changes, and individual citizen info "only go so far" |
 | Civilization | Experiencing different **eras**; good **player and NPC interactions**; **tech and culture trees**; **progression through time**; the feeling of continuously "upgrading" cities and civilizations; **trade routes** and interactions between cities of all types | It's **turn-based**, which is not desired |
-| Crusader Kings III | Its **time system** (real-time with pause and speed controls) is a reference | — |
-| RimWorld, Minecraft, Songs of Syx, and others | Played and enjoyed (specifics _OPEN_) | — |
+| Crusader Kings III | Its **time system** (real-time with pause and speed controls); **power dynamics** and **RPG elements**; **progression trees**; **era / time progression**; **skills and traits** | — |
+| Songs of Syx | A **larger map view** (world/region layer above the city); **granular creativity** in structure building and landscaping; feels like a **living city**, where you can tell what each citizen is doing and where they're going | — |
+| RimWorld | A **larger map view**; **granular creativity** in structure building and landscaping; feels like a **living city**, where each pawn's activity and destination is legible | — |
+| Minecraft | **Granular creativity** in structure building and landscaping | — |
 
 **Derived design implications:**
 - **Time model:** Real-time with pause and multiple speeds (CS / CK3 style). Not turn-based.
@@ -44,6 +46,11 @@ region, and preferably the **player can build multiple cities that interact with
 - **Deeper citizens than CS2:** Individual life histories, needs, opinions, and relationships.
 - **Era progression (Civ-inspired):** The game progresses through eras, with tech and culture trees, and cities continuously "upgrade" over time.
 - **Inter-city interaction:** Trade routes, diplomacy or relations, and possibly NPC-controlled cities as well as player cities.
+- **Power dynamics and RPG layer (CK3-inspired):** Characters with **skills and traits** (officials, notable citizens, rival leaders?) and political power struggles.
+- **Two-layer map:** a **region / world map view** above the detailed city view (Songs of Syx / RimWorld style).
+- **Custom building construction:** Players can **customize the structure of buildings**, **build from scratch**, or use an **assisted build** mode. This needs a modular or voxel-like building system, not only fixed prefab assets. It's a major technical driver.
+- **Granular landscaping:** Fine-grained terrain shaping beyond CS-style terraforming.
+- **Legible citizens:** At any zoom, the player can see what an individual is doing and where they're going (activity states, destinations, visible agents). This implies **agent-based** citizen simulation, at least for visible or notable citizens.
 
 ### 1.3 Remaining Round 1 Questions — _OPEN_
 3. Player fantasy / role (mayor, governor, ruler, god-hand, etc.)
