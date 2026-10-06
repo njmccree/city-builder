@@ -7,7 +7,7 @@
 
 | Round | Topic | Status |
 |-------|-------|--------|
-| 1 | Vision & Identity | In progress (Q1–Q4 answered; Q5–Q16 open) |
+| 1 | Vision & Identity | In progress (Q1–Q4 answered, incl. 4d–4i; Q5–Q16 open) |
 
 ---
 
@@ -57,7 +57,7 @@ region, and preferably the **player can build multiple cities that interact with
 **Designer's answers:**
 - **3a.** The player holds **an office or position**, not a family dynasty. At any moment the player is also **a specific person** in that office, with traits and skills. **Succession** follows the mechanism that fits the era and government (politics, tribal selection, appointment, election, and so on). It is dynastic only when that makes sense for the era. Succession matters less than in CK3.
 - **3b.** The **government form is chosen freely** from the options the era allows. **Citizens can force change** through revolutions, reform movements, social activism, civil rights movements, militia mobilization, rebellions, and so on.
-- **3c.** Undecided. The designer asked for a recommendation. Adopted below (_pending veto_).
+- **3c.** Undecided. The designer asked for a recommendation. **Recommendation accepted** (below).
 
 **Model: "The Office persists; the officeholder does not."**
 - The player controls **the Office** (the seat of power of their realm). Its title, powers, and constraints come from the current **Government Form**.
@@ -69,8 +69,7 @@ region, and preferably the **player can build multiple cities that interact with
 - When the officeholder is ousted by an election, a coup, or a revolution, the **player keeps playing as the new officeholder**. That person's traits, ideology, and backing faction are **not chosen by the player**.
 - Consequences carry over: the new holder arrives with a **mandate or agenda** from the faction that put them in power. That can mean **forced policy reversals**, a legitimacy reset, purges of officials, and possibly **cities seceding or changing allegiance**.
 - The player's "score" is the long-term state of the realm, not one leader's survival. This fits the *consequences* pillar.
-- **Game over** happens only if the **realm ceases to exist**, meaning all cities are lost, conquered, or abandoned. An optional **"Ironman / Mortal Mandate" difficulty** makes losing office a loss condition for players who want it.
-- **Later, optional idea:** an "opposition phase," where an ousted leader can scheme to return. This is a stretch goal, not core.
+- **Game over** happens only if the **realm ceases to exist**, meaning all cities are lost, conquered, or abandoned.
 
 ### 1.4 Setting & Eras (Q4)
 
@@ -86,13 +85,25 @@ region, and preferably the **player can build multiple cities that interact with
 | 1 | Ancient | _TBD_ | Launch era |
 | 2 | Colonial | _TBD_ (≈1500s–1800s?) | Launch era |
 | 3 | 20th-Century Modern | 1900–1960 | Launch era |
-| 4 | Utopian | Present day → 2100 → indefinite | Final era (_launch or post-launch? OPEN_) |
+| 4 | Utopian | Present day → 2100 → indefinite | Final era, **after the first three are complete** |
+| — | Classical, Medieval, Industrial, Late Modern, … | fill the gaps | **Post-launch** expansion eras |
 
 **Design implications:**
 - The engine **must not depend on era**. Eras, government forms, technologies, buildings, and cultures are all **data**.
 - **Modular building parts** per era (they tie into custom building construction) keep the per-era asset cost manageable.
 - **Era transitions inside a living city** (old districts that persist, renovation, demolition, historic preservation) are a core feature, not a reset.
-- "Real Earth territories" suggests the region and world map is based on **real geography** (_scope OPEN_).
+- **4d.** Gaps between eras (e.g., Classical, Medieval, Late Modern) are **filled with more eras after launch**. The era system must allow inserting eras between existing ones.
+- **4e. Eras progress per realm**, not per city and not globally. Realms in different eras **coexist** in the same region (e.g., colonial settlements beside tribes still in the Ancient era). The player's era advances through **tech and culture progress**. **NPC realms progress as the game calendar passes**. The player can **compare their progress** with other realms (falling behind or far ahead).
+- **4f.** The Utopian Era ships **after** the first three eras are complete.
+- **4g.** The Utopian Era **can go dystopian** depending on choices. _Details deferred._
+- **4h. Real places with real terrain data** for the region map. Example starts: **Nile Delta** (Ancient), **Chesapeake Bay** (Colonial), **Chicago** (Modern).
+- **4i. Real cultures and civilizations**, picked from a set at game start. Culture **shapes buildings, government options, and citizens**. Cultures **mix and evolve** inside cities over time and **localize into neighborhoods** (they feed the emergent-district system).
+
+**Further implications:**
+- A **real-world terrain data pipeline** is needed (elevation, water, possibly climate and soil) to produce playable region maps.
+- **NPC realms** are first-class: they run their own era and tech progression, and they need AI, diplomacy, trade, and conflict with the player's realm.
+- A **realm comparison / progress view** is needed (an era and tech standing relative to other realms).
+- **Culture is a simulation value carried by citizens**, not just a building skin. It drives building styles, neighborhood identity, and cultural blending.
 
 ### 1.5 Remaining Round 1 Questions — _OPEN_
 5. Tone
