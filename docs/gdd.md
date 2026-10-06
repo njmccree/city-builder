@@ -7,7 +7,7 @@
 
 | Round | Topic | Status |
 |-------|-------|--------|
-| 1 | Vision & Identity | In progress (Q1–Q4 answered, incl. 4d–4i; Q5–Q16 open) |
+| 1 | Vision & Identity | In progress (Q1–Q6 answered, incl. 4d–4m; Q7–Q16 open) |
 
 ---
 
@@ -105,9 +105,29 @@ region, and preferably the **player can build multiple cities that interact with
 - A **realm comparison / progress view** is needed (an era and tech standing relative to other realms).
 - **Culture is a simulation value carried by citizens**, not just a building skin. It drives building styles, neighborhood identity, and cultural blending.
 
-### 1.5 Remaining Round 1 Questions — _OPEN_
-5. Tone
-6. Realism vs. stylized
+**Game starts & map scope (4j–4m):**
+- **4j. Start modes, CK3-style:** both a **full playthrough from the Ancient era** and **era-specific bookmark starts** (e.g., Chesapeake Bay 1607, Chicago 1900).
+- **4k.** Only **historically appropriate cultures** for the chosen location and era (for now; it may be relaxed later).
+- **4l. Map size: continental / macro-region scale** to start. The globe may come later.
+  - Ancient → **Middle East**
+  - Colonial → **North America**
+  - Modern → **U.S. Midwest**
+- **4m.** **Native peoples** start as full **NPC realms** with cities, government, and diplomacy. **Sensitive histories are included** (displacement, conflict, treaties, colonization) and portrayed in a serious, grounded way.
+
+**Technical implication of 4l:** real terrain at continental scale needs **multiple resolutions**. A coarse realm or region map is built from real elevation and hydrology data. Detailed **city-scale terrain is generated on demand** for each city site from real data plus procedural detail.
+
+## 2. Tone & Realism
+
+### 2.1 Tone (Q5)
+**Serious and grounded** (CK3-like). Not cozy, not satirical.
+
+### 2.2 Realism (Q6)
+- **Economics is active** (money, prices, and budgets matter), **traffic is a system the player must maintain**, and **zoning rules apply**.
+- **The micro layer is the most realistic:** individual citizens, buildings, roads, zones, neighborhoods.
+- **The macro layer is simplified:** the wider economy, trade, and inter-realm systems use abstracted models.
+- **Design principle:** *simulate in detail what the player can see and touch; abstract what they can only read about.*
+
+### 2.3 Remaining Round 1 Questions — _OPEN_
 7. Fail states vs. sandbox (partly answered by 3c: game over only if the realm ceases to exist)
 8. Scenarios, campaign, narrative
 9. Session length and the lifespan of a save
