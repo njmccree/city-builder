@@ -7,7 +7,8 @@
 
 | Round | Topic | Status |
 |-------|-------|--------|
-| 1 | Vision & Identity | In progress (Q1–Q6 answered, incl. 4d–4m; Q7–Q16 open) |
+| 1 | Vision & Identity | **Complete** |
+| 2 | Core Gameplay Loop & City Building | In progress |
 
 ---
 
@@ -114,6 +115,11 @@ region, and preferably the **player can build multiple cities that interact with
   - Modern → **U.S. Midwest**
 - **4m.** **Native peoples** start as full **NPC realms** with cities, government, and diplomacy. **Sensitive histories are included** (displacement, conflict, treaties, colonization) and portrayed in a serious, grounded way.
 
+- **4n.** **Full playthroughs stay on the same map through every era.** A Nile Delta realm reaches the Colonial and Modern eras **in the Middle East**. Every launch map therefore needs content for **all launch eras**, not just its starting era.
+- **4o.** Realms on bookmark starts *can* in principle meet other regions and civilizations. **Every realm starts at the bookmark date** (e.g., all of them in 1900), possibly with **simulated pre-history** to give them a plausible starting state.
+- **4p.** **Colonial start:** play as **native nations or colonial powers**. **Ancient start:** play as one of **several Middle Eastern civilizations**.
+- **4q.** The Ancient map covers **Egypt → Mesopotamia** (the Fertile Crescent) to start. The **full game scales to the entire Earth**.
+
 **Technical implication of 4l:** real terrain at continental scale needs **multiple resolutions**. A coarse realm or region map is built from real elevation and hydrology data. Detailed **city-scale terrain is generated on demand** for each city site from real data plus procedural detail.
 
 ## 2. Tone & Realism
@@ -127,14 +133,60 @@ region, and preferably the **player can build multiple cities that interact with
 - **The macro layer is simplified:** the wider economy, trade, and inter-realm systems use abstracted models.
 - **Design principle:** *simulate in detail what the player can see and touch; abstract what they can only read about.*
 
-### 2.3 Remaining Round 1 Questions — _OPEN_
-7. Fail states vs. sandbox (partly answered by 3c: game over only if the realm ceases to exist)
-8. Scenarios, campaign, narrative
-9. Session length and the lifespan of a save
-10. Target audience and difficulty
-11. Peak city size
-12. Individual vs. aggregate citizen simulation
-13. Camera and visual style
-14. Target platforms
-15. Single-player vs. multiplayer
-16. Commercial vs. hobby vs. open source; mod support
+## 3. Structure, Audience & Platform
+
+### 3.1 Fail State (Q7)
+**The realm ceasing to exist is the only loss.** Bankruptcy, annexation of cities, losing office, and so on are setbacks, not losses.
+
+### 3.2 Narrative & Goals (Q8)
+- **Scripted historical events** are woven together with **emergent simulation events** (CK3-style event chains with triggers and conditions).
+- **Open-ended play.** There are no victory conditions.
+
+### 3.3 Session Length & Time Cadence (Q9)
+- Replay value like **Cities: Skylines or Civilization**. The game should work for a **30-minute session** as well as **sessions many hours long**.
+- **Era-specific time cadence:** game time runs at a different rate in each era. _Proposed defaults below, pending tuning._
+
+| Era | Proposed time at speed 1 | Rationale |
+|-----|--------------------------|-----------|
+| Ancient | 1 game year ≈ 2 real minutes | Thousands of years of history; slow technological change |
+| Colonial | 1 game year ≈ 5 real minutes | Roughly 300 years of history |
+| Modern (1900–1960) | 1 game year ≈ 12 real minutes | 60 years of dense change; city-scale detail dominates |
+| Utopian | 1 game year ≈ 15 real minutes | Endgame; time is open-ended |
+
+- **Design note:** the **calendar** (years, seasons) is separate from the **citizen daily cycle** (day/night, commutes, work shifts). The daily cycle runs at a speed that reads well visually. The calendar advances at the era cadence. Citizens' lives "skip" days at a statistical level when the calendar outpaces the visual day.
+
+### 3.4 Audience & Onboarding (Q10)
+- Aimed at **medium to hardcore sim players**.
+- **Difficulty settings** make the game easier or harder.
+- Onboarding priorities: **1) in-game encyclopedia (must have)** · **2) tooltips (second)** · **3) advisors (fringe goal)**.
+
+## 4. Scale & Simulation
+
+### 4.1 City Size (Q11)
+- **No hard population caps.** Each era has **soft "living thresholds"**: growth gets harder past them, and **bonuses, stats, and city or realm progress** raise them. A city outgrowing its era's carrying capacity is a challenge the player has to manage.
+
+### 4.2 Simulation Level of Detail (Q12) — confirmed hybrid
+- **Viewed or active city:** every citizen is fully simulated as a visible individual agent.
+- **Other cities:** statistical or aggregate simulation until the player zooms in. Detail is then re-hydrated from the aggregates.
+- **Notable people** (officeholders, officials, faction leaders, rivals, notable citizens): **always simulated as individuals**, wherever they are.
+
+## 5. Presentation & Platform
+
+### 5.1 Camera & Art (Q13)
+- **Full 3D with a free camera.**
+- The art style is still flexible. **Prototype realistic first**, then stylized and low-poly for comparison.
+
+### 5.2 Platform (Q14)
+**PC only** to start.
+
+### 5.3 Multiplayer (Q15)
+**Single-player only.** Multiplayer is a possible future addition. _Architecture note: keep the simulation deterministic and command-driven where practical, so multiplayer isn't ruled out later._
+
+### 5.4 Business & Modding (Q16)
+- Goal: **sell on Steam** eventually.
+- **Mod support is a strong plus.** Data-driven content (eras, cultures, buildings, events, governments) and an eventual Steam Workshop integration.
+
+## 6. Scope Notes & Risks (living)
+- **Content multiplication:** launch maps × launch eras × playable cultures. Because full playthroughs stay on one map (4n), the Middle East map needs Ancient, Colonial, and Modern content. _Launch scope decision OPEN._
+- **Biggest technical risks:** custom building construction, agent simulation at scale, continental real-terrain pipeline, aggregate ↔ agent LOD transitions, NPC realm AI.
+- **Mitigation:** ship in **milestones**, each one a playable vertical slice; keep content in data; build systems that don't depend on any era.
