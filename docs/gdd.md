@@ -8,7 +8,8 @@
 | Round | Topic | Status |
 |-------|-------|--------|
 | 1 | Vision & Identity | **Complete** |
-| 2 | Core Gameplay Loop & City Building | In progress |
+| 2 | Core Gameplay Loop & City Building | **Complete** (rank follow-ups open) |
+| 3 | Citizens & Society | In progress |
 
 ---
 
@@ -185,6 +186,78 @@ region, and preferably the **player can build multiple cities that interact with
 ### 5.4 Business & Modding (Q16)
 - Goal: **sell on Steam** eventually.
 - **Mod support is a strong plus.** Data-driven content (eras, cultures, buildings, events, governments) and an eventual Steam Workshop integration.
+
+## 7. Core Gameplay Loop & City Building
+
+### 7.1 Zoning & Placement (Q17)
+- **CS-style zoning** painted onto the terrain. Zoned buildings grow on their own.
+- **Ploppable buildings** for civic, religious, government, and service buildings.
+- **Decorations and visual props** can be placed freely.
+
+### 7.2 Custom Buildings (Q18)
+- The game **ships with every building required for gameplay**. Custom building is **optional visual customization** and never a requirement.
+- All of these are supported:
+  - (a) Players design **templates** that the city then builds.
+  - (b) Players **hand-build** individual landmark buildings.
+  - (c) Citizens build **culturally styled** homes, which the player can edit.
+
+### 7.3 Construction & Logistics (Q19–Q20)
+- **Construction is physical** (Songs of Syx / Manor Lords style). Workers and materials are hauled to the site, and the building rises over time.
+- **Construction and goods share one logistics system.**
+- **Inside a city:** goods **move physically** (haulers, carts, trucks).
+- **Between cities:** goods move as **generalized flows** along trade routes. This follows the micro-realistic / macro-simplified rule.
+
+### 7.4 Roads (Q21)
+- **Free-form and grid** road tools.
+- **Early eras:** **desire paths form where people actually walk**, wear down over time, and can then be **upgraded** into formal roads.
+
+### 7.5 Terrain & Landscaping (Q22)
+- Terraforming, decorations, and aesthetic items are **placed instantly and paid for upfront** (unlike buildings).
+
+### 7.6 Land Ownership (Q23)
+- **Citizens and companies own land and buildings.**
+- **Private property can block the player.** Use **eminent domain** to seize it, with political and cost consequences.
+- **Protected land** also exists: **natural preserves**, **Indigenous lands**, and other legal protections.
+
+### 7.7 Founding Cities (Q24)
+- Cities are founded by **sending settlers**, or **appear on their own** through migration.
+- **Limit: 10 player-controlled cities per realm.** _(How this works with ranks is OPEN; see 8.2.)_
+
+### 7.8 Region Map (Q25)
+- Activities: building **roads, rail, canals, and transport lines between cities**; **trade routes**; **diplomacy**; **moving armies**; **claiming land**.
+- **Decision (delegated to Claude): one real-time clock for the whole game.** The region map is a *view*, not a separate mode. Pausing pauses everything, and time keeps flowing in every city and realm while the player is on any view.
+
+## 8. Ranks of Office (Q26) — core system
+
+The player's Office has a **rank**. The **systems available to the player depend on that rank**, and they exist in **every era**.
+
+| Rank | Domain | Example titles (era-dependent) |
+|------|--------|-------------------------------|
+| 1 | **Neighborhood** (part of a city) | Ward elder, quarter headman, alderman, ward boss |
+| 2 | **City** | Chieftain or governor of a town, burgess, mayor |
+| 3 | **Region / State** (multiple cities) | Nomarch, provincial governor, state governor |
+| 4 | **Nation** | King, president, prime minister |
+| 5 | **Empire** (many countries, or a nation with colonies) | Pharaoh of the Two Lands, emperor, imperial power |
+
+- Each rank has its own **systems**: budget scope, laws vs. ordinances, diplomacy, military, and so on.
+
+### 8.1 Rank-Scaled Conflict (Q27)
+- **War and military are in scope.**
+- **Conflict scales by era:**
+  - **Ancient:** conflict is localized and can happen at **any rank**, from **neighborhood clashes inside a city** to (more rarely) **wars between kingdoms or empires**.
+  - **Later eras:** conflict moves up the ranks. By the **Modern era**, formal warfare is **between nations and empires only**. Neighborhoods and cities no longer wage formal war.
+- **Combat model:** **abstracted CK3-style armies** on the region map, **with battles that can be watched in the city** when they happen in or near a city being viewed.
+
+### 8.2 Rank Questions — _OPEN_
+See Round 3 follow-ups (starting rank, promotion and demotion, superiors, delegation, the 10-city limit).
+
+## 9. Crises & Constraints
+
+### 9.1 Disasters & Crises (Q28)
+- **Specific to era, region, and situation.** Examples: fire, flood (the Nile's annual inundation), plague and epidemics, famine, earthquakes, economic depressions (e.g., 1929).
+
+### 9.2 Limits on Player Power (Q29)
+- **The player's power is limited by game mechanics:** eminent domain costs, laws, factions, government form, resource limits, protected land, and so on. The player is **not an all-powerful hand**.
 
 ## 6. Scope Notes & Risks (living)
 - **Content multiplication:** launch maps × launch eras × playable cultures. Because full playthroughs stay on one map (4n), the Middle East map needs Ancient, Colonial, and Modern content. _Launch scope decision OPEN._
