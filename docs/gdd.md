@@ -8,7 +8,7 @@
 | Round | Topic | Status |
 |-------|-------|--------|
 | 1 | Vision & Identity | **Complete** |
-| 2 | Core Gameplay Loop & City Building | **Complete** (rank follow-ups open) |
+| 2 | Core Gameplay Loop & City Building | **Complete** (incl. rank follow-ups 26a–26f) |
 | 3 | Citizens & Society | In progress |
 
 ---
@@ -221,7 +221,7 @@ region, and preferably the **player can build multiple cities that interact with
 
 ### 7.7 Founding Cities (Q24)
 - Cities are founded by **sending settlers**, or **appear on their own** through migration.
-- **Limit: 10 player-controlled cities per realm.** _(How this works with ranks is OPEN; see 8.2.)_
+- **Limit: 10 player-controlled cities per realm.** This is the **demesne limit**: cities the player directly controls (see 8.2).
 
 ### 7.8 Region Map (Q25)
 - Activities: building **roads, rail, canals, and transport lines between cities**; **trade routes**; **diplomacy**; **moving armies**; **claiming land**.
@@ -248,8 +248,21 @@ The player's Office has a **rank**. The **systems available to the player depend
   - **Later eras:** conflict moves up the ranks. By the **Modern era**, formal warfare is **between nations and empires only**. Neighborhoods and cities no longer wage formal war.
 - **Combat model:** **abstracted CK3-style armies** on the region map, **with battles that can be watched in the city** when they happen in or near a city being viewed.
 
-### 8.2 Rank Questions — _OPEN_
-See Round 3 follow-ups (starting rank, promotion and demotion, superiors, delegation, the 10-city limit).
+### 8.2 Rank Mechanics (26a–26f)
+- **26a. Choosing a starting rank:** the player picks a rank by choosing from **predetermined characters** available at each era's start (CK3 bookmark-style character selection).
+- **26b. Promotion and demotion:** the player can **rise or fall** through the ranks during play. Rising is a **long-term goal but not required** (as in CK3).
+- **26c. Superiors (liege–vassal):**
+  - Superiors exist **when it fits the setting**. Example: a Chicago 1900 ward boss → mayor → governor → president. Small Ancient or Colonial realms that are just starting **may report to no one**.
+  - An NPC superior **sets budget and orders**, **has an opinion of the player**, and **can be lobbied, allied with, or overthrown**.
+- **26d. Demesne model:**
+  - The player **directly controls up to 10 cities** (zoning, building, budgets).
+  - All other holdings are held by **NPC governors or vassals**. The player gives them **directives, budgets, and laws**. They build in their own way, according to their **traits**.
+- **26e. Neighborhood boundaries:** neighborhood officers act **only inside their neighborhood's boundaries**. Boundaries can **grow** (annexation, being granted more) or **shrink**.
+- **26f. Neighborhoods inside the player's city:** a city-rank player can delegate neighborhoods to **NPC ward leaders** (who may support or resist them) **or control them directly**.
+
+**Implications:**
+- The **same character / office / relationship model** is used for the player, superiors, vassals, and ward leaders. Every office has a holder, and NPC holders run on the same AI as NPC realms, scaled down to their rank.
+- **Jurisdiction boundaries** (neighborhood, city, region, nation) are first-class map data. They limit where the player's tools work.
 
 ## 9. Crises & Constraints
 
