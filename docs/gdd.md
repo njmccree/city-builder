@@ -11,7 +11,7 @@
 | 2 | Core Gameplay Loop & City Building | **Complete** (incl. rank follow-ups 26a–26f) |
 | 3 | Citizens & Society | **Complete** |
 | 4 | Economy, Industry & Trade | Paused (Q41–Q52 sent, unanswered) |
-| T | Technology & Workflow | **Complete** (T4 language and T5 determinism pending confirmation) |
+| T | Technology & Workflow | **Complete** → `docs/architecture.md`, backlog E0 drafted |
 
 ---
 
@@ -343,7 +343,7 @@ Proposed design:
 - **Dev machine:** Windows, **GTX 1660 Ti (6 GB VRAM)**, 64 GB RAM.
   - **Implication:** the dev machine is the **reference minimum spec**. Realistic art has to hold up on 6 GB of VRAM, which needs aggressive LOD, instancing, and texture budgets. Art direction leans toward **"stylized realism"** if full realism doesn't fit the budget.
 
-### 11.2 Engine & Languages (T4) — _proposed, pending confirmation_
+### 11.2 Engine & Languages (T4) — confirmed
 - **Engine:** Godot 4.
 - **Simulation core:** **C++20**, as a standalone library with no dependency on any engine. It builds with CMake, is unit-tested with a C++ test framework, and **runs headless on Linux** (cloud sessions) and Windows.
 - **Engine binding:** **GDExtension** (godot-cpp) exposes the core to Godot.
@@ -357,7 +357,7 @@ Proposed design:
   - **GPU instancing** (MultiMesh) for crowds, vehicles, and props.
   - **Simulation LOD:** agents in the viewed city, aggregates elsewhere (see 4.2).
 
-### 11.3 Determinism (T5) — _proposed, pending confirmation_
+### 11.3 Determinism (T5) — confirmed
 - **Deterministic within the same build and platform.** There is a single seeded simulation RNG, a fixed tick, no wall-clock reads in the simulation, ordered iteration, and parallel jobs that merge results in a fixed order.
 - Floats are allowed. Cross-platform bit-exactness is **not** a goal (PC-only).
 
