@@ -83,7 +83,7 @@ Acceptance: the files exist; `git status` is clean after commit; no build output
 Follow the Task workflow in CLAUDE.md (branch story/S0.1.1-skeleton, commit "T0.1.1.1: ...").
 ```
 
-#### [ ] T0.1.1.2 — CMake project, presets, pinned dependencies, first test
+#### [x] T0.1.1.2 — CMake project, presets, pinned dependencies, first test
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.1.1.1
 ```
 Task T0.1.1.2 (Story S0.1.1, last task of the story). Read CLAUDE.md and docs/architecture.md §2–§3.

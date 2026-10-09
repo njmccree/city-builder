@@ -1,0 +1,85 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CITYSIM_BUILD_TESTS": "ON",
+        "CITYSIM_BUILD_TOOLS": "ON"
+      }
+    },
+    {
+      "name": "linux-debug",
+      "inherits": "base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "linux-release",
+      "inherits": "base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "ci-linux",
+      "inherits": "linux-debug",
+      "cacheVariables": { "CITYSIM_WARNINGS_AS_ERRORS": "ON" }
+    },
+    {
+      "name": "windows-base",
+      "hidden": true,
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe"
+      },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "windows-debug",
+      "inherits": "windows-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "windows-release",
+      "inherits": "windows-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "linux-debug", "configurePreset": "linux-debug" },
+    { "name": "linux-release", "configurePreset": "linux-release" },
+    { "name": "ci-linux", "configurePreset": "ci-linux" },
+    { "name": "windows-debug", "configurePreset": "windows-debug" },
+    { "name": "windows-release", "configurePreset": "windows-release" }
+  ],
+  "testPresets": [
+    {
+      "name": "linux-debug",
+      "configurePreset": "linux-debug",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "linux-release",
+      "configurePreset": "linux-release",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "ci-linux",
+      "configurePreset": "ci-linux",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "windows-debug",
+      "configurePreset": "windows-debug",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "windows-release",
+      "configurePreset": "windows-release",
+      "output": { "outputOnFailure": true }
+    }
+  ]
+}
