@@ -9,7 +9,8 @@
 |-------|-------|--------|
 | 1 | Vision & Identity | **Complete** |
 | 2 | Core Gameplay Loop & City Building | **Complete** (incl. rank follow-ups 26a–26f) |
-| 3 | Citizens & Society | In progress |
+| 3 | Citizens & Society | **Complete** |
+| 4 | Economy, Industry & Trade | In progress |
 
 ---
 
@@ -271,6 +272,67 @@ The player's Office has a **rank**. The **systems available to the player depend
 
 ### 9.2 Limits on Player Power (Q29)
 - **The player's power is limited by game mechanics:** eminent domain costs, laws, factions, government form, resource limits, protected land, and so on. The player is **not an all-powerful hand**.
+
+## 10. Citizens & Society
+
+### 10.1 Life Cycle (Q30)
+- **Full life cycle:** birth → childhood → education → work → marriage → household and family → aging → death.
+- **Families and lineages are preserved only for important citizens and notable people.** For ordinary citizens, family links last only as long as the household does, and their history is dropped at death to save memory.
+
+### 10.2 Needs (Q31)
+- **Core needs:** food, water, shelter, safety from crime, health, employment, religion, leisure.
+- **Stretch needs:** belonging, status.
+- **Needs depend on era and culture.** Which needs apply and how they are satisfied are defined as data for each era and culture.
+
+### 10.3 Traits & Skills (Q32)
+- **Every citizen has traits and skills.** For ordinary citizens, these **drive AI behavior**: pathing preferences, how needs are weighted, where they go, and life choices (jobs, moving, marriage, crime, activism).
+- Notable people get the full CK3-style presentation as well.
+
+### 10.4 Social Classes (Q33)
+- **Persistent mechanics in every era:** a class or status tier per citizen, social mobility rules, how class affects needs and politics, and class-based housing and jobs.
+- **Each era adds its own content:**
+  - Ancient: castes, estates, priestly and scribal classes
+  - Colonial: nobility, clergy, commoners, and colonial hierarchies
+  - Modern: working, middle, and upper classes
+- **Slavery and forced labor:** _assumed in scope for the Ancient and Colonial eras, per 4m. Modeled as a system, with **abolition movements** as a citizen-forced change. To be confirmed._
+
+### 10.5 Identity (Q34)
+- **Culture:** can change through **cultural conversion**.
+- **Ethnicity:** cannot change. It is **inherited from the parents**.
+- **Religion:** can change.
+- **Language:** can change, and a citizen can learn more than one.
+- **Religion is its own system**, with **institutions, clergy, and schisms**.
+
+### 10.6 Politics (Q35)
+- **Democratic realms** hold **elections**. Citizens' **political leanings** shift during the run-up.
+- **Social change over the eras** can make citizens **want more democratic government**.
+- **Non-democratic realms** see **more revolts, crime, and rebellions** when citizens' needs aren't met. This is the pressure valve that replaces elections.
+
+### 10.7 Relationships (Q36) — designed to be cheap to compute
+Proposed design:
+- **Household links** (spouse, children, parents in the home) are stored directly.
+- Each citizen has a **small fixed number of bond slots** (e.g., up to 4: friend, rival, mentor, partner). These are formed **probabilistically during infrequent social ticks** between citizens who **share a place** (workplace, home block, place of worship, school). There is **no global social graph**.
+- **Neighborhood cohesion and identity** are calculated as **aggregates** (how culture, religion, class, and ethnicity mix per block), not from pairwise relationships.
+- Ordinary citizens' bonds **decay and are dropped** at death. Notable people keep complete relationship records.
+
+### 10.8 Citizen Inspection (Q37)
+- Shows **every player-facing stat**: family, ethnicity, culture, caste or status, children, ancestry (where kept), needs, traits, skills, job, home, political affiliation, religion, current activity and destination.
+- **Hidden:** back-end data and intermediate metrics (raw utility scores, internal timers, and so on).
+
+### 10.9 Migration (Q38)
+- **Two-way migration:** NPC realms → player realm, and player realm → NPC realms.
+- **Immigration policy** is unlocked on the **culture tree**, then enacted and fine-tuned.
+- **Cultural impact scales with size:**
+  - **Small migration** → neighborhood culture shifts.
+  - **Medium migration** → neighborhood or city culture shifts.
+  - **Large / mass migration** → realm-level culture shifts, to varying degrees.
+
+### 10.10 Emergent Notables (Q39)
+- **Notable people can emerge from ordinary citizens.** An inventor, organizer, priest, or crime boss can be promoted into the full character simulation.
+
+### 10.11 Daily Life (Q40)
+- An ordinary day is **home + work**. The rest of the time is spent **moving around to meet needs and obligations**.
+- **Movement varies by culture, era, and situation.** For example, a **jailed citizen barely moves** until they are released or escape.
 
 ## 6. Scope Notes & Risks (living)
 - **Content multiplication:** launch maps × launch eras × playable cultures. Because full playthroughs stay on one map (4n), the Middle East map needs Ancient, Colonial, and Modern content. _Launch scope decision OPEN._
