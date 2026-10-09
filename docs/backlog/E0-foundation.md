@@ -198,7 +198,7 @@ Follow the Task workflow in CLAUDE.md (branch story/S0.1.3-windows-env); open th
 - Jobs: Linux (GCC and Clang) build and test, Windows (MSVC) build and test, all with warnings as errors.
 - FetchContent downloads are cached.
 
-#### [ ] T0.1.4.1 — GitHub Actions CI
+#### [x] T0.1.4.1 — GitHub Actions CI
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.1.1.2
 ```
 Task T0.1.4.1 (Story S0.1.4). Read CLAUDE.md and docs/architecture.md §13.
