@@ -10,7 +10,7 @@
 | 1 | Vision & Identity | **Complete** |
 | 2 | Core Gameplay Loop & City Building | **Complete** (incl. rank follow-ups 26a–26f) |
 | 3 | Citizens & Society | **Complete** |
-| 4 | Economy, Industry & Trade | Paused (Q41–Q52 sent, unanswered) |
+| 4 | Economy, Industry & Trade | In progress (Q41–Q43 answered; Q44–Q52 open) |
 | T | Technology & Workflow | **Complete** → `docs/architecture.md`, backlog E0 drafted |
 
 ---
@@ -389,6 +389,45 @@ Proposed design:
 
 ### 11.7 Localization (T14)
 - **English only at launch.** All player-facing strings go through **localization keys** from day 1.
+
+## 12. Economy, Industry & Trade
+
+### 12.1 Currency (Q41)
+- **There is one abstract treasury unit** for all accounting. **Its name and icon come from the era and culture**, supplied as data (a `CurrencyDef`).
+  - **Proposed defaults** (historically grounded, since the setting is real Earth):
+    - Ancient Egypt: *deben*
+    - Mesopotamia: *shekel* (of silver)
+    - Colonial: *pound* or *Spanish dollar*, depending on the colonial power
+    - Native nations: trade-goods or *wampum*-flavored display
+    - Modern U.S.: *dollar*
+  - Generic fallbacks: gold, silver, dollars.
+- **No exchange rates or multiple currencies.** These are a possible future goal, not a focus.
+
+### 12.2 Prices (Q42)
+- **Prices move with supply and demand.**
+- **Each city is a market.** Local consumers pay the local price, and that price is smoothed over calendar time so it doesn't swing wildly.
+- **Each realm pays different prices for goods**, following its own supply and demand (Songs of Syx style). This is the main reason for trade between cities and realms.
+- Macro (inter-realm) price formation is abstracted, per §2.2.
+
+### 12.3 Land Value & Rent (Q43) — designed by Claude, builds up through the eras
+One system that gains layers as **institutions are unlocked**. The unlocks are data-driven through the tech and culture trees, so a realm without land markets keeps the earlier layer even in a later era.
+
+| Layer | Typical era | Mechanics |
+|---|---|---|
+| **1. Desirability** | All eras (Ancient onward) | A per-parcel score on a coarse grid (~16–32 m cells), updated in time slices. **Inputs:** access (paths, roads), water, services, safety, prestige (temples, palaces, landmarks), cultural and religious significance, nuisances (noise, smell, industry, crowding). **Ancient:** desirability decides **who gets which land** in the authority's allotments. Elites settle near the river, temple, and palace; the poor end up at the edges. **There is no market.** |
+| **2. Property & rent** | Colonial | Land becomes **owned property** (links to §7.6). **Land value** follows desirability × demand, with lag. **Tenancy:** landlords (citizens, notables, companies) charge **rent** = value × rate. Land grants and sales. |
+| **3. Full land market** | Modern | **Property tax base**, **speculation**, zoning and infrastructure effects on value, **overcrowding → slums/tenements**, **rising values → displacement and gentrification**. Sensitive histories such as **redlining** are modeled where historically relevant. |
+
+- **Feedback loop:**
+  - A household chooses a home by weighing desirability against rent and its income.
+  - Households that can't pay **move away or crowd together**.
+  - Prices filter out who can afford an area, which shifts its **class, culture, and ethnicity mix**.
+  - This **drives emergent neighborhoods** (ties to §10.9 and the neighborhood identity aggregates in §10.7).
+- **Performance:** a coarse grid, incremental updates, and land values that change slowly on calendar time (monthly).
+
+### 12.4 Remaining Round 4 Questions — _OPEN_
+44 Businesses and ownership · 45 Production-chain depth · 46 Labor, guilds, unions · 47 Natural resources ·
+48 Taxes and money flowing between ranks · 49 Debt and bankruptcy · 50 Corruption · 51 Trade routes · 52 Economic cycles
 
 ## 6. Scope Notes & Risks (living)
 - **Content multiplication:** launch maps × launch eras × playable cultures. Because full playthroughs stay on one map (4n), the Middle East map needs Ancient, Colonial, and Modern content. _Launch scope decision OPEN._
