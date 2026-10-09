@@ -10,7 +10,8 @@
 | 1 | Vision & Identity | **Complete** |
 | 2 | Core Gameplay Loop & City Building | **Complete** (incl. rank follow-ups 26a–26f) |
 | 3 | Citizens & Society | **Complete** |
-| 4 | Economy, Industry & Trade | In progress |
+| 4 | Economy, Industry & Trade | Paused (Q41–Q52 sent, unanswered) |
+| T | Technology & Workflow | **Complete** (T4 language and T5 determinism pending confirmation) |
 
 ---
 
@@ -333,6 +334,61 @@ Proposed design:
 ### 10.11 Daily Life (Q40)
 - An ordinary day is **home + work**. The rest of the time is spent **moving around to meet needs and obligations**.
 - **Movement varies by culture, era, and situation.** For example, a **jailed citizen barely moves** until they are released or escape.
+
+## 11. Technology & Workflow
+
+### 11.1 Developer Profile (T1–T3)
+- **Designer/developer:** CS major with an engineering background. **C++** is the strongest language. Has done light hobby work in **Godot**, basic Blender (3D printing), and some pixel and splash art. No professional game-dev experience.
+- **Time and budget:** open-ended. **Claude should do as much as possible.**
+- **Dev machine:** Windows, **GTX 1660 Ti (6 GB VRAM)**, 64 GB RAM.
+  - **Implication:** the dev machine is the **reference minimum spec**. Realistic art has to hold up on 6 GB of VRAM, which needs aggressive LOD, instancing, and texture budgets. Art direction leans toward **"stylized realism"** if full realism doesn't fit the budget.
+
+### 11.2 Engine & Languages (T4) — _proposed, pending confirmation_
+- **Engine:** Godot 4.
+- **Simulation core:** **C++20**, as a standalone library with no dependency on any engine. It builds with CMake, is unit-tested with a C++ test framework, and **runs headless on Linux** (cloud sessions) and Windows.
+- **Engine binding:** **GDExtension** (godot-cpp) exposes the core to Godot.
+- **Presentation and UI glue:** **GDScript**, which is text-based and quick to iterate. No C#, to avoid a third language.
+- **Performance strategy:**
+  - **Data-oriented ECS** in the core (e.g., EnTT or flecs), with struct-of-arrays data.
+  - **The simulation runs on its own thread(s)**, at a fixed tick, separate from rendering.
+  - A **job system** spreads work across cores.
+  - **Time-sliced updates:** not every agent updates every tick.
+  - **Hierarchical pathfinding and flow fields** for crowds, and **spatial hashing** for neighbor queries.
+  - **GPU instancing** (MultiMesh) for crowds, vehicles, and props.
+  - **Simulation LOD:** agents in the viewed city, aggregates elsewhere (see 4.2).
+
+### 11.3 Determinism (T5) — _proposed, pending confirmation_
+- **Deterministic within the same build and platform.** There is a single seeded simulation RNG, a fixed tick, no wall-clock reads in the simulation, ordered iteration, and parallel jobs that merge results in a fixed order.
+- Floats are allowed. Cross-platform bit-exactness is **not** a goal (PC-only).
+
+### 11.4 Modding Architecture (T6) — confirmed
+- **Day 1:** all content is in **data files** (JSON/YAML). The base game loads its own content the same way a mod would.
+- **Later:** a **mod scripting** layer (Lua or sandboxed) and **Steam Workshop** support.
+
+### 11.5 Claude Workflow (T7–T9)
+- **Sessions:** both **cloud** (headless: build plus tests) and **local PC** (editor, running the game, visual checks). **Every task is tagged `[Cloud]` or `[PC]`.**
+- **Plan:** Claude Pro ($20/mo).
+  - **Sonnet 5.5** is the default.
+  - **Opus** is reserved for architecture-critical tasks (it uses quota faster).
+  - **Haiku** handles simple data and content entry.
+  - Tasks are kept small enough to fit in one session.
+- **Process (delegated to Claude):**
+  - One **feature branch and one PR per User Story**, not per Task. Each Task is one commit on that branch.
+  - **Squash-merge** into a protected `main`.
+  - **GitHub Actions CI:**
+    - Linux build of the core plus unit tests on every PR.
+    - A Windows GDExtension build.
+    - A Godot headless smoke test.
+  - Determinism regression tests: hash the simulation state after N ticks from a fixed seed.
+
+### 11.6 Assets & Content (T10–T13)
+- **3D art:** a balanced mix of **free asset packs** (with commercial-use licenses), **AI-generated models and textures**, **designer-made assets**, and **procedurally generated buildings from modular parts** (the main approach; it shares a system with custom building).
+- **Audio:** AI-generated plus the designer's own contributions. **Claude owns the sound design** (what plays when, layering, mixing rules). The designer gives input as needed.
+- **Terrain data:** free public datasets (Copernicus/SRTM elevation, HydroSHEDS, Natural Earth) turned into game maps by an **offline map-building tool**. _Historical correction of rivers and coastlines is OPEN._
+- **Historical content:** **Claude drafts it as data files**, **checks it against sources** (with citations kept in content metadata), and the **designer reviews all historical content**.
+
+### 11.7 Localization (T14)
+- **English only at launch.** All player-facing strings go through **localization keys** from day 1.
 
 ## 6. Scope Notes & Risks (living)
 - **Content multiplication:** launch maps × launch eras × playable cultures. Because full playthroughs stay on one map (4n), the Middle East map needs Ancient, Colonial, and Modern content. _Launch scope decision OPEN._
