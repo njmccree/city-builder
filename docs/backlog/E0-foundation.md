@@ -138,7 +138,7 @@ Follow the Task workflow in CLAUDE.md; this is the last task of S0.1.1, so open 
 - A SessionStart hook installs any missing tools and pre-builds the `linux-debug` preset.
 - The hook is idempotent and finishes quickly on a warm container.
 
-#### [ ] T0.1.2.1 — SessionStart hook for cloud sessions
+#### [x] T0.1.2.1 — SessionStart hook for cloud sessions
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.1.1.2
 ```
 Task T0.1.2.1 (Story S0.1.2). Use the session-start-hook skill.
