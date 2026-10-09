@@ -49,7 +49,7 @@ Recommended interleaving: F0.1 → F0.2 → F0.4 (T0.4.1.1) → F0.3 → rest of
 - The `linux-debug` preset configures, builds and runs ≥ 1 Catch2 test.
 - Dependencies are pinned in `cmake/Dependencies.cmake` and recorded in `docs/versions.md`.
 
-#### [ ] T0.1.1.1 — Repo skeleton, ignore rules, formatting config
+#### [x] T0.1.1.1 — Repo skeleton, ignore rules, formatting config
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** —
 ```
 Task T0.1.1.1 (Story S0.1.1). Read CLAUDE.md and docs/architecture.md §2–§3.
