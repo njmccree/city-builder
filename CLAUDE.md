@@ -54,6 +54,8 @@ cmake --preset windows-debug
 cmake --build --preset windows-debug
 ctest --preset windows-debug --output-on-failure
 ```
+**Cloud session hook:** `.claude/hooks/session-start.sh` (registered in `.claude/settings.json`) runs at the start of every cloud session. It installs missing tools, updates submodules and pre-builds `linux-debug` without running tests. It downloads the Godot editor into `~/.cache/citysim/godot/<version>/` once `docs/versions.md` pins a version, and `tools/godot.sh` runs it. It is idempotent and only warns on network errors.
+
 - Content validation: `build/<preset>/sim/tools/validate/citysim_validate game/content`
 - Godot smoke test (once it exists): `godot --headless --path game -s res://tests/smoke.gd`
 

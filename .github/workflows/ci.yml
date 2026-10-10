@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: gcc
+            preset: ci-linux
+          - compiler: clang
+            preset: ci-linux-clang
+    env:
+      FETCHCONTENT_BASE_DIR: ${{ github.workspace }}/.fetchcontent
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Cache FetchContent downloads
+        uses: actions/cache@v4
+        with:
+          path: .fetchcontent
+          key: fetchcontent-linux-${{ hashFiles('cmake/Dependencies.cmake') }}
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }} -DFETCHCONTENT_BASE_DIR="$FETCHCONTENT_BASE_DIR"
+      - name: Build
+        run: cmake --build --preset ${{ matrix.preset }}
+      - name: Test
+        run: ctest --preset ${{ matrix.preset }}
+      # - name: Validate content (enable when citysim_validate exists)
+      #   run: build/${{ matrix.preset }}/sim/tools/validate/citysim_validate game/content
+      # - name: Godot smoke test (enable when game/tests/smoke.gd exists)
+      #   run: godot --headless --path game -s res://tests/smoke.gd
+
+  windows:
+    runs-on: windows-latest
+    env:
+      FETCHCONTENT_BASE_DIR: ${{ github.workspace }}/.fetchcontent
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Cache FetchContent downloads
+        uses: actions/cache@v4
+        with:
+          path: .fetchcontent
+          key: fetchcontent-windows-${{ hashFiles('cmake/Dependencies.cmake') }}
+      - name: Configure
+        run: cmake --preset ci-windows -DFETCHCONTENT_BASE_DIR="$env:FETCHCONTENT_BASE_DIR"
+      - name: Build
+        run: cmake --build --preset ci-windows
+      - name: Test
+        run: ctest --preset ci-windows
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Determinism lint
+        run: tools/lint_determinism.sh

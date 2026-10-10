@@ -49,7 +49,7 @@ Recommended interleaving: F0.1 → F0.2 → F0.4 (T0.4.1.1) → F0.3 → rest of
 - The `linux-debug` preset configures, builds and runs ≥ 1 Catch2 test.
 - Dependencies are pinned in `cmake/Dependencies.cmake` and recorded in `docs/versions.md`.
 
-#### [ ] T0.1.1.1 — Repo skeleton, ignore rules, formatting config
+#### [x] T0.1.1.1 — Repo skeleton, ignore rules, formatting config
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** —
 ```
 Task T0.1.1.1 (Story S0.1.1). Read CLAUDE.md and docs/architecture.md §2–§3.
@@ -83,7 +83,7 @@ Acceptance: the files exist; `git status` is clean after commit; no build output
 Follow the Task workflow in CLAUDE.md (branch story/S0.1.1-skeleton, commit "T0.1.1.1: ...").
 ```
 
-#### [ ] T0.1.1.2 — CMake project, presets, pinned dependencies, first test
+#### [x] T0.1.1.2 — CMake project, presets, pinned dependencies, first test
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.1.1.1
 ```
 Task T0.1.1.2 (Story S0.1.1, last task of the story). Read CLAUDE.md and docs/architecture.md §2–§3.
@@ -138,7 +138,7 @@ Follow the Task workflow in CLAUDE.md; this is the last task of S0.1.1, so open 
 - A SessionStart hook installs any missing tools and pre-builds the `linux-debug` preset.
 - The hook is idempotent and finishes quickly on a warm container.
 
-#### [ ] T0.1.2.1 — SessionStart hook for cloud sessions
+#### [x] T0.1.2.1 — SessionStart hook for cloud sessions
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.1.1.2
 ```
 Task T0.1.2.1 (Story S0.1.2). Use the session-start-hook skill.
@@ -198,7 +198,7 @@ Follow the Task workflow in CLAUDE.md (branch story/S0.1.3-windows-env); open th
 - Jobs: Linux (GCC and Clang) build and test, Windows (MSVC) build and test, all with warnings as errors.
 - FetchContent downloads are cached.
 
-#### [ ] T0.1.4.1 — GitHub Actions CI
+#### [x] T0.1.4.1 — GitHub Actions CI
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.1.1.2
 ```
 Task T0.1.4.1 (Story S0.1.4). Read CLAUDE.md and docs/architecture.md §13.
