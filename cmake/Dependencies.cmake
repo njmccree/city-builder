@@ -6,34 +6,42 @@ set(FETCHCONTENT_QUIET ON)
 FetchContent_Declare(EnTT
     GIT_REPOSITORY https://github.com/skypjack/entt.git
     GIT_TAG v4.0.0
-    GIT_SHALLOW TRUE)
+    GIT_SHALLOW TRUE
+    SYSTEM)
 
 FetchContent_Declare(Catch2
     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
     GIT_TAG v3.16.1
-    GIT_SHALLOW TRUE)
+    GIT_SHALLOW TRUE
+    SYSTEM)
 
 FetchContent_Declare(nlohmann_json
     GIT_REPOSITORY https://github.com/nlohmann/json.git
     GIT_TAG v3.12.0
-    GIT_SHALLOW TRUE)
+    GIT_SHALLOW TRUE
+    SYSTEM)
 
 FetchContent_Declare(spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
     GIT_TAG v1.17.0
-    GIT_SHALLOW TRUE)
+    GIT_SHALLOW TRUE
+    SYSTEM)
 
 FetchContent_Declare(zstd
     GIT_REPOSITORY https://github.com/facebook/zstd.git
     GIT_TAG v1.5.7
     GIT_SHALLOW TRUE
+    SYSTEM
     SOURCE_SUBDIR build/cmake)
 
 FetchContent_Declare(xxHash
     GIT_REPOSITORY https://github.com/Cyan4973/xxHash.git
     GIT_TAG v0.8.4
     GIT_SHALLOW TRUE
+    SYSTEM
     SOURCE_SUBDIR build/cmake)
+
+# SYSTEM marks third-party include dirs as system headers so our warning flags never apply to them.
 
 # zstd: static library only, no programs or tests.
 set(ZSTD_BUILD_STATIC ON CACHE BOOL "" FORCE)
