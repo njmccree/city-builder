@@ -233,7 +233,7 @@ Run tools/lint_determinism.sh locally. Follow the Task workflow in CLAUDE.md
 - `World` exposes entity create and destroy, component access, and singleton context state.
 - `ComponentRegistry` stores a stable name and hash/serialize hooks for each type. Unit tests cover it.
 
-#### [ ] T0.2.1.1 — World and ComponentRegistry
+#### [x] T0.2.1.1 — World and ComponentRegistry
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.1.1.2
 ```
 Task T0.2.1.1 (Story S0.2.1). Read CLAUDE.md and docs/architecture.md §4, §5.1, §10.

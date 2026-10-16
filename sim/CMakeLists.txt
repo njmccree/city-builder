@@ -1,4 +1,7 @@
-add_library(citysim_core STATIC src/core/version.cpp)
+add_library(citysim_core STATIC
+    src/core/component_registry.cpp
+    src/core/version.cpp
+    src/core/world.cpp)
 target_include_directories(citysim_core PUBLIC include)
 target_compile_features(citysim_core PUBLIC cxx_std_20)
 target_link_libraries(citysim_core
