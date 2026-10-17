@@ -10,7 +10,7 @@
 
 namespace citysim::runner {
 
-enum class UiEventKind { Message, SaveCompleted, LoadCompleted };
+enum class UiEventKind { Message, SaveCompleted, LoadCompleted, StateHash };
 
 // Something the UI should react to (a toast, a sound). `text` is the message; for SaveCompleted and
 // LoadCompleted it is a failure's reason (empty when ok). Real event kinds arrive with the UI tasks.
@@ -23,10 +23,12 @@ struct UiEvent {
     std::string path;      // SaveCompleted / LoadCompleted: the file
     bool ok = true;        // SaveCompleted / LoadCompleted: whether it worked
     bool autosave = false; // SaveCompleted: written by the autosave timer
-    // Set by the runner on SaveCompleted / LoadCompleted: these events stay in snapshots until the consumer
-    // has read one, and latest_snapshot() hands each to the consumer once. 0 for other events.
+    // Set by the runner on SaveCompleted / LoadCompleted / StateHash: these events stay in snapshots until
+    // the consumer has read one, and latest_snapshot() hands each to the consumer once. 0 for other events.
     std::uint64_t serial = 0;
     std::vector<std::string> warnings; // LoadCompleted: e.g. the content changed since the save
+    std::uint64_t hash = 0;            // StateHash: World::state_hash() at the moment it was taken
+    std::uint64_t tick = 0;            // StateHash: the tick that state was at
 };
 
 // A named block of flat numbers for a renderer (architecture §7.3): `data` holds records of `stride` floats,

@@ -79,6 +79,8 @@ void CitySim::_bind_methods() {
     ADD_SIGNAL(godot::MethodInfo("save_completed", godot::PropertyInfo(godot::Variant::STRING, "path"),
                                  godot::PropertyInfo(godot::Variant::BOOL, "ok"),
                                  godot::PropertyInfo(godot::Variant::STRING, "message")));
+    ADD_SIGNAL(godot::MethodInfo("state_hash_ready", godot::PropertyInfo(godot::Variant::INT, "tick"),
+                                 godot::PropertyInfo(godot::Variant::STRING, "hash")));
     ADD_SIGNAL(godot::MethodInfo("load_completed", godot::PropertyInfo(godot::Variant::STRING, "path"),
                                  godot::PropertyInfo(godot::Variant::BOOL, "ok"),
                                  godot::PropertyInfo(godot::Variant::STRING, "message")));
@@ -203,6 +205,12 @@ void CitySim::_process(double) {
     // Results of saves and loads (each is handed over once).
     for (const runner::UiEvent& event : snapshot.ui_events) {
         if (event.kind == runner::UiEventKind::Message) {
+            continue;
+        }
+        if (event.kind == runner::UiEventKind::StateHash) {
+            // Hex text, because a Godot int is signed 64-bit and the hash is unsigned.
+            emit_signal("state_hash_ready", static_cast<int64_t>(event.tick),
+                        godot::String::num_uint64(event.hash, 16).lpad(16, "0"));
             continue;
         }
         String message = to_godot(event.text);

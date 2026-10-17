@@ -1042,7 +1042,7 @@ cadence (~1 year per 2 minutes at 1×). Report what you verified. Follow the Tas
 (branch story/S0.7.2-debug-ui).
 ```
 
-#### [ ] T0.7.2.2 — Developer console
+#### [x] T0.7.2.2 — Developer console
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.7.2.1
 ```
 Task T0.7.2.2 (Story S0.7.2, last task). Read CLAUDE.md.

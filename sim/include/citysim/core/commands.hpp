@@ -38,9 +38,13 @@ struct SaveGame {
 struct LoadGame {
     std::string path;
 };
+// Asks for the hash of the whole game state, taken between ticks; the answer comes back as a StateHash
+// UiEvent. Also handled by the runner and not recorded in the input log. For tests and the developer console.
+struct RequestStateHash {};
 
-using Command = std::variant<NoOp, DebugSetComponentValue, time::SetSpeed, time::TogglePause, time::SetEra,
-                             SaveGame, LoadGame, debug::SpawnDebugAgents, debug::ClearDebugAgents>;
+using Command =
+    std::variant<NoOp, DebugSetComponentValue, time::SetSpeed, time::TogglePause, time::SetEra, SaveGame,
+                 LoadGame, debug::SpawnDebugAgents, debug::ClearDebugAgents, RequestStateHash>;
 
 struct SequencedCommand {
     std::uint64_t sequence = 0;   // assigned by CommandQueue::submit, strictly increasing

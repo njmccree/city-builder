@@ -27,6 +27,8 @@ template <class Ar> void serialize(Ar& ar, LoadGame& command, std::uint32_t vers
     save::io(ar, command.path, version);
 }
 
+template <class Ar> void serialize(Ar&, RequestStateHash&, std::uint32_t) {}
+
 template <class Ar> void serialize(Ar& ar, SequencedCommand& command, std::uint32_t version) {
     save::io(ar, command.sequence, version);
     save::io(ar, command.issue_tick, version);

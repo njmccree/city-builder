@@ -9,6 +9,8 @@ signal date_changed(text: String)
 signal speed_changed(speed: int, paused: bool)
 signal save_completed(path: String, ok: bool, message: String)
 signal load_completed(path: String, ok: bool, message: String)
+## The answer to a {"type": "state_hash"} command: the tick it was taken at and the hash as 16 hex digits.
+signal state_hash_ready(tick: int, hash: String)
 
 ## Folders searched for mods: the base game and the bundled optional mods.
 const DEFAULT_CONTENT_ROOTS: PackedStringArray = ["res://content", "res://content/mods"]
@@ -32,6 +34,7 @@ func _ready() -> void:
 	core.load_completed.connect(
 		func(path: String, ok: bool, message: String) -> void: load_completed.emit(path, ok, message)
 	)
+	core.state_hash_ready.connect(func(tick: int, hash: String) -> void: state_hash_ready.emit(tick, hash))
 
 
 func _exit_tree() -> void:

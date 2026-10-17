@@ -40,6 +40,9 @@ struct WriteCommand {
     void operator()(const citysim::core::LoadGame&) const {
         throw std::logic_error("LoadGame is not part of an input log");
     }
+    void operator()(const citysim::core::RequestStateHash&) const {
+        throw std::logic_error("RequestStateHash is not part of an input log");
+    }
 };
 
 [[noreturn]] void fail(std::size_t line, const std::string& message) {

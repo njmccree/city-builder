@@ -162,17 +162,26 @@ MarshalResult parse_load_game(const Dictionary& dictionary, const MarshalContext
     return success(core::LoadGame{file_path(path, false)});
 }
 
+MarshalResult parse_state_hash(const Dictionary& dictionary, const MarshalContext&) {
+    std::string error;
+    if (!only_keys(dictionary, {"type"}, error)) {
+        return failure(error);
+    }
+    return success(core::RequestStateHash{});
+}
+
 // The conversion table: one line per command type.
 struct Entry {
     std::string_view type;
     MarshalResult (*parse)(const Dictionary&, const MarshalContext&);
 };
-constexpr std::array<Entry, 5> k_entries{{
+constexpr std::array<Entry, 6> k_entries{{
     {"set_speed", &parse_set_speed},
     {"toggle_pause", &parse_toggle_pause},
     {"set_era", &parse_set_era},
     {"save_game", &parse_save_game},
     {"load_game", &parse_load_game},
+    {"state_hash", &parse_state_hash},
 }};
 
 } // namespace

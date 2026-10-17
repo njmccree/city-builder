@@ -23,6 +23,7 @@ struct Describe {
         return "SpawnDebugAgents count=" + std::to_string(cmd.count);
     }
     std::string operator()(const debug::ClearDebugAgents&) const { return "ClearDebugAgents"; }
+    std::string operator()(const RequestStateHash&) const { return "RequestStateHash"; }
 };
 } // namespace
 

@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace citysim;
@@ -432,4 +433,44 @@ TEST_CASE("runner: autosave settings are validated", "[runner][save]") {
     RunnerConfig config;
     config.time.autosave_slots = 0;
     CHECK_THROWS_AS(SimulationRunner(5, clock, config, 1), std::invalid_argument);
+}
+
+TEST_CASE("runner: RequestStateHash returns the state hash, equal after save then load", "[runner][save]") {
+    const TempDir dir("citysim_runner_hash");
+    const std::string file = (dir.path / "game.csav").generic_string();
+
+    FakeClock clock;
+    SimulationRunner runner(5, clock, {}, 1);
+    runner.configure(setup_game);
+    runner.start();
+    REQUIRE(runner.wait_until_idle());
+    Timeline now;
+    run_ticks(clock, runner, now, 20);
+
+    const auto request_hash = [&runner] {
+        runner.submit(core::RequestStateHash{});
+        REQUIRE(runner.wait_until_idle());
+        const RenderSnapshot snapshot = runner.latest_snapshot();
+        const UiEvent* event = find_event(snapshot, UiEventKind::StateHash);
+        REQUIRE(event != nullptr);
+        return std::pair{event->hash, event->tick};
+    };
+
+    const auto [saved_hash, saved_tick] = request_hash();
+    CHECK(saved_tick == 20);
+    CHECK(saved_hash != 0);
+    runner.submit(core::SaveGame{file});
+    REQUIRE(runner.wait_until_idle());
+
+    run_ticks(clock, runner, now, 10);
+    const auto [later_hash, later_tick] = request_hash();
+    CHECK(later_tick == 30);
+    CHECK(later_hash != saved_hash);
+
+    runner.submit(core::LoadGame{file});
+    REQUIRE(runner.wait_until_idle());
+    const auto [loaded_hash, loaded_tick] = request_hash();
+    CHECK(loaded_tick == 20);
+    CHECK(loaded_hash == saved_hash);
+    runner.stop();
 }

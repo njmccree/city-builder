@@ -222,6 +222,14 @@ bool SimulationRunner::handle_batch(std::vector<core::SequencedCommand>& batch) 
             flush();
             replaced = do_load(load->path) || replaced;
             publish_snapshot();
+        } else if (std::holds_alternative<core::RequestStateHash>(command.cmd)) {
+            flush();
+            UiEvent event;
+            event.kind = UiEventKind::StateHash;
+            event.hash = simulation_->world().state_hash();
+            event.tick = simulation_->tick();
+            push_result_event(std::move(event));
+            publish_snapshot();
         } else {
             ordinary.push_back(std::move(command));
         }

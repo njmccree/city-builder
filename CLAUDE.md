@@ -25,6 +25,7 @@ Read the architecture sections that a Task cites before writing code.
    - Every stateful component is registered in the `ComponentRegistry`.
 3. **All content is data** (architecture §8). Don't hard-code content ids in C++ outside tests.
 4. **All player-facing text uses localization keys** (architecture §9).
+   - Exception: the developer console (`game/scripts/debug/console_commands.gd`, `game/ui/debug/dev_console.*`) prints developer-facing English text, not keys.
 5. **Never commit build outputs** (`build/`, `game/bin/`, `game/.godot/`) or large binaries outside Git LFS.
 6. **Never use `-ffast-math`.** Keep warnings clean.
 

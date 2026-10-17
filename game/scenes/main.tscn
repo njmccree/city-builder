@@ -1,9 +1,10 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/camera/city_camera.tscn" id="2_camera"]
 [ext_resource type="PackedScene" path="res://ui/debug/debug_overlay.tscn" id="3_overlay"]
 [ext_resource type="PackedScene" path="res://ui/hud/time_controls.tscn" id="4_time"]
+[ext_resource type="PackedScene" path="res://ui/debug/dev_console.tscn" id="5_console"]
 
 [sub_resource type="Shader" id="Shader_ground"]
 code = "shader_type spatial;
@@ -73,3 +74,5 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1000, 0, 1000)
 [node name="DebugOverlay" parent="." instance=ExtResource("3_overlay")]
 
 [node name="TimeControls" parent="." instance=ExtResource("4_time")]
+
+[node name="DevConsole" parent="." instance=ExtResource("5_console")]
