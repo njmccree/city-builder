@@ -38,6 +38,11 @@ add_library(citysim_core STATIC
     src/save/migration_registry.cpp
     src/save/simulation_io.cpp
     src/save/world_io.cpp
+    src/debug/grid_pathfinder.cpp
+    src/debug/movement_system.cpp
+    src/debug/test_map.cpp
+    src/debug/walking_skeleton.cpp
+    src/debug/wander_planner_system.cpp
     src/runner/clock.cpp
     src/runner/game_session.cpp
     src/runner/simulation_runner.cpp
