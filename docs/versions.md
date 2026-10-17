@@ -4,7 +4,7 @@
 |---|---|---|---|
 | Godot | TBD | Must match godot-cpp | - |
 | godot-cpp | TBD | Submodule; must match the Godot version | - |
-| CMake (minimum) | 3.25 | Architecture §3 | 2026-10-09 |
+| CMake (minimum) | 3.28 | EnTT v4 requires 3.28 (found building on Windows, PR #3); Architecture §3 | 2026-10-17 |
 | C++ standard | C++20 | Architecture §3 | 2026-10-09 |
 | EnTT | v4.0.0 | ECS; latest stable release | 2026-10-09 |
 | Catch2 | v3.16.1 | Unit tests | 2026-10-09 |

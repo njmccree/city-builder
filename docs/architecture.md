@@ -56,7 +56,7 @@ docs/                     gdd.md, architecture.md, backlog/, versions.md, perf.m
 
 ## 3. Build & Dependencies
 
-- **CMake ≥ 3.25 + Ninja**, configured through `CMakePresets.json`. Compilers: GCC or Clang on Linux, MSVC (VS 2022 Build Tools) on Windows.
+- **CMake ≥ 3.28 + Ninja**, configured through `CMakePresets.json`. Compilers: GCC or Clang on Linux, MSVC (VS 2022 Build Tools) on Windows.
 - **C++20.** Warnings at a high level; `-Werror` / `/WX` in CI. **Never use `-ffast-math`** or equivalents.
 - Third-party libraries come through **FetchContent with pinned release tags** in `cmake/Dependencies.cmake`. Each pin is recorded in `docs/versions.md`.
 
