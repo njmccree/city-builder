@@ -2,6 +2,7 @@
 
 #include "citysim/core/log.hpp"
 #include "citysim/core/state_hasher.hpp"
+#include "citysim/time/calendar_scheduler.hpp"
 #include "citysim/time/calendar_state.hpp"
 #include "citysim/time/calendar_system.hpp"
 #include "citysim/time/time_commands.hpp"
@@ -10,6 +11,8 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
+#include <variant>
 
 namespace citysim::time {
 
@@ -19,6 +22,24 @@ void hash_calendar_state(core::StateHasher& hasher, const CalendarState& state) 
     hasher.add_pod(state.now);
     hasher.add_pod(state.remainder);
     hasher.add_pod(state.era.index);
+}
+
+void hash_calendar_scheduler(core::StateHasher& hasher, const CalendarScheduler& scheduler) {
+    hasher.add_pod(scheduler.next_sequence());
+    hasher.add_pod(static_cast<std::uint64_t>(scheduler.size()));
+    for (const CalendarScheduler::Entry& entry : scheduler.entries()) {
+        hasher.add_pod(entry.when);
+        hasher.add_pod(entry.sequence);
+        hasher.add_pod(static_cast<std::uint64_t>(entry.action.index()));
+        std::visit(
+            [&hasher](const auto& action) {
+                using Action = std::decay_t<decltype(action)>;
+                if constexpr (std::is_same_v<Action, DebugAction>) {
+                    hasher.add(action.tag);
+                }
+            },
+            entry.action);
+    }
 }
 
 } // namespace
@@ -46,6 +67,12 @@ void install_calendar(core::Simulation& simulation, const content::ContentDataba
     state.now = to_calendar_time(start_date);
     state.era = *handle;
     simulation.world().ctx().emplace<CalendarState>(state);
+
+    core::Hooks<CalendarScheduler> scheduler_hooks;
+    scheduler_hooks.hash = &hash_calendar_scheduler;
+    simulation.world().registry().register_singleton<CalendarScheduler>("time.CalendarScheduler",
+                                                                        scheduler_hooks);
+    simulation.world().ctx().emplace<CalendarScheduler>();
 
     simulation.add_system(core::Phase::Calendar, std::make_unique<CalendarSystem>(content));
 

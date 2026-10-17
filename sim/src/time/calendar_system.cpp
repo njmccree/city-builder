@@ -1,6 +1,8 @@
 #include "citysim/time/calendar_system.hpp"
 
 #include "citysim/core/tick_context.hpp"
+#include "citysim/time/calendar_events.hpp"
+#include "citysim/time/calendar_scheduler.hpp"
 #include "citysim/time/time_defines.hpp"
 
 #include <limits>
@@ -42,7 +44,27 @@ void CalendarSystem::update(core::TickContext& context) {
     auto& state = context.world.ctx().get<CalendarState>();
     const auto& defines = context.world.ctx().get<TimeDefines>();
     const content::EraDef& era = content_.registry<content::EraDef>().get(state.era);
+
+    const CalendarTime before = state.now;
     advance_calendar(state, calendar_denominator(era, defines.base_tick_rate));
+
+    // One event per day boundary crossed, oldest first; a fast era can cross many in one tick. At a midnight
+    // that also starts a month or a year the coarser event comes first.
+    for (std::int64_t day = day_number(before) + 1; day <= day_number(state.now); ++day) {
+        const Date date = to_date(day * k_seconds_per_day);
+        if (date.month == 1 && date.day == 1) {
+            context.events.emit(core::Event{YearStarted{date.year}});
+        }
+        if (date.day == 1) {
+            context.events.emit(core::Event{MonthStarted{date}});
+        }
+        context.events.emit(core::Event{DayStarted{date}});
+    }
+
+    // Then whatever has come due, in (time, insertion order).
+    for (CalendarScheduler::Entry& entry : context.world.ctx().get<CalendarScheduler>().pop_due(state.now)) {
+        context.events.emit(core::Event{ScheduledActionDue{entry.when, std::move(entry.action)}});
+    }
 }
 
 } // namespace citysim::time

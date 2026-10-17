@@ -1,10 +1,5 @@
-#include "citysim/content/content_database.hpp"
-#include "citysim/core/simulation.hpp"
-#include "citysim/time/calendar_module.hpp"
-#include "citysim/time/calendar_state.hpp"
 #include "citysim/time/calendar_system.hpp"
-#include "citysim/time/time_commands.hpp"
-#include "citysim/time/time_module.hpp"
+#include "support/calendar_game.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <filesystem>
@@ -15,34 +10,8 @@ using namespace citysim;
 using namespace citysim::time;
 
 namespace {
-
-std::unique_ptr<content::ContentDatabase> load_calendar_content() {
-    auto db = std::make_unique<content::ContentDatabase>();
-    const auto result = db->load({std::filesystem::path(CITYSIM_TEST_FIXTURES_DIR) / "content" / "calendar"});
-    REQUIRE(result.ok());
-    return db;
-}
-
-// A simulation with the time module and calendar installed, starting in `era`.
-struct Game {
-    std::unique_ptr<content::ContentDatabase> content = load_calendar_content();
-    core::Simulation sim;
-
-    explicit Game(std::string_view era, std::optional<Date> start = std::nullopt) : sim(1, 1) {
-        time::install(sim);
-        install_calendar(sim, *content, era, start);
-    }
-
-    const CalendarState& calendar() const { return sim.world().ctx().get<CalendarState>(); }
-    void step(std::uint64_t ticks) {
-        for (std::uint64_t i = 0; i < ticks; ++i) {
-            sim.step();
-        }
-    }
-    void set_era(std::string_view id, std::uint64_t sequence) {
-        sim.enqueue({core::SequencedCommand{sequence, 0, SetEra{std::string(id)}}});
-    }
-};
+using Game = citysim::test::CalendarGame;
+using citysim::test::load_calendar_content;
 
 constexpr std::int64_t k_year = k_seconds_per_year;
 

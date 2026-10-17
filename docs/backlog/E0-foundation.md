@@ -583,7 +583,7 @@ Task T0.3.2.2 (Story S0.3.2). Read docs/architecture.md §6 and §8.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.3.2.3 — Calendar scheduler (day/month/year boundaries, dated triggers)
+#### [x] T0.3.2.3 — Calendar scheduler (day/month/year boundaries, dated triggers)
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.3.2.2
 ```
 Task T0.3.2.3 (Story S0.3.2, last task). Read docs/architecture.md §5.2, §5.5, §6.

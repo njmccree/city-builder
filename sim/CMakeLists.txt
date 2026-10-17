@@ -20,6 +20,7 @@ add_library(citysim_core STATIC
     src/core/world.cpp
     src/time/calendar.cpp
     src/time/calendar_module.cpp
+    src/time/calendar_scheduler.cpp
     src/time/calendar_system.cpp
     src/time/clock_system.cpp
     src/time/game_clock.cpp
