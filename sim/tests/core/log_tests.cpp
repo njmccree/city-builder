@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <system_error>
 
 using namespace citysim;
 using citysim::log::Category;
@@ -23,6 +24,21 @@ struct RestoreLogging {
 std::filesystem::path temp_log_path(const std::string& name) {
     return std::filesystem::temp_directory_path() / ("citysim_log_test_" + name + ".log");
 }
+
+// Owns a temp log file. On destruction it first points logging away from the file, because Windows cannot
+// delete a file that is still open (the sink holds it), then deletes it without ever throwing.
+struct TempLogFile {
+    explicit TempLogFile(const std::string& name) : path(temp_log_path(name)) {}
+    ~TempLogFile() {
+        log::init(LogConfig::all(Level::Off));
+        std::error_code ignored;
+        std::filesystem::remove(path, ignored);
+    }
+    TempLogFile(const TempLogFile&) = delete;
+    TempLogFile& operator=(const TempLogFile&) = delete;
+
+    std::filesystem::path path;
+};
 
 std::string read_file(const std::filesystem::path& path) {
     std::ifstream in(path);
@@ -47,7 +63,8 @@ TEST_CASE("log categories have stable names", "[core][log]") {
 
 TEST_CASE("log levels are applied per category", "[core][log]") {
     const RestoreLogging restore;
-    const auto path = temp_log_path("levels");
+    const TempLogFile file("levels");
+    const auto& path = file.path;
 
     LogConfig config = LogConfig::all(Level::Info);
     config.levels[static_cast<std::size_t>(Category::Sim)] = Level::Debug;
@@ -73,12 +90,12 @@ TEST_CASE("log levels are applied per category", "[core][log]") {
     REQUIRE_FALSE(contains(text, "core-warn")); // Core is at Error
     REQUIRE(contains(text, "[core] [error] core-error"));
     REQUIRE(contains(text, "[save] [info] save-info"));
-    std::filesystem::remove(path);
 }
 
 TEST_CASE("Level::Off silences a category", "[core][log]") {
     const RestoreLogging restore;
-    const auto path = temp_log_path("off");
+    const TempLogFile file("off");
+    const auto& path = file.path;
     LogConfig config = LogConfig::all(Level::Off);
     config.file_path = path.string();
     config.console = false;
@@ -87,7 +104,6 @@ TEST_CASE("Level::Off silences a category", "[core][log]") {
     CS_LOG_ERROR(Core, "should-not-appear");
     log::flush();
     REQUIRE(read_file(path).empty());
-    std::filesystem::remove(path);
 }
 
 TEST_CASE("log arguments are not evaluated when the level is disabled", "[core][log]") {
@@ -107,7 +123,8 @@ TEST_CASE("log arguments are not evaluated when the level is disabled", "[core][
 
 TEST_CASE("init throws for an unwritable file and keeps the previous setup", "[core][log]") {
     const RestoreLogging restore;
-    const auto path = temp_log_path("keep");
+    const TempLogFile file("keep");
+    const auto& path = file.path;
     LogConfig good = LogConfig::all(Level::Info);
     good.file_path = path.string();
     good.console = false;
@@ -119,12 +136,12 @@ TEST_CASE("init throws for an unwritable file and keeps the previous setup", "[c
     LogConfig bad = good;
     bad.file_path = (not_a_directory / "x.log").string();
     REQUIRE_THROWS_AS(log::init(bad), std::runtime_error);
-    std::filesystem::remove(not_a_directory);
+    std::error_code ignored;
+    std::filesystem::remove(not_a_directory, ignored);
 
     CS_LOG_INFO(Core, "still-working");
     log::flush();
     REQUIRE(contains(read_file(path), "still-working"));
-    std::filesystem::remove(path);
 }
 
 TEST_CASE("log settings never change simulation results", "[core][log][determinism]") {
@@ -143,7 +160,8 @@ TEST_CASE("log settings never change simulation results", "[core][log][determini
         script[tick] = {core::NoOp{}};
     }
 
-    const auto path = temp_log_path("determinism");
+    const TempLogFile file("determinism");
+    const auto& path = file.path;
     LogConfig loud = LogConfig::all(Level::Trace);
     loud.file_path = path.string();
     loud.console = false;
@@ -156,7 +174,6 @@ TEST_CASE("log settings never change simulation results", "[core][log][determini
     const auto without_logging = test::run_scenario(5, 100, setup, script);
 
     test::expect_same_hashes(with_logging, without_logging);
-    std::filesystem::remove(path);
 }
 
 TEST_CASE("profiling macros compile in every configuration", "[core][profiling]") {
