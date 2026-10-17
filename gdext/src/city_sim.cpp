@@ -4,6 +4,9 @@
 #include "citysim/core/version.hpp"
 #include "command_marshal.hpp"
 
+#include <algorithm>
+#include <array>
+#include <cstdio>
 #include <filesystem>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/translation_server.hpp>
@@ -63,7 +66,8 @@ CitySim::~CitySim() {
 void CitySim::_bind_methods() {
     godot::ClassDB::bind_method(godot::D_METHOD("get_core_version"), &CitySim::get_core_version);
     godot::ClassDB::bind_method(
-        godot::D_METHOD("new_game", "seed", "content_roots", "enabled_mods", "era_id"), &CitySim::new_game);
+        godot::D_METHOD("new_game", "seed", "content_roots", "enabled_mods", "era_id", "test_map_size"),
+        &CitySim::new_game, DEFVAL(0));
     godot::ClassDB::bind_method(godot::D_METHOD("shutdown"), &CitySim::shutdown);
     godot::ClassDB::bind_method(godot::D_METHOD("is_running"), &CitySim::is_running);
     godot::ClassDB::bind_method(godot::D_METHOD("submit_command", "command"), &CitySim::submit_command);
@@ -79,6 +83,8 @@ void CitySim::_bind_methods() {
     ADD_SIGNAL(godot::MethodInfo("save_completed", godot::PropertyInfo(godot::Variant::STRING, "path"),
                                  godot::PropertyInfo(godot::Variant::BOOL, "ok"),
                                  godot::PropertyInfo(godot::Variant::STRING, "message")));
+    ADD_SIGNAL(godot::MethodInfo("state_hash_ready", godot::PropertyInfo(godot::Variant::INT, "tick"),
+                                 godot::PropertyInfo(godot::Variant::STRING, "hash")));
     ADD_SIGNAL(godot::MethodInfo("load_completed", godot::PropertyInfo(godot::Variant::STRING, "path"),
                                  godot::PropertyInfo(godot::Variant::BOOL, "ok"),
                                  godot::PropertyInfo(godot::Variant::STRING, "message")));
@@ -90,7 +96,8 @@ godot::String CitySim::get_core_version() const {
 }
 
 Dictionary CitySim::new_game(int64_t seed, const godot::PackedStringArray& content_roots,
-                             const godot::PackedStringArray& enabled_mods, const String& era_id) {
+                             const godot::PackedStringArray& enabled_mods, const String& era_id,
+                             int64_t test_map_size) {
     shutdown();
 
     runner::NewGameRequest request;
@@ -102,6 +109,7 @@ Dictionary CitySim::new_game(int64_t seed, const godot::PackedStringArray& conte
         request.enabled_mods.push_back(to_std(enabled_mods[i]));
     }
     request.era_id = to_std(era_id);
+    request.test_map_size = static_cast<std::uint32_t>(std::clamp<int64_t>(test_map_size, 0, 4096));
     request.autosave_directory = real_path("user://saves/autosave");
     request.publish_hooks.push_back(&publish_debug_clock);
 
@@ -203,6 +211,14 @@ void CitySim::_process(double) {
     // Results of saves and loads (each is handed over once).
     for (const runner::UiEvent& event : snapshot.ui_events) {
         if (event.kind == runner::UiEventKind::Message) {
+            continue;
+        }
+        if (event.kind == runner::UiEventKind::StateHash) {
+            // Hex text, because a Godot int is signed 64-bit and the hash is unsigned.
+            std::array<char, 17> digits{};
+            std::snprintf(digits.data(), digits.size(), "%016llx",
+                          static_cast<unsigned long long>(event.hash));
+            emit_signal("state_hash_ready", static_cast<int64_t>(event.tick), String::utf8(digits.data()));
             continue;
         }
         String message = to_godot(event.text);

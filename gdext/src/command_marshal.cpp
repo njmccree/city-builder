@@ -78,6 +78,23 @@ bool read_int(const Dictionary& dictionary, const char* key, int64_t& out, std::
     return false;
 }
 
+// Any number, as a double.
+bool read_number(const Dictionary& dictionary, const char* key, double& out, std::string& error) {
+    if (!dictionary.has(key)) {
+        error = std::string("missing field '") + key + "'";
+        return false;
+    }
+    const Variant value = dictionary[key];
+    if (value.get_type() == Variant::INT || value.get_type() == Variant::FLOAT) {
+        out = static_cast<double>(value);
+        if (std::isfinite(out)) {
+            return true;
+        }
+    }
+    error = std::string("field '") + key + "' must be a number";
+    return false;
+}
+
 bool read_string(const Dictionary& dictionary, const char* key, std::string& out, std::string& error) {
     if (!dictionary.has(key)) {
         error = std::string("missing field '") + key + "'";
@@ -162,17 +179,68 @@ MarshalResult parse_load_game(const Dictionary& dictionary, const MarshalContext
     return success(core::LoadGame{file_path(path, false)});
 }
 
+MarshalResult parse_state_hash(const Dictionary& dictionary, const MarshalContext&) {
+    std::string error;
+    if (!only_keys(dictionary, {"type"}, error)) {
+        return failure(error);
+    }
+    return success(core::RequestStateHash{});
+}
+
+MarshalResult parse_spawn_agents(const Dictionary& dictionary, const MarshalContext&) {
+    std::string error;
+    int64_t count = 0;
+    if (!only_keys(dictionary, {"type", "count"}, error) || !read_int(dictionary, "count", count, error)) {
+        return failure(error);
+    }
+    constexpr int64_t k_most_agents = 1000000;
+    if (count < 1 || count > k_most_agents) {
+        return failure("'count' must be between 1 and " + std::to_string(k_most_agents));
+    }
+    return success(debug::SpawnDebugAgents{static_cast<std::uint32_t>(count)});
+}
+
+MarshalResult parse_clear_agents(const Dictionary& dictionary, const MarshalContext&) {
+    std::string error;
+    if (!only_keys(dictionary, {"type"}, error)) {
+        return failure(error);
+    }
+    return success(debug::ClearDebugAgents{});
+}
+
+MarshalResult parse_set_time_scale(const Dictionary& dictionary, const MarshalContext&) {
+    std::string error;
+    double scale = 0.0;
+    int64_t day_ticks = 0;
+    if (!only_keys(dictionary, {"type", "movement_scale", "day_length_ticks"}, error) ||
+        !read_number(dictionary, "movement_scale", scale, error) ||
+        !read_int(dictionary, "day_length_ticks", day_ticks, error)) {
+        return failure(error);
+    }
+    if (!(scale > 0.0) || scale > 100.0) {
+        return failure("'movement_scale' must be above 0 and at most 100");
+    }
+    if (day_ticks < 24 || day_ticks > 10000000) {
+        return failure("'day_length_ticks' must be between 24 and 10000000");
+    }
+    return success(time::SetTimeScale{static_cast<float>(scale), static_cast<std::uint32_t>(day_ticks)});
+}
+
 // The conversion table: one line per command type.
 struct Entry {
     std::string_view type;
     MarshalResult (*parse)(const Dictionary&, const MarshalContext&);
 };
-constexpr std::array<Entry, 5> k_entries{{
+constexpr std::array<Entry, 9> k_entries{{
     {"set_speed", &parse_set_speed},
     {"toggle_pause", &parse_toggle_pause},
     {"set_era", &parse_set_era},
     {"save_game", &parse_save_game},
     {"load_game", &parse_load_game},
+    {"state_hash", &parse_state_hash},
+    {"spawn_agents", &parse_spawn_agents},
+    {"clear_agents", &parse_clear_agents},
+    {"set_time_scale", &parse_set_time_scale},
 }};
 
 } // namespace

@@ -990,7 +990,7 @@ Run all tests and the smoke test. Follow the Task workflow in CLAUDE.md; last ta
 - Smoothing, map bounds, and settings in a Resource.
 - Verified on the PC.
 
-#### [ ] T0.7.1.1 — Camera rig
+#### [x] T0.7.1.1 — Camera rig
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.6.2.2
 ```
 Task T0.7.1.1 (Story S0.7.1). Read CLAUDE.md (GDScript style: static typing) and docs/architecture.md §11.
@@ -1021,7 +1021,7 @@ final message, list the controls and what the user should try. Follow the Task w
 - The `~` console with a command registry and history.
 - All UI text uses loc keys.
 
-#### [ ] T0.7.2.1 — Debug overlay and speed controls
+#### [x] T0.7.2.1 — Debug overlay and speed controls
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.7.1.1
 ```
 Task T0.7.2.1 (Story S0.7.2). Read CLAUDE.md and docs/architecture.md §9, §11.
@@ -1042,7 +1042,7 @@ cadence (~1 year per 2 minutes at 1×). Report what you verified. Follow the Tas
 (branch story/S0.7.2-debug-ui).
 ```
 
-#### [ ] T0.7.2.2 — Developer console
+#### [x] T0.7.2.2 — Developer console
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.7.2.1
 ```
 Task T0.7.2.2 (Story S0.7.2, last task). Read CLAUDE.md.
@@ -1122,7 +1122,7 @@ Task T0.8.1.2 (Story S0.8.1). Read docs/architecture.md §7.3, §13, §14.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.8.1.3 — AgentRenderer (MultiMesh) and test map in Godot
+#### [x] T0.8.1.3 — AgentRenderer (MultiMesh) and test map in Godot
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.8.1.2, T0.7.2.2
 ```
 Task T0.8.1.3 (Story S0.8.1). Read docs/architecture.md §7.3, §11.
@@ -1144,7 +1144,7 @@ Run on this PC: spawn 1,000 then 10,000 agents; confirm smooth interpolated moti
 when paused. Report FPS from the debug overlay. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.8.1.4 — End-to-end verification and PC performance baseline
+#### [x] T0.8.1.4 — End-to-end verification and PC performance baseline
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.8.1.3
 ```
 Task T0.8.1.4 (Story S0.8.1, last task). Read docs/architecture.md §13–§14 and docs/perf.md.
@@ -1170,7 +1170,7 @@ S0.8.1, so open the PR.
 **Acceptance criteria**
 - `docs/spikes/time-scale.md` compares at least 3 settings, with measurements and a recommendation for the designer to approve.
 
-#### [ ] T0.8.2.1 — Time-scale spike
+#### [x] T0.8.2.1 — Time-scale spike
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.8.1.4
 ```
 Task T0.8.2.1 (Story S0.8.2). Read docs/architecture.md §6 and docs/gdd.md §3.3 (time cadence) and §10.11
@@ -1195,3 +1195,23 @@ review the recommendation.
 
 ## Follow-ups
 _Filled in by T0.8.1.4 and later reviews._
+
+No budget was missed on the reference machine (see `docs/perf.md`), so there are no performance fixes to propose.
+Findings from the measurements and from building the PC Tasks:
+
+- **F-1 Decide cross-platform determinism (owner question).** The same seed and commands give a different final hash
+  on MSVC/Windows than on GCC/Linux (10,000 agents: `749e8cfc1ebb0243` vs `c854ee2a1160dd12`), although every
+  thread count agrees on one machine. Saves and replays are therefore not portable between compilers. Decide whether
+  that matters (multiplayer, shared bug reports, cloud-made saves played on the PC) and, if it does, plan fixed-point
+  or otherwise compiler-independent math for simulation state.
+- **F-2 Spread path requests over time.** Both machines show the same shape: after spawning, the first few hundred
+  ticks are 5 to 8 times costlier than the steady state because every agent searches for its first path on one
+  thread. Real citizens will need queued or hierarchical pathfinding before the Citizens epic.
+- **F-3 Interpolation when ticks run late.** The renderer blends over one nominal tick interval. When the simulation
+  cannot keep up (Debug builds) motion stutters because the blend clamps at 1 and waits. Consider blending over the
+  measured interval, or showing a "simulation behind" warning in the overlay.
+- **F-4 Make the Debug build usable.** A Debug simulation is tens of times slower than Release (10,000 agents: about 65 ms per tick against under 1 ms), too slow to judge anything, which
+  makes the editor experience misleading. Consider building the core with optimization (for example `/O2` with debug
+  info) in a "dev" preset for everyday work.
+- **F-5 Hash after entity recycling** (already noted in `docs/architecture.md`): still open until the hash is
+  rank-based.

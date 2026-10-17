@@ -9,12 +9,16 @@ signal date_changed(text: String)
 signal speed_changed(speed: int, paused: bool)
 signal save_completed(path: String, ok: bool, message: String)
 signal load_completed(path: String, ok: bool, message: String)
+## The answer to a {"type": "state_hash"} command: the tick it was taken at and the hash as 16 hex digits.
+signal state_hash_ready(tick: int, hash: String)
 
 ## Folders searched for mods: the base game and the bundled optional mods.
 const DEFAULT_CONTENT_ROOTS: PackedStringArray = ["res://content", "res://content/mods"]
 const DEFAULT_MODS: PackedStringArray = ["base"]
 const DEFAULT_ERA: String = "base:era.ancient"
 const DEFAULT_SEED: int = 1
+## Cells per side of the debug test map the walking-skeleton agents walk on (4 m per cell).
+const DEFAULT_TEST_MAP_SIZE: int = 256
 
 var core: CitySim
 
@@ -32,6 +36,7 @@ func _ready() -> void:
 	core.load_completed.connect(
 		func(path: String, ok: bool, message: String) -> void: load_completed.emit(path, ok, message)
 	)
+	core.state_hash_ready.connect(func(tick: int, hash: String) -> void: state_hash_ready.emit(tick, hash))
 
 
 func _exit_tree() -> void:
@@ -45,8 +50,9 @@ func new_game(
 	era_id: String = DEFAULT_ERA,
 	content_roots: PackedStringArray = DEFAULT_CONTENT_ROOTS,
 	enabled_mods: PackedStringArray = DEFAULT_MODS,
+	test_map_size: int = DEFAULT_TEST_MAP_SIZE,
 ) -> Dictionary:
-	var result: Dictionary = core.new_game(seed, content_roots, enabled_mods, era_id)
+	var result: Dictionary = core.new_game(seed, content_roots, enabled_mods, era_id, test_map_size)
 	for message: String in result["warnings"]:
 		push_warning("Sim.new_game: " + message)
 	for message: String in result["errors"]:

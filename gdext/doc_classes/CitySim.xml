@@ -46,8 +46,9 @@
 			<param index="1" name="content_roots" type="PackedStringArray" />
 			<param index="2" name="enabled_mods" type="PackedStringArray" />
 			<param index="3" name="era_id" type="String" />
+			<param index="4" name="test_map_size" type="int" default="0" />
 			<description>
-				Loads the content found under [param content_roots] ([code]res://[/code] and [code]user://[/code] paths are fine), starts a game in the era [param era_id] and its simulation thread, replacing a running game. [param enabled_mods] lists the mods to load; empty means the ones enabled by default. Returns [code]{ok, errors, warnings}[/code]; on failure [code]errors[/code] says what is wrong and no game is running.
+				Loads the content found under [param content_roots] ([code]res://[/code] and [code]user://[/code] paths are fine), starts a game in the era [param era_id] and its simulation thread, replacing a running game. [param enabled_mods] lists the mods to load; empty means the ones enabled by default. [param test_map_size] above 0 adds the debug agents on a square test map that many cells wide. Returns [code]{ok, errors, warnings}[/code]; on failure [code]errors[/code] says what is wrong and no game is running.
 			</description>
 		</method>
 		<method name="shutdown">
@@ -60,7 +61,7 @@
 			<return type="bool" />
 			<param index="0" name="command" type="Dictionary" />
 			<description>
-				Validates [param command] in C++ and queues it for the next tick. Returns [code]false[/code], after printing the reason with [method @GlobalScope.push_error], if it was not accepted. Commands: [code]{"type": "set_speed", "speed": 1..3}[/code], [code]{"type": "toggle_pause"}[/code], [code]{"type": "set_era", "era_id": "base:era.modern"}[/code], [code]{"type": "save_game", "path": "user://saves/a.csav"}[/code] and [code]{"type": "load_game", "path": "..."}[/code]. [code]true[/code] means queued, not done: the result of a save or load arrives as a signal.
+				Validates [param command] in C++ and queues it for the next tick. Returns [code]false[/code], after printing the reason with [method @GlobalScope.push_error], if it was not accepted. Commands: [code]{"type": "set_speed", "speed": 1..3}[/code], [code]{"type": "toggle_pause"}[/code], [code]{"type": "set_era", "era_id": "base:era.modern"}[/code], [code]{"type": "save_game", "path": "user://saves/a.csav"}[/code] [code]{"type": "load_game", "path": "..."}[/code], [code]{"type": "state_hash"}[/code] (answered by [signal state_hash_ready]), [code]{"type": "spawn_agents", "count": 1..1000000}[/code] and [code]{"type": "clear_agents"}[/code] and [code]{"type": "set_time_scale", "movement_scale": 0..100, "day_length_ticks": 24..10000000}[/code] (how fast agents move through simulated time, and how long a day is). [code]true[/code] means queued, not done: the result of a save or load arrives as a signal.
 			</description>
 		</method>
 	</methods>
@@ -92,6 +93,13 @@
 			<param index="1" name="paused" type="bool" />
 			<description>
 				Emitted when the game speed or the pause state changes (and once when a game starts).
+			</description>
+		</signal>
+		<signal name="state_hash_ready">
+			<param index="0" name="tick" type="int" />
+			<param index="1" name="hash" type="String" />
+			<description>
+				The answer to a [code]state_hash[/code] command: the hash of the whole game state at [param tick], taken between ticks, as 16 hexadecimal digits.
 			</description>
 		</signal>
 		<signal name="tick_advanced">

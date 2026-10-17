@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="AgentRenderer" inherits="MultiMeshInstance3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Draws the debug agents with one MultiMesh, smoothly between simulation ticks.
+	</brief_description>
+	<description>
+		Every frame it blends the previous and the current simulation snapshot with the interpolation alpha and writes all agent transforms straight into the MultiMesh buffer. Agents are matched between the two snapshots by id. It reads snapshots only and never touches the simulation. Needs a running game with the debug agents installed (see [method CitySim.new_game]).
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_agent_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns how many agents were drawn in the last frame.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="sim_path" type="NodePath" setter="set_sim_path" getter="get_sim_path" default="NodePath(&quot;/root/Sim/CitySim&quot;)">
+			Where the [CitySim] node is. The default is the one inside the [code]Sim[/code] autoload.
+		</member>
+	</members>
+</class>

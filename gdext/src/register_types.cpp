@@ -1,6 +1,8 @@
 #include "register_types.hpp"
 
+#include "agent_renderer.hpp"
 #include "city_sim.hpp"
+#include "test_map_view.hpp"
 
 #include <gdextension_interface.h>
 #include <godot_cpp/godot.hpp>
@@ -12,6 +14,8 @@ void initialize_citysim_module(godot::ModuleInitializationLevel level) {
         return;
     }
     GDREGISTER_CLASS(CitySim);
+    GDREGISTER_CLASS(AgentRenderer);
+    GDREGISTER_CLASS(TestMapView);
 }
 
 void uninitialize_citysim_module(godot::ModuleInitializationLevel level) {

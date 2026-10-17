@@ -4,13 +4,14 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace citysim::runner {
 
-enum class UiEventKind { Message, SaveCompleted, LoadCompleted };
+enum class UiEventKind { Message, SaveCompleted, LoadCompleted, StateHash };
 
 // Something the UI should react to (a toast, a sound). `text` is the message; for SaveCompleted and
 // LoadCompleted it is a failure's reason (empty when ok). Real event kinds arrive with the UI tasks.
@@ -23,10 +24,12 @@ struct UiEvent {
     std::string path;      // SaveCompleted / LoadCompleted: the file
     bool ok = true;        // SaveCompleted / LoadCompleted: whether it worked
     bool autosave = false; // SaveCompleted: written by the autosave timer
-    // Set by the runner on SaveCompleted / LoadCompleted: these events stay in snapshots until the consumer
-    // has read one, and latest_snapshot() hands each to the consumer once. 0 for other events.
+    // Set by the runner on SaveCompleted / LoadCompleted / StateHash: these events stay in snapshots until
+    // the consumer has read one, and latest_snapshot() hands each to the consumer once. 0 for other events.
     std::uint64_t serial = 0;
     std::vector<std::string> warnings; // LoadCompleted: e.g. the content changed since the save
+    std::uint64_t hash = 0;            // StateHash: World::state_hash() at the moment it was taken
+    std::uint64_t tick = 0;            // StateHash: the tick that state was at
 };
 
 // A named block of flat numbers for a renderer (architecture §7.3): `data` holds records of `stride` floats,
@@ -43,6 +46,18 @@ struct SnapshotChannel {
     std::vector<std::uint32_t> ids;
 
     std::size_t record_count() const { return stride == 0 ? 0 : data.size() / stride; }
+};
+
+// A fixed 2D grid for a renderer, such as which cells of the test map are walkable. Big and rarely changing,
+// so it is shared rather than copied: a publish hook keeps the same `cells` pointer until the grid changes,
+// and a renderer rebuilds only when the pointer differs from the one it last saw.
+struct SnapshotGrid {
+    std::string name;
+    std::uint32_t width = 0;
+    std::uint32_t height = 0;
+    float cell_size = 1.0F; // meters
+    std::shared_ptr<const std::vector<std::uint8_t>>
+        cells; // width * height values, row by row (y * width + x)
 };
 
 struct SimStats {
@@ -69,12 +84,23 @@ struct RenderSnapshot {
     std::vector<UiEvent> ui_events;
     // Data for renderers, added by publish hooks. Cleared before every publish: a hook fills it each time.
     std::vector<SnapshotChannel> channels;
+    // Shared grids for renderers, added by publish hooks. Cleared before every publish.
+    std::vector<SnapshotGrid> grids;
 
     // The channel with this name, or nullptr.
     const SnapshotChannel* find_channel(const std::string& name) const {
         for (const SnapshotChannel& channel : channels) {
             if (channel.name == name) {
                 return &channel;
+            }
+        }
+        return nullptr;
+    }
+
+    const SnapshotGrid* find_grid(const std::string& name) const {
+        for (const SnapshotGrid& grid : grids) {
+            if (grid.name == name) {
+                return &grid;
             }
         }
         return nullptr;

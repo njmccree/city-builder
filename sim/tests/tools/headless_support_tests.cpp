@@ -126,6 +126,26 @@ TEST_CASE("input log text round-trips SetEra", "[tools][headless]") {
     REQUIRE_THROWS(read_text("citysim-input-log 1\nseed 1\nticks 1\n1 1 SetEra\n")); // missing its argument
 }
 
+TEST_CASE("input log text round-trips SetTimeScale exactly", "[tools][headless]") {
+    LogFile log;
+    log.seed = 1;
+    log.ticks = 10;
+    log.entries.push_back({3, 1, citysim::time::SetTimeScale{2.5F, 7200}});
+    log.entries.push_back({4, 1, citysim::time::SetTimeScale{0.1F, 28800}}); // 0.1 is not exact in binary
+
+    std::ostringstream out;
+    write_log_file(out, log);
+    const LogFile back = read_text(out.str());
+    REQUIRE(back.entries.size() == 2);
+    const auto first = std::get<citysim::time::SetTimeScale>(back.entries[0].cmd);
+    CHECK(first.movement_scale == 2.5F);
+    CHECK(first.day_length_ticks == 7200);
+    const auto second = std::get<citysim::time::SetTimeScale>(back.entries[1].cmd);
+    CHECK(second.movement_scale == 0.1F); // bit for bit, so a replay stays identical
+    CHECK(second.day_length_ticks == 28800);
+    REQUIRE_THROWS(read_text("citysim-input-log 1\nseed 1\nticks 1\n1 1 SetTimeScale abc 100\n"));
+}
+
 TEST_CASE("input log reader skips comments and blank lines", "[tools][headless]") {
     const LogFile log =
         read_text("# a comment\n\ncitysim-input-log 1\n\nseed 3\nticks 9\n# note\n5 1 NoOp\n");

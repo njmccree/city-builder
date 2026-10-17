@@ -117,6 +117,52 @@ TEST_CASE("SetSpeed and TogglePause commands change the clock", "[time][clock]")
     REQUIRE(clock_of(sim).speed == 2);
 }
 
+TEST_CASE("SetTimeScale changes movement and day length, and ignores bad values", "[time][clock]") {
+    core::Simulation sim(1, 1);
+    time::install(sim);
+    const auto defines = [&sim]() -> const time::TimeDefines& {
+        return sim.world().ctx().get<TimeDefines>();
+    };
+    REQUIRE(defines().movement_scale == 3.0F);
+    REQUIRE(defines().day_length_ticks == 14400);
+
+    sim.enqueue({command(1, time::SetTimeScale{6.0F, 28800})});
+    sim.step();
+    CHECK(defines().movement_scale == 6.0F);
+    CHECK(defines().day_length_ticks == 28800);
+    CHECK(time::movement_seconds_per_tick(defines()) == 6.0F / 20.0F);
+
+    // Not above 0, too big, or a day too short to have 24 ticks: ignored, nothing changes.
+    sim.enqueue({command(2, time::SetTimeScale{0.0F, 28800}), command(3, time::SetTimeScale{-1.0F, 28800}),
+                 command(4, time::SetTimeScale{500.0F, 28800}), command(5, time::SetTimeScale{6.0F, 10}),
+                 command(6, time::SetTimeScale{std::nanf(""), 28800})});
+    sim.step();
+    CHECK(defines().movement_scale == 6.0F);
+    CHECK(defines().day_length_ticks == 28800);
+
+    // Shortening the day never leaves the clock past its end.
+    for (int i = 0; i < 500; ++i) {
+        sim.step();
+    }
+    REQUIRE(clock_of(sim).day_tick > 100);
+    sim.enqueue({command(7, time::SetTimeScale{6.0F, 100})});
+    sim.step();
+    CHECK(clock_of(sim).day_tick < 100);
+}
+
+TEST_CASE("the time scale is part of the state hash", "[time][clock][hash]") {
+    const auto hash_after = [](float scale, std::uint32_t day_ticks) {
+        core::Simulation sim(1, 1);
+        time::install(sim);
+        sim.enqueue({command(1, time::SetTimeScale{scale, day_ticks})});
+        sim.step();
+        return sim.world().state_hash();
+    };
+    CHECK(hash_after(3.0F, 14400) == hash_after(3.0F, 14400));
+    CHECK(hash_after(3.0F, 14400) != hash_after(6.0F, 14400));
+    CHECK(hash_after(3.0F, 14400) != hash_after(3.0F, 7200));
+}
+
 TEST_CASE("clock state is part of the state hash", "[time][clock][hash]") {
     const auto hash_after = [](std::vector<core::Command> commands) {
         core::Simulation sim(1, 1);

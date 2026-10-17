@@ -24,6 +24,9 @@ struct NewGameRequest {
     // Not owned. Null uses the real clock.
     IClock* clock = nullptr;
     std::size_t worker_count = 0; // see Simulation; 0 = hardware default
+    // Above 0 installs the walking skeleton (debug agents on a square test map this many cells wide, 4 m per
+    // cell) and the publish hooks for its snapshot data. 0 leaves the game without it.
+    std::uint32_t test_map_size = 0;
     // Called on the runner thread after every tick, in this order, to add data to the snapshot (channels).
     std::vector<SimulationRunner::PublishHook> publish_hooks;
 };

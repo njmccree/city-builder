@@ -57,6 +57,9 @@ struct RunnerConfig {
 // state, so for it to work the Simulation's systems and handlers must be set up through configure(), which
 // the runner can repeat on the new Simulation.
 //
+// RequestStateHash is handled the same way: the hash of the whole state (World::state_hash) is taken between
+// ticks and returned as a StateHash event.
+//
 // Speed and pause live in the simulation's GameClock and are changed with SetSpeed / TogglePause commands
 // like every other input, so they are recorded in the input log and replay correctly.
 //

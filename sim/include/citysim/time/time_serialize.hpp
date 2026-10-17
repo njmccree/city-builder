@@ -43,6 +43,11 @@ template <class Ar> void serialize(Ar& ar, SetSpeed& command, std::uint32_t vers
 
 template <class Ar> void serialize(Ar&, TogglePause&, std::uint32_t) {}
 
+template <class Ar> void serialize(Ar& ar, SetTimeScale& command, std::uint32_t version) {
+    save::io(ar, command.movement_scale, version);
+    save::io(ar, command.day_length_ticks, version);
+}
+
 template <class Ar> void serialize(Ar& ar, SetEra& command, std::uint32_t version) {
     save::io(ar, command.era_id, version);
 }

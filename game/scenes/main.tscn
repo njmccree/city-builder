@@ -1,6 +1,82 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/camera/city_camera.tscn" id="2_camera"]
+[ext_resource type="PackedScene" path="res://ui/debug/debug_overlay.tscn" id="3_overlay"]
+[ext_resource type="PackedScene" path="res://ui/hud/time_controls.tscn" id="4_time"]
+[ext_resource type="PackedScene" path="res://ui/debug/dev_console.tscn" id="5_console"]
+
+[sub_resource type="Shader" id="Shader_ground"]
+code = "shader_type spatial;
+
+// Temporary test ground: a 10 m minor grid and a 100 m major grid, drawn from world position so it
+// needs no texture. Replaced when real terrain exists.
+varying vec3 world_pos;
+
+float grid_line(vec2 p, float cell) {
+	vec2 q = p / cell;
+	vec2 g = abs(fract(q - 0.5) - 0.5) / max(fwidth(q), vec2(0.0001));
+	return 1.0 - min(min(g.x, g.y), 1.0);
+}
+
+void vertex() {
+	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
+
+void fragment() {
+	vec2 p = world_pos.xz;
+	vec3 color = vec3(0.30, 0.45, 0.27);
+	color = mix(color, vec3(0.16, 0.27, 0.15), grid_line(p, 10.0) * 0.55);
+	color = mix(color, vec3(0.92, 0.9, 0.78), grid_line(p, 100.0) * 0.6);
+	ALBEDO = color;
+	ROUGHNESS = 1.0;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ground"]
+shader = SubResource("Shader_ground")
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
+material = SubResource("ShaderMaterial_ground")
+size = Vector2(2000, 2000)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+
+[sub_resource type="Sky" id="Sky_main"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_main")
+ambient_light_source = 3
+ambient_light_color = Color(0.75, 0.8, 0.9, 1)
+ambient_light_energy = 0.6
+tonemap_mode = 2
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1000, 0, 1000)
+mesh = SubResource("PlaneMesh_ground")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 100, 0)
+shadow_enabled = true
+directional_shadow_max_distance = 1500.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="CityCamera" parent="." instance=ExtResource("2_camera")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1000, 0, 1000)
+
+[node name="DebugOverlay" parent="." instance=ExtResource("3_overlay")]
+
+[node name="TimeControls" parent="." instance=ExtResource("4_time")]
+
+[node name="DevConsole" parent="." instance=ExtResource("5_console")]
+
+[node name="TestMapView" type="TestMapView" parent="."]
+
+[node name="AgentRenderer" type="AgentRenderer" parent="."]

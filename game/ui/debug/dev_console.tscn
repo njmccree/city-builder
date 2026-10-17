@@ -1,0 +1,27 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/debug/dev_console.gd" id="1_console"]
+
+[node name="DevConsole" type="CanvasLayer"]
+layer = 20
+script = ExtResource("1_console")
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 320.0
+grow_horizontal = 2
+
+[node name="Column" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+
+[node name="Log" type="RichTextLabel" parent="Panel/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
+selection_enabled = true
+
+[node name="Input" type="LineEdit" parent="Panel/Column"]
+layout_mode = 2
+placeholder_text = "help"
