@@ -34,7 +34,7 @@ apt_install() {
 need_cmake=1
 if command -v cmake >/dev/null 2>&1; then
     v=$(cmake --version | head -n1 | awk '{print $3}')
-    if version_ge "$v" 3.25; then need_cmake=0; else warn "cmake $v < 3.25"; fi
+    if version_ge "$v" 3.28; then need_cmake=0; else warn "cmake $v < 3.28"; fi
 fi
 [ "$need_cmake" -eq 1 ] && apt_install cmake
 command -v ninja >/dev/null 2>&1 || apt_install ninja-build

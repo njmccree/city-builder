@@ -332,7 +332,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md; last task of S0.2.2, so op
 - Commands carry sequence numbers and are recorded in a replayable input log.
 - `citysim_headless` runs N ticks and prints hashes, and can replay an input log with an identical result.
 
-#### [ ] T0.2.3.1 ★ — Scheduler, phases, TickContext, Simulation
+#### [x] T0.2.3.1 ★ — Scheduler, phases, TickContext, Simulation
 - **Model:** **Opus** · **Session:** [Cloud] · **Depends on:** T0.2.2.2
 ```
 Task T0.2.3.1 (Story S0.2.3). This is architecture-critical. Read docs/architecture.md §4–§7 fully.
@@ -362,7 +362,7 @@ small test system that mutates components with rng).
 Run all tests and the determinism lint. Follow the Task workflow in CLAUDE.md (branch story/S0.2.3-kernel).
 ```
 
-#### [ ] T0.2.3.2 — Commands, CommandQueue, input log
+#### [x] T0.2.3.2 — Commands, CommandQueue, input log
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.3.1
 ```
 Task T0.2.3.2 (Story S0.2.3). Read docs/architecture.md §5.3 and the kernel in sim/include/citysim/core/.
@@ -385,7 +385,7 @@ in sequence order), unhandled commands, input log contents.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.2.3.3 — Determinism harness and headless runner CLI
+#### [x] T0.2.3.3 — Determinism harness and headless runner CLI
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.3.2
 ```
 Task T0.2.3.3 (Story S0.2.3, last task). Read docs/architecture.md §5.3 and §13.
