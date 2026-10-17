@@ -5,6 +5,7 @@
 #include "citysim/runner/clock.hpp"
 #include "citysim/runner/render_snapshot.hpp"
 #include "citysim/runner/triple_buffer.hpp"
+#include "citysim/save/migration_registry.hpp"
 #include "citysim/time/time_defines.hpp"
 
 #include <array>
@@ -12,11 +13,17 @@
 #include <condition_variable>
 #include <cstdint>
 #include <exception>
+#include <filesystem>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
+
+namespace citysim::content {
+class ContentDatabase;
+}
 
 namespace citysim::runner {
 
@@ -28,11 +35,27 @@ struct RunnerConfig {
     // When the runner falls behind it runs at most this many ticks back to back, then drops the backlog
     // so the game slows down instead of spiralling.
     std::uint32_t max_catchup_ticks = 5;
+
+    // Saving and loading (architecture §10). `content` resolves content references in saves and lets a load
+    // warn about changed content; `migrations` upgrades saves from older builds. Both must outlive the
+    // runner.
+    const content::ContentDatabase* content = nullptr;
+    const save::MigrationRegistry* migrations = nullptr;
+    // Where autosave_1.csav .. autosave_<slots>.csav go (time.autosave_slots, every
+    // time.autosave_interval_real_seconds of the runner's clock). Empty turns autosave off.
+    std::filesystem::path autosave_directory;
 };
 
 // Runs a Simulation on its own thread at the pace of the current speed (architecture §7.1). This is the
 // only place real time enters the simulation, and it does so only through the IClock it is given. The
 // UI thread talks to it through submit() (in) and latest_snapshot() (out) and nothing else.
+//
+// SaveGame and LoadGame commands are executed here, between ticks and also while paused: a save writes the
+// state as it stands (commands not yet applied are saved with it); a load builds a new Simulation, loads the
+// file into it, and replaces the old one only if that worked. Either way the outcome reaches the UI as a
+// SaveCompleted / LoadCompleted event in a snapshot published right away. A load replaces the whole game
+// state, so for it to work the Simulation's systems and handlers must be set up through configure(), which
+// the runner can repeat on the new Simulation.
 //
 // Speed and pause live in the simulation's GameClock and are changed with SetSpeed / TogglePause commands
 // like every other input, so they are recorded in the input log and replay correctly.
@@ -49,9 +72,15 @@ class SimulationRunner {
     SimulationRunner(const SimulationRunner&) = delete;
     SimulationRunner& operator=(const SimulationRunner&) = delete;
 
-    // For setting up systems before start() and inspecting state after stop(). Never touch it while the
-    // runner thread is running.
-    core::Simulation& simulation() { return simulation_; }
+    // For inspecting state after stop(), and for quick setup in tests. Never touch it while the runner thread
+    // is running. Anything added through it is lost when a LoadGame replaces the Simulation; use configure().
+    // The reference is invalidated by a load.
+    core::Simulation& simulation() { return *simulation_; }
+
+    // Installs the game's modules, systems and handlers: runs `setup` on the current Simulation now and again
+    // on every Simulation a load creates (after the time module is installed). Call before start(); throws
+    // std::logic_error afterwards.
+    void configure(std::function<void(core::Simulation&)> setup);
 
     // Called on the runner thread after every tick and before publishing, so other modules can add data
     // to the snapshot. Set it before start().
@@ -67,7 +96,9 @@ class SimulationRunner {
     // it.
     std::uint64_t submit(core::Command cmd);
 
-    // The newest published snapshot (a copy). Call from one consumer thread only.
+    // The newest published snapshot (a copy). Call from one consumer thread only. Save and load results
+    // (SaveCompleted / LoadCompleted) are never lost to a newer snapshot: they stay in each snapshot until a
+    // call has returned them, and are returned exactly once.
     RenderSnapshot latest_snapshot();
 
     // Set if the simulation threw on the runner thread; the thread has then stopped.
@@ -83,6 +114,15 @@ class SimulationRunner {
 
     void run_loop();
     void loop_body();
+    std::unique_ptr<core::Simulation> make_simulation();
+    // Splits a drained batch: SaveGame / LoadGame run here, everything else goes to the simulation. Returns
+    // true if a load replaced the simulation.
+    void push_result_event(UiEvent event);
+    bool handle_batch(std::vector<core::SequencedCommand>& batch);
+    void do_save(const std::filesystem::path& path, bool autosave);
+    bool do_load(const std::filesystem::path& path);
+    void run_autosave();
+    double autosave_interval() const;
     void publish_snapshot();
     void record_tick_stats(double started, double finished);
     void set_state(State state, std::uint64_t handled_seq, double deadline = 0.0);
@@ -90,7 +130,10 @@ class SimulationRunner {
 
     IClock& clock_;
     RunnerConfig config_;
-    core::Simulation simulation_;
+    std::uint64_t world_seed_;
+    std::size_t worker_count_;
+    std::function<void(core::Simulation&)> setup_;
+    std::unique_ptr<core::Simulation> simulation_;
     core::CommandQueue queue_;
     TripleBuffer<RenderSnapshot> snapshots_;
     PublishHook publish_hook_;
@@ -99,6 +142,8 @@ class SimulationRunner {
 
     std::atomic<bool> stop_{false};
     std::atomic<std::uint64_t> published_tick_{0};
+    std::atomic<std::uint64_t> consumed_event_serial_{0}; // newest result event the consumer has been given
+    std::uint64_t seen_event_serial_ = 0;                 // consumer thread only
 
     // Everything below is guarded by mutex_.
     mutable std::mutex mutex_;
@@ -111,6 +156,10 @@ class SimulationRunner {
     std::string failure_;
 
     // Runner-thread only.
+    std::vector<UiEvent> pending_ui_events_; // results not yet given to the consumer, oldest first
+    std::uint64_t next_event_serial_ = 1;
+    std::uint32_t next_autosave_slot_ = 1;
+    double autosave_due_ = 0.0;
     std::array<double, 60> tick_durations_{};
     std::array<double, 60> tick_finish_times_{};
     std::size_t stats_count_ = 0;

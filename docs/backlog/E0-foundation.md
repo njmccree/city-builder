@@ -824,7 +824,7 @@ Task T0.5.1.3 (Story S0.5.1). Read docs/architecture.md §10.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.5.1.4 — Save and load commands in the runner, autosave
+#### [x] T0.5.1.4 — Save and load commands in the runner, autosave
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.5.1.3
 ```
 Task T0.5.1.4 (Story S0.5.1, last task). Read docs/architecture.md §7.1 and §10.

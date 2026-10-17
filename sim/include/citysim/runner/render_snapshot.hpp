@@ -3,14 +3,28 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace citysim::runner {
 
-// Something the UI should react to (a toast, a sound). Placeholder shape; real event kinds arrive with
-// the UI tasks.
+enum class UiEventKind { Message, SaveCompleted, LoadCompleted };
+
+// Something the UI should react to (a toast, a sound). `text` is the message; for SaveCompleted and
+// LoadCompleted it is a failure's reason (empty when ok). Real event kinds arrive with the UI tasks.
 struct UiEvent {
+    UiEvent() = default;
+    UiEvent(std::string message) : text(std::move(message)) {} // NOLINT: UiEvent{"text"} is the common case
+
     std::string text;
+    UiEventKind kind = UiEventKind::Message;
+    std::string path;      // SaveCompleted / LoadCompleted: the file
+    bool ok = true;        // SaveCompleted / LoadCompleted: whether it worked
+    bool autosave = false; // SaveCompleted: written by the autosave timer
+    // Set by the runner on SaveCompleted / LoadCompleted: these events stay in snapshots until the consumer
+    // has read one, and latest_snapshot() hands each to the consumer once. 0 for other events.
+    std::uint64_t serial = 0;
+    std::vector<std::string> warnings; // LoadCompleted: e.g. the content changed since the save
 };
 
 struct SimStats {

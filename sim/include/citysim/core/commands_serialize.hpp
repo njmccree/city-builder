@@ -18,6 +18,14 @@ template <class Ar> void serialize(Ar& ar, DebugSetComponentValue& command, std:
     save::io(ar, command.value, version);
 }
 
+template <class Ar> void serialize(Ar& ar, SaveGame& command, std::uint32_t version) {
+    save::io(ar, command.path, version);
+}
+
+template <class Ar> void serialize(Ar& ar, LoadGame& command, std::uint32_t version) {
+    save::io(ar, command.path, version);
+}
+
 template <class Ar> void serialize(Ar& ar, SequencedCommand& command, std::uint32_t version) {
     save::io(ar, command.sequence, version);
     save::io(ar, command.issue_tick, version);

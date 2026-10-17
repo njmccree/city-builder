@@ -28,7 +28,18 @@ struct DebugSetComponentValue {
     std::int32_t value = 0;
 };
 
-using Command = std::variant<NoOp, DebugSetComponentValue, time::SetSpeed, time::TogglePause, time::SetEra>;
+// Handled by the SimulationRunner strictly between ticks, never by the Simulation: replacing the game while a
+// tick is running is impossible. They are not recorded in the input log (a save changes no game state).
+// `path` is a file path as the platform writes it.
+struct SaveGame {
+    std::string path;
+};
+struct LoadGame {
+    std::string path;
+};
+
+using Command = std::variant<NoOp, DebugSetComponentValue, time::SetSpeed, time::TogglePause, time::SetEra,
+                             SaveGame, LoadGame>;
 
 struct SequencedCommand {
     std::uint64_t sequence = 0;   // assigned by CommandQueue::submit, strictly increasing

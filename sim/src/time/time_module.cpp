@@ -40,6 +40,9 @@ void validate(const TimeDefines& defines) {
     if (defines.day_length_ticks == 0) {
         throw std::invalid_argument("TimeDefines: day_length_ticks must be positive");
     }
+    if (defines.autosave_slots == 0 || defines.autosave_slots > 99) {
+        throw std::invalid_argument("TimeDefines: autosave_slots must be between 1 and 99");
+    }
     for (std::size_t speed = 1; speed < defines.speed_multipliers.size(); ++speed) {
         if (defines.speed_multipliers[speed] == 0) {
             throw std::invalid_argument("TimeDefines: every speed from 1 to 3 needs a positive multiplier");
