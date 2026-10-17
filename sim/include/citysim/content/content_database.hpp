@@ -3,6 +3,7 @@
 #include "citysim/content/content_issue.hpp"
 #include "citysim/content/def_kind.hpp"
 #include "citysim/content/era_def.hpp"
+#include "citysim/content/localizer.hpp"
 #include "citysim/content/mod_discovery.hpp"
 #include "citysim/content/mod_load_order.hpp"
 #include "citysim/time/time_defines.hpp"
@@ -20,6 +21,7 @@ namespace citysim::content {
 struct LoadResult {
     std::vector<ContentIssue> errors;
     std::vector<ContentIssue> warnings;
+    std::vector<ContentIssue> infos; // not problems; tools show them on request
     bool ok() const { return errors.empty(); }
 };
 
@@ -33,6 +35,9 @@ struct LoadResult {
 struct ModLoadRequest {
     std::vector<std::filesystem::path> roots; // folders to search for mods (see discover_mods)
     LoadOrderOptions order;                   // which mods are enabled; default: those enabled by default
+    // Every "*_key" field (and mod name_key) must have text in "en" (architecture §9). Tests of unrelated
+    // content turn this off rather than carry loc files.
+    bool check_localization = true;
 };
 
 class ContentDatabase {
@@ -66,8 +71,9 @@ class ContentDatabase {
     // type, by id). Can be called once, by this or by load().
     LoadResult load_mods(const ModLoadRequest& request);
 
-    // Loads each folder as a mod, in the order given, with no dependency handling: a lower-level entry point
-    // for tests and tools. A folder without mod.json is named after its folder. Can be called once.
+    // Loads each folder as a mod, in the order given, with no dependency handling and no localization key
+    // checks: a lower-level entry point for tests and tools. A folder without mod.json is named after its
+    // folder. Can be called once.
     LoadResult load(const std::vector<std::filesystem::path>& mod_roots);
 
     // The mods that were loaded, in load order.
@@ -96,6 +102,11 @@ class ContentDatabase {
         return static_cast<const DefKind<T>*>(it->second)->registry();
     }
 
+    // Text for every key, from loc/<lang>/*.json of each loaded mod, later mods overriding earlier ones.
+    // The language can be changed after loading; the tables cannot.
+    const Localizer& localizer() const { return localizer_; }
+    Localizer& localizer() { return localizer_; }
+
     // From defines/time.json, or the built-in defaults when the file is absent.
     const time::TimeDefines& time_defines() const { return time_defines_; }
 
@@ -114,6 +125,9 @@ class ContentDatabase {
     void load_time_defines(const std::filesystem::path& path, const std::string& mod_root,
                            const std::string& display_name, std::vector<ContentIssue>& issues);
     void finish(std::vector<ContentIssue>& issues);
+    void collect_loc_files(const ModInfo& mod, std::vector<ContentIssue>& issues);
+    void check_loc_keys(const std::vector<ModInfo>& mods, const RawDefs& raw,
+                        std::vector<ContentIssue>& issues) const;
 
     std::string type_name_of(std::type_index type) const;
 
@@ -129,8 +143,12 @@ class ContentDatabase {
     std::map<std::string, IDefKind*> by_name_;
     std::map<std::type_index, IDefKind*> by_type_;
     time::TimeDefines time_defines_;
+    Localizer localizer_;
+    // Where each loaded string came from, by (language, key): mod root and file, for messages.
+    std::map<std::pair<std::string, std::string>, std::pair<std::string, std::string>> loc_origins_;
     std::vector<ModManifest> mods_;
     std::uint64_t content_hash_ = 0;
+    bool check_loc_keys_enabled_ = false;
     bool loaded_ = false;
 };
 

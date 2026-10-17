@@ -1,0 +1,16 @@
+{
+  "calendar.month.1": "January",
+  "calendar.month.2": "February",
+  "calendar.month.3": "March",
+  "calendar.month.4": "April",
+  "calendar.month.5": "May",
+  "calendar.month.6": "June",
+  "calendar.month.7": "July",
+  "calendar.month.8": "August",
+  "calendar.month.9": "September",
+  "calendar.month.10": "October",
+  "calendar.month.11": "November",
+  "calendar.month.12": "December",
+  "calendar.date.bce": "{day} {month} {year} BCE",
+  "calendar.date.ce": "{day} {month} {year} CE"
+}

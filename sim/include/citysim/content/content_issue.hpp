@@ -4,7 +4,8 @@
 
 namespace citysim::content {
 
-enum class Severity { Error, Warning };
+// Info is for things worth knowing but never a failure, such as unused localization keys.
+enum class Severity { Error, Warning, Info };
 
 // One problem found while loading or validating content. `file` is relative to the mod root, `pointer` is a
 // JSON Pointer (RFC 6901) into that file, empty for the whole file.

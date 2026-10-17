@@ -27,6 +27,7 @@ LoadResult load_fixture(ContentDatabase& database, const std::string& name,
     ModLoadRequest request;
     request.roots = {layering_fixture(name)};
     request.order = order;
+    request.check_localization = false; // these fixtures use placeholder keys
     return database.load_mods(request);
 }
 
@@ -198,6 +199,7 @@ TEST_CASE("the content hash changes when a file changes, but not for line ending
         ContentDatabase database;
         ModLoadRequest request;
         request.roots = {work};
+        request.check_localization = false;
         REQUIRE(database.load_mods(request).errors.empty());
         return database.content_hash();
     };
