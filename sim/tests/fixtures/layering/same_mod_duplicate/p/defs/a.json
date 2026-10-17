@@ -1,0 +1,13 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "p:era.one",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 100,
+      "default_start_year": 0,
+      "order": 5
+    }
+  ]
+}

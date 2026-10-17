@@ -1,0 +1,31 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "base:era.ancient",
+      "patch": true,
+      "real_seconds_per_year": 150,
+      "desc_key": "patcher.ancient.desc",
+      "next_era": null
+    },
+    {
+      "type": "era",
+      "id": "base:era.colonial",
+      "name_key": "patcher.colonial.name",
+      "desc_key": "patcher.colonial.desc",
+      "real_seconds_per_year": 360,
+      "default_start_year": 1700,
+      "order": 2,
+      "next_era": "base:era.modern"
+    },
+    {
+      "type": "era",
+      "id": "patcher:era.extra",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 900,
+      "default_start_year": 2025,
+      "order": 9
+    }
+  ]
+}

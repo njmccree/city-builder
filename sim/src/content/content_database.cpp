@@ -1,5 +1,8 @@
 #include "citysim/content/content_database.hpp"
 
+#include "citysim/content/json_merge_patch.hpp"
+#include "citysim/core/state_hasher.hpp"
+
 #include <algorithm>
 #include <fstream>
 #include <optional>
@@ -48,6 +51,69 @@ std::optional<nlohmann::json> read_json_file(const fs::path& path, ParseContext&
     }
 }
 
+// Every .json file under `dir`, sorted by path relative to `root`.
+std::vector<fs::path> json_files_under(const fs::path& dir, const fs::path& root) {
+    std::vector<fs::path> files;
+    std::error_code ec;
+    if (fs::is_directory(dir, ec)) {
+        for (const auto& entry : fs::recursive_directory_iterator(dir)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".json") {
+                files.push_back(entry.path());
+            }
+        }
+    }
+    std::sort(files.begin(), files.end(), [&](const fs::path& a, const fs::path& b) {
+        return display_path(a, root) < display_path(b, root);
+    });
+    return files;
+}
+
+// Adds a mod's identity and every content file to the hash: mod.json, then the .json files of defs/, defines/
+// and loc/, each as relative path and text. Text is hashed with CRLF turned into LF, so a Windows checkout
+// with autocrlf gives the same hash as a Linux one.
+void hash_mod(core::StateHasher& hasher, const ModInfo& mod) {
+    hasher.add(mod.manifest.id);
+    hasher.add(mod.manifest.version);
+
+    std::vector<fs::path> files;
+    std::error_code ec;
+    if (fs::is_regular_file(mod.root / "mod.json", ec)) {
+        files.push_back(mod.root / "mod.json");
+    }
+    for (const char* folder : {"defs", "defines", "loc"}) {
+        for (fs::path& file : json_files_under(mod.root / folder, mod.root)) {
+            files.push_back(std::move(file));
+        }
+    }
+    std::sort(files.begin(), files.end(), [&](const fs::path& a, const fs::path& b) {
+        return display_path(a, mod.root) < display_path(b, mod.root);
+    });
+
+    hasher.add_pod(static_cast<std::uint64_t>(files.size()));
+    for (const fs::path& file : files) {
+        std::ifstream in(file, std::ios::binary);
+        std::ostringstream buffer;
+        buffer << in.rdbuf();
+        std::string text = buffer.str();
+        std::string normalized;
+        normalized.reserve(text.size());
+        for (std::size_t i = 0; i < text.size(); ++i) {
+            if (text[i] == '\r' && i + 1 < text.size() && text[i + 1] == '\n') {
+                continue; // drop the CR of a CRLF
+            }
+            normalized += text[i];
+        }
+        hasher.add(display_path(file, mod.root));
+        hasher.add(normalized);
+    }
+}
+
+void add_if_new(std::vector<std::string>& mods, const std::string& id) {
+    if (mods.empty() || mods.back() != id) {
+        mods.push_back(id);
+    }
+}
+
 } // namespace
 
 ContentDatabase::ContentDatabase() {
@@ -59,16 +125,81 @@ std::string ContentDatabase::type_name_of(std::type_index type) const {
     return it == by_type_.end() ? std::string("definition") : std::string(it->second->type_name());
 }
 
+LoadResult ContentDatabase::load_mods(const ModLoadRequest& request) {
+    if (loaded_) {
+        throw std::logic_error("ContentDatabase can only load once");
+    }
+    DiscoveryResult found = discover_mods(request.roots);
+    LoadOrderResult order = resolve_load_order(found.mods, request.order);
+
+    std::vector<ContentIssue> issues = std::move(found.issues);
+    for (ContentIssue& issue : order.issues) {
+        issues.push_back(std::move(issue));
+    }
+    return load_ordered(order.ordered, std::move(issues));
+}
+
 LoadResult ContentDatabase::load(const std::vector<fs::path>& mod_roots) {
     if (loaded_) {
-        throw std::logic_error("ContentDatabase::load can only be called once");
+        throw std::logic_error("ContentDatabase can only load once");
     }
+    std::vector<ContentIssue> issues;
+    std::vector<ModInfo> mods;
+    for (const fs::path& root : mod_roots) {
+        std::error_code ec;
+        if (!fs::is_directory(root, ec)) {
+            issues.push_back(
+                ContentIssue{Severity::Error, root.generic_string(), "", "mod root is not a directory", ""});
+            continue;
+        }
+        if (auto info = read_mod_folder(root, issues)) {
+            mods.push_back(std::move(*info));
+        }
+    }
+    return load_ordered(mods, std::move(issues));
+}
+
+LoadResult ContentDatabase::load_ordered(const std::vector<ModInfo>& mods, std::vector<ContentIssue> issues) {
     loaded_ = true;
 
-    std::vector<ContentIssue> issues;
-    for (const fs::path& root : mod_roots) {
-        load_mod_root(root, issues);
+    const bool earlier_errors = std::any_of(
+        issues.begin(), issues.end(), [](const ContentIssue& i) { return i.severity == Severity::Error; });
+    if (!earlier_errors) {
+        // Phase 1: read every file and layer the raw definitions, mod by mod in load order.
+        RawDefs raw;
+        core::StateHasher hasher;
+        hasher.add_pod(static_cast<std::uint64_t>(mods.size()));
+        for (const ModInfo& mod : mods) {
+            mods_.push_back(mod.manifest);
+            collect_mod_defs(mod, raw, issues);
+            hash_mod(hasher, mod);
+        }
+        content_hash_ = hasher.digest();
+
+        // Phase 2: parse what is left after layering. Ordered by (type, id), so the result and any messages
+        // never depend on which mod or file a definition came from.
+        ParseContext context(issues);
+        for (auto& [key, def] : raw) {
+            const auto kind = by_name_.find(key.first);
+            context.set_file(def.source.file);
+            context.set_mod_root(def.source.mod_root);
+            context.set_layering(def.source.mod_id, def.source.touched_by);
+            context.set_pointer(def.source.pointer);
+            const ContentId id(key.second); // validated when collected
+            context.set_def_id(id);
+            kind->second->parse_and_add(def.json, id, context);
+        }
     }
+    finish(issues);
+
+    LoadResult result;
+    for (ContentIssue& issue : issues) {
+        (issue.severity == Severity::Error ? result.errors : result.warnings).push_back(std::move(issue));
+    }
+    return result;
+}
+
+void ContentDatabase::finish(std::vector<ContentIssue>& issues) {
     for (const auto& kind : kinds_) {
         kind->finalize();
     }
@@ -90,49 +221,24 @@ LoadResult ContentDatabase::load(const std::vector<fs::path>& mod_roots) {
     for (const auto& kind : kinds_) {
         kind->validate_all(pass_context);
     }
-
-    LoadResult result;
-    for (ContentIssue& issue : issues) {
-        (issue.severity == Severity::Error ? result.errors : result.warnings).push_back(std::move(issue));
-    }
-    return result;
 }
 
-void ContentDatabase::load_mod_root(const fs::path& root, std::vector<ContentIssue>& issues) {
+void ContentDatabase::collect_mod_defs(const ModInfo& mod, RawDefs& raw, std::vector<ContentIssue>& issues) {
+    for (const fs::path& file : json_files_under(mod.root / "defs", mod.root)) {
+        collect_defs_file(mod, file, display_path(file, mod.root), raw, issues);
+    }
+    const fs::path time_file = mod.root / "defines" / "time.json";
     std::error_code ec;
-    if (!fs::is_directory(root, ec)) {
-        issues.push_back(
-            ContentIssue{Severity::Error, root.generic_string(), "", "mod root is not a directory", ""});
-        return;
-    }
-
-    std::vector<fs::path> files;
-    const fs::path defs_dir = root / "defs";
-    if (fs::is_directory(defs_dir, ec)) {
-        for (const auto& entry : fs::recursive_directory_iterator(defs_dir)) {
-            if (entry.is_regular_file() && entry.path().extension() == ".json") {
-                files.push_back(entry.path());
-            }
-        }
-    }
-    // Sorted by the displayed path, so load order does not depend on the file system's own ordering.
-    std::sort(files.begin(), files.end(), [&](const fs::path& a, const fs::path& b) {
-        return display_path(a, root) < display_path(b, root);
-    });
-    for (const fs::path& file : files) {
-        load_defs_file(file, root.generic_string(), display_path(file, root), issues);
-    }
-
-    const fs::path time_file = root / "defines" / "time.json";
     if (fs::is_regular_file(time_file, ec)) {
-        load_time_defines(time_file, root.generic_string(), display_path(time_file, root), issues);
+        load_time_defines(time_file, mod.root.generic_string(), display_path(time_file, mod.root), issues);
     }
 }
 
-void ContentDatabase::load_defs_file(const fs::path& path, const std::string& mod_root,
-                                     const std::string& display_name, std::vector<ContentIssue>& issues) {
+void ContentDatabase::collect_defs_file(const ModInfo& mod, const fs::path& path,
+                                        const std::string& display_name, RawDefs& raw,
+                                        std::vector<ContentIssue>& issues) {
     ParseContext context(issues);
-    context.set_mod_root(mod_root);
+    context.set_mod_root(mod.root.generic_string());
     context.set_file(display_name);
 
     const std::optional<nlohmann::json> parsed = read_json_file(path, context);
@@ -152,6 +258,7 @@ void ContentDatabase::load_defs_file(const fs::path& path, const std::string& mo
     context.set_pointer("");
     context.warn_unknown_keys(root, {"defs"});
 
+    const std::string& mod_id = mod.manifest.id;
     for (std::size_t index = 0; index < defs.size(); ++index) {
         const nlohmann::json& def = defs[index];
         const std::string pointer = "/defs/" + std::to_string(index);
@@ -163,8 +270,10 @@ void ContentDatabase::load_defs_file(const fs::path& path, const std::string& mo
 
         const auto type = context.read_string(def, "type");
         const auto id_text = context.read_string(def, "id");
-        if (!type || !id_text) {
-            continue;
+        const std::size_t errors_before = context.error_count();
+        const bool patch = context.read_bool(def, "patch", false).value_or(false);
+        if (!type || !id_text || context.error_count() != errors_before) {
+            continue; // a missing field or a "patch" that is not true/false: already reported
         }
         std::string reason;
         const auto id = ContentId::parse(*id_text, &reason);
@@ -172,13 +281,49 @@ void ContentDatabase::load_defs_file(const fs::path& path, const std::string& mo
             context.error(context.child_pointer("id"), "invalid id '" + *id_text + "': " + reason);
             continue;
         }
-        const auto kind = by_name_.find(*type);
-        if (kind == by_name_.end()) {
+        if (!by_name_.contains(*type)) {
             context.error(context.child_pointer("type"), "unknown definition type '" + *type + "'");
             continue;
         }
-        context.set_def_id(*id);
-        kind->second->parse_and_add(def, *id, context);
+
+        const std::pair<std::string, std::string> key{*type, id->str()};
+        const auto existing = raw.find(key);
+        DefSource here{display_name, mod.root.generic_string(), pointer, mod_id, {}};
+
+        if (patch) {
+            if (existing == raw.end()) {
+                context.error(context.child_pointer("id"),
+                              "cannot patch '" + id->str() + "': no earlier " + *type +
+                                  " with that id (patches apply to a definition from "
+                                  "this mod or one that loads before it)");
+                continue;
+            }
+            // The patch is the definition minus the "patch" marker itself.
+            nlohmann::json patch_body = def;
+            patch_body.erase("patch");
+            existing->second.json = merge_patch(std::move(existing->second.json), patch_body);
+            here.touched_by = existing->second.source.touched_by;
+            add_if_new(here.touched_by, mod_id);
+            existing->second.source = std::move(here);
+            continue;
+        }
+
+        if (existing != raw.end()) {
+            const DefSource& first = existing->second.source;
+            if (first.mod_id == mod_id) {
+                // Replacing is for overriding another mod; a repeat inside one mod is almost certainly a
+                // mistake.
+                context.error("duplicate id '" + id->str() + "' (first defined in " + first.file + " at " +
+                              first.pointer + ")");
+                continue;
+            }
+            here.touched_by = first.touched_by; // a later mod replaces it wholesale; keep the history
+            add_if_new(here.touched_by, mod_id);
+            existing->second = RawDef{def, std::move(here)};
+            continue;
+        }
+        here.touched_by = {mod_id};
+        raw.emplace(key, RawDef{def, std::move(here)});
     }
 }
 
@@ -201,7 +346,7 @@ void ContentDatabase::load_time_defines(const fs::path& path, const std::string&
     context.warn_unknown_keys(json,
                               {"base_tick_rate", "speed_multipliers", "movement_scale", "day_length_ticks"});
 
-    // Fields that are absent keep their built-in defaults.
+    // Fields that are absent keep their previous values: the built-in defaults, or what an earlier mod set.
     time::TimeDefines defines = time_defines_;
     if (const auto value = context.read_u32(json, "base_tick_rate", false)) {
         defines.base_tick_rate = *value;
@@ -229,6 +374,7 @@ void ContentDatabase::load_time_defines(const fs::path& path, const std::string&
             }
         }
     }
+
     // Values that parse but cannot work.
     if (json.contains("base_tick_rate") && defines.base_tick_rate == 0) {
         context.error("/base_tick_rate", "must be greater than 0");

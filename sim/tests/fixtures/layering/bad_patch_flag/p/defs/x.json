@@ -1,0 +1,10 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "base:era.ancient",
+      "patch": "yes",
+      "order": 2
+    }
+  ]
+}

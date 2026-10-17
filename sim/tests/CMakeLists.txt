@@ -1,6 +1,8 @@
 find_package(Threads REQUIRED)
 add_executable(citysim_tests
     content/content_tests.cpp
+    content/mods_tests.cpp
+    content/layering_tests.cpp
     core/commands_tests.cpp
     core/component_registry_tests.cpp
     core/determinism_harness_tests.cpp

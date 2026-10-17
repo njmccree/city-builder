@@ -1,0 +1,10 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "base:era.ancient",
+      "patch": true,
+      "desc_key": "example_mod.era.ancient.desc"
+    }
+  ]
+}

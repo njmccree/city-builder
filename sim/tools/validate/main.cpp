@@ -8,7 +8,6 @@
 
 #include "citysim/content/content_database.hpp"
 
-#include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -26,21 +25,23 @@ bool looks_like_mod_root(const fs::path& dir) {
            fs::is_directory(dir / "defines", ignored);
 }
 
-// The folder itself if it is a mod, otherwise its subfolders that are, by name. Proper manifest-based
-// discovery with dependencies and load order arrives in T0.4.2.1.
-std::vector<fs::path> find_mod_roots(const fs::path& content_root) {
+// The folder itself if it is a mod, otherwise its mods and those in its "mods" subfolder (where optional
+// mods live, game/content/mods). Discovery handles the rest.
+std::vector<fs::path> search_roots(const fs::path& content_root) {
     if (looks_like_mod_root(content_root)) {
         return {content_root};
     }
-    std::vector<fs::path> roots;
-    for (const auto& entry : fs::directory_iterator(content_root)) {
-        if (entry.is_directory() && looks_like_mod_root(entry.path())) {
-            roots.push_back(entry.path());
-        }
+    std::vector<fs::path> roots{content_root};
+    std::error_code ignored;
+    if (fs::is_directory(content_root / "mods", ignored)) {
+        roots.push_back(content_root / "mods");
     }
-    std::sort(roots.begin(), roots.end(),
-              [](const fs::path& a, const fs::path& b) { return a.generic_string() < b.generic_string(); });
     return roots;
+}
+
+void print_issue(const content::ContentIssue& issue, const char* severity) {
+    const std::string path = issue.mod_root.empty() ? issue.file : issue.mod_root + "/" + issue.file;
+    std::cout << path << ':' << issue.pointer << ": " << severity << ": " << issue.message << '\n';
 }
 
 void print_usage(std::ostream& out) {
@@ -83,25 +84,24 @@ int main(int argc, char** argv) {
         std::cerr << "error: " << root_arg << " is not a directory\n";
         return 2;
     }
-    const std::vector<fs::path> mod_roots = find_mod_roots(content_root);
-    if (mod_roots.empty()) {
+    content::ContentDatabase database;
+    content::ModLoadRequest request;
+    request.roots = search_roots(content_root);
+    request.order.enable_all = true; // check every mod, not only those on by default
+    const content::LoadResult result = database.load_mods(request);
+    if (database.mods().empty() && result.errors.empty()) {
         std::cerr << "error: no mods found under " << root_arg
                   << " (expected a folder with mod.json, defs/ or defines/)\n";
         return 2;
     }
 
-    content::ContentDatabase database;
-    const content::LoadResult result = database.load(mod_roots);
-
     for (const content::ContentIssue& issue : result.errors) {
-        std::cout << issue.mod_root << '/' << issue.file << ':' << issue.pointer
-                  << ": error: " << issue.message << '\n';
+        print_issue(issue, "error");
     }
     for (const content::ContentIssue& issue : result.warnings) {
-        std::cout << issue.mod_root << '/' << issue.file << ':' << issue.pointer
-                  << ": warning: " << issue.message << '\n';
+        print_issue(issue, "warning");
     }
-    std::cout << mod_roots.size() << " mod(s) checked: " << result.errors.size() << " error(s), "
+    std::cout << database.mods().size() << " mod(s) checked: " << result.errors.size() << " error(s), "
               << result.warnings.size() << " warning(s)\n";
 
     if (!result.errors.empty() || (strict && !result.warnings.empty())) {
