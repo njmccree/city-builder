@@ -29,6 +29,10 @@ struct WriteCommand {
     }
     void operator()(const citysim::time::TogglePause&) const { out << "TogglePause"; }
     void operator()(const citysim::time::SetEra& cmd) const { out << "SetEra " << cmd.era_id; }
+    void operator()(const citysim::debug::SpawnDebugAgents& cmd) const {
+        out << "SpawnDebugAgents " << cmd.count;
+    }
+    void operator()(const citysim::debug::ClearDebugAgents&) const { out << "ClearDebugAgents"; }
     // The runner executes these between ticks and never records them, so a log cannot contain them.
     void operator()(const citysim::core::SaveGame&) const {
         throw std::logic_error("SaveGame is not part of an input log");
@@ -89,6 +93,14 @@ Command parse_command(const std::vector<std::string>& tokens, std::size_t line) 
     if (name == "TogglePause") {
         expect_arg_count(tokens, 0, line);
         return citysim::time::TogglePause{};
+    }
+    if (name == "SpawnDebugAgents") {
+        expect_arg_count(tokens, 1, line);
+        return citysim::debug::SpawnDebugAgents{parse_number<std::uint32_t>(tokens[3], line, "count")};
+    }
+    if (name == "ClearDebugAgents") {
+        expect_arg_count(tokens, 0, line);
+        return citysim::debug::ClearDebugAgents{};
     }
     fail(line, "unknown command '" + name + "'");
 }

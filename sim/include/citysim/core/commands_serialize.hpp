@@ -6,6 +6,7 @@
 
 #include "citysim/core/commands.hpp"
 #include "citysim/core/input_log.hpp"
+#include "citysim/debug/debug_serialize.hpp"
 #include "citysim/save/archive.hpp"
 #include "citysim/time/time_serialize.hpp"
 

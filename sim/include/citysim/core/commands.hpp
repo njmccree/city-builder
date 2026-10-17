@@ -1,5 +1,6 @@
 #pragma once
 
+#include "citysim/debug/debug_commands.hpp"
 #include "citysim/time/time_commands.hpp"
 
 #include <cstdint>
@@ -39,7 +40,7 @@ struct LoadGame {
 };
 
 using Command = std::variant<NoOp, DebugSetComponentValue, time::SetSpeed, time::TogglePause, time::SetEra,
-                             SaveGame, LoadGame>;
+                             SaveGame, LoadGame, debug::SpawnDebugAgents, debug::ClearDebugAgents>;
 
 struct SequencedCommand {
     std::uint64_t sequence = 0;   // assigned by CommandQueue::submit, strictly increasing

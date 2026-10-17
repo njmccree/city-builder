@@ -37,6 +37,10 @@ struct SnapshotChannel {
     std::string name;
     std::vector<float> data;
     std::uint32_t stride = 1;
+    // Optional: one id per record (so ids.size() == record_count() when used), in the same order, so a
+    // renderer can match records between two snapshots: things appear and disappear, so the index alone does
+    // not identify them. Kept as integers beside the floats because a float cannot hold every 32-bit id.
+    std::vector<std::uint32_t> ids;
 
     std::size_t record_count() const { return stride == 0 ? 0 : data.size() / stride; }
 };

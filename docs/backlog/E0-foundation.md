@@ -1076,7 +1076,7 @@ Follow the Task workflow in CLAUDE.md; last task of S0.7.2, so open the PR.
 - Save and load mid-walk preserve hashes.
 - `docs/perf.md` records benchmarks (headless in the cloud as indicative, PC as authoritative).
 
-#### [ ] T0.8.1.1 — Test map, grid pathfinding, wandering agents (core)
+#### [x] T0.8.1.1 — Test map, grid pathfinding, wandering agents (core)
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.6.2.2
 ```
 Task T0.8.1.1 (Story S0.8.1). Read docs/architecture.md §4, §5, §6, §7.2.
@@ -1103,7 +1103,7 @@ production-quality *engineering* (deterministic, tested, uses the job system):
 Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.8.1-walking-skeleton).
 ```
 
-#### [ ] T0.8.1.2 — Agent snapshot channel and headless benchmark
+#### [x] T0.8.1.2 — Agent snapshot channel and headless benchmark
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.8.1.1
 ```
 Task T0.8.1.2 (Story S0.8.1). Read docs/architecture.md §7.3, §13, §14.

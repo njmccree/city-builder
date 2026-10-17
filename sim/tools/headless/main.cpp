@@ -6,6 +6,7 @@
 #include "citysim/core/command_queue.hpp"
 #include "citysim/core/simulation.hpp"
 #include "citysim/save/simulation_io.hpp"
+#include "headless/bench.hpp"
 #include "headless/cli_options.hpp"
 #include "headless/demo_scenario.hpp"
 #include "headless/input_log_text.hpp"
@@ -135,6 +136,9 @@ int main(int argc, char** argv) {
         return 0;
     }
     try {
+        if (parsed.options.bench) {
+            return headless::run_bench(*parsed.options.bench, parsed.options.seed, std::cout);
+        }
         return run(parsed.options);
     } catch (const std::exception& error) {
         std::cerr << "error: " << error.what() << '\n';

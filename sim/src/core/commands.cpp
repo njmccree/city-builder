@@ -19,6 +19,10 @@ struct Describe {
     std::string operator()(const time::SetEra& cmd) const { return "SetEra era=" + cmd.era_id; }
     std::string operator()(const SaveGame& cmd) const { return "SaveGame path=" + cmd.path; }
     std::string operator()(const LoadGame& cmd) const { return "LoadGame path=" + cmd.path; }
+    std::string operator()(const debug::SpawnDebugAgents& cmd) const {
+        return "SpawnDebugAgents count=" + std::to_string(cmd.count);
+    }
+    std::string operator()(const debug::ClearDebugAgents&) const { return "ClearDebugAgents"; }
 };
 } // namespace
 
