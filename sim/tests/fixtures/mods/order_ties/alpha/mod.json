@@ -1,0 +1,7 @@
+{
+  "id": "alpha",
+  "name_key": "mod.alpha.name",
+  "version": "1.0.0",
+  "depends_on": [],
+  "load_after": []
+}

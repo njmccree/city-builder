@@ -1,0 +1,9 @@
+{
+  "id": "beta",
+  "name_key": "mod.beta.name",
+  "version": "1.0.0",
+  "depends_on": [],
+  "load_after": [
+    "mid"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "id": "later",
+  "name_key": "mod.later.name",
+  "version": "1.0.0",
+  "depends_on": [
+    "patcher"
+  ]
+}

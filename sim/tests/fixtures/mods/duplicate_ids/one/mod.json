@@ -1,0 +1,7 @@
+{
+  "id": "same",
+  "name_key": "mod.same.name",
+  "version": "1.0.0",
+  "depends_on": [],
+  "load_after": []
+}

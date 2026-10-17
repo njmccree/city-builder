@@ -1,0 +1,1 @@
+{"id": "wt", "name_key": 5, "version": "1.0.0", "depends_on": "base", "load_after": [1, "Bad Id"], "enabled_by_default": "yes"}

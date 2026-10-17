@@ -36,6 +36,15 @@ class ParseContext {
     // --- position, set by the loader ---------------------------------------------------------------------
     void set_file(std::string file) { file_ = std::move(file); }
     void set_mod_root(std::string mod_root) { mod_root_ = std::move(mod_root); }
+    // The mods that wrote or changed the definition, in load order. When there is more than one (a mod
+    // replaced or patched it), messages say so, because a field in a merged definition does not map to one
+    // place in one file.
+    void set_layering(std::string mod_id, std::vector<std::string> touched_by) {
+        mod_id_ = std::move(mod_id);
+        touched_by_ = std::move(touched_by);
+    }
+    const std::string& mod_id() const { return mod_id_; }
+    const std::vector<std::string>& touched_by() const { return touched_by_; }
     void set_pointer(std::string pointer) { pointer_ = std::move(pointer); }
     void set_def_id(ContentId id) { def_id_ = std::move(id); }
     const std::string& file() const { return file_; }
@@ -75,11 +84,14 @@ class ParseContext {
     static std::string escape_pointer_token(std::string_view token);
 
   private:
+    std::string layered_suffix() const;
     const nlohmann::json* find_field(const nlohmann::json& object, std::string_view key, bool required);
 
     std::vector<ContentIssue>& sink_;
     std::string file_;
     std::string mod_root_;
+    std::string mod_id_;
+    std::vector<std::string> touched_by_;
     std::string pointer_;
     const RefLookup* ref_lookup_ = nullptr;
     ContentId def_id_;

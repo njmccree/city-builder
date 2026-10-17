@@ -1,0 +1,10 @@
+{
+  "defs": [
+    {
+      "type": "building",
+      "id": "base:era.ancient",
+      "patch": true,
+      "order": 2
+    }
+  ]
+}

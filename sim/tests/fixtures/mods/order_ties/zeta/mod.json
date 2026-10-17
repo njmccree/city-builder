@@ -1,0 +1,7 @@
+{
+  "id": "zeta",
+  "name_key": "mod.zeta.name",
+  "version": "1.0.0",
+  "depends_on": [],
+  "load_after": []
+}

@@ -11,8 +11,21 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace citysim::content {
+
+// Where a definition came from: the file and position of the last record that wrote or patched it, and the
+// mods that touched it, in load order. Used for messages and, later, for showing a definition's origin in the
+// game.
+struct DefSource {
+    std::string file;
+    std::string mod_root;
+    std::string pointer;
+    std::string mod_id; // the mod that last wrote or patched it
+    std::vector<std::string>
+        touched_by; // every mod that did, in load order; more than one means it was layered
+};
 
 // Type-erased face of one registered definition type, so the loader can dispatch on the "type" field.
 class IDefKind {
@@ -22,6 +35,8 @@ class IDefKind {
     // Parses one definition object and stores it, or reports why not. The context is positioned at it.
     virtual void parse_and_add(const nlohmann::json& json, const ContentId& id, ParseContext& context) = 0;
     virtual void finalize() = 0;
+    // Where the definition with this id came from; nullptr if there is none.
+    virtual const DefSource* source_of(const ContentId& id) const = 0;
 
     // The handle index of `id` in this type's registry, if it exists. Only valid after finalize().
     virtual std::optional<std::uint32_t> find_index(const ContentId& id) const = 0;
@@ -39,13 +54,6 @@ template <class T> using ResolveFn = std::function<void(T&, ParseContext&)>;
 // Checks one definition once everything is loaded and resolved. `all` is the whole registry, for checks that
 // span definitions (such as unique values). Report problems on the context, which is positioned at `def`.
 template <class T> using ValidateFn = std::function<void(const T&, const DefRegistry<T>&, ParseContext&)>;
-
-// Where a definition came from, kept for messages from the later passes.
-struct DefSource {
-    std::string file;
-    std::string mod_root;
-    std::string pointer;
-};
 
 template <class T> class DefKind final : public IDefKind {
   public:
@@ -67,10 +75,16 @@ template <class T> class DefKind final : public IDefKind {
                           first.pointer + ")");
             return;
         }
-        sources_.emplace(id.str(), DefSource{context.file(), context.mod_root(), context.pointer()});
+        sources_.emplace(id.str(), DefSource{context.file(), context.mod_root(), context.pointer(),
+                                             context.mod_id(), context.touched_by()});
     }
 
     void finalize() override { registry_.finalize(); }
+
+    const DefSource* source_of(const ContentId& id) const override {
+        const auto it = sources_.find(id.str());
+        return it == sources_.end() ? nullptr : &it->second;
+    }
 
     std::optional<std::uint32_t> find_index(const ContentId& id) const override {
         const auto handle = registry_.find(id);
@@ -106,6 +120,7 @@ template <class T> class DefKind final : public IDefKind {
         const DefSource& source = sources_.at(id.str());
         context.set_file(source.file);
         context.set_mod_root(source.mod_root);
+        context.set_layering(source.mod_id, source.touched_by);
         context.set_pointer(source.pointer);
         context.set_def_id(id);
     }

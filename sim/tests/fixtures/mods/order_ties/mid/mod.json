@@ -1,0 +1,9 @@
+{
+  "id": "mid",
+  "name_key": "mod.mid.name",
+  "version": "1.0.0",
+  "depends_on": [
+    "zeta"
+  ],
+  "load_after": []
+}

@@ -1,0 +1,7 @@
+{
+  "id": "other",
+  "name_key": "mod.other.name",
+  "version": "1.0.0",
+  "depends_on": [],
+  "load_after": []
+}

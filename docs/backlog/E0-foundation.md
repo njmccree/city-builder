@@ -693,7 +693,7 @@ it passes. Follow the Task workflow in CLAUDE.md; last task of S0.4.1, so open t
 - A content hash covers the mod list and files.
 - The base game loads as mod `base`.
 
-#### [ ] T0.4.2.1 — Mod manifests, load order, override and patch, content hash
+#### [x] T0.4.2.1 — Mod manifests, load order, override and patch, content hash
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.4.1.3
 ```
 Task T0.4.2.1 (Story S0.4.2). Read docs/architecture.md §8.

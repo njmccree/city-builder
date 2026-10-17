@@ -1,0 +1,12 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "base:era.ancient",
+      "name_key": "k",
+      "desc_key": "k",
+      "default_start_year": 0,
+      "order": 1
+    }
+  ]
+}

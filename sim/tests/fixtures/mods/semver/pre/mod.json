@@ -1,0 +1,7 @@
+{
+  "id": "pre",
+  "name_key": "mod.pre.name",
+  "version": "2.0.0-beta.1+build.5",
+  "depends_on": [],
+  "load_after": []
+}
