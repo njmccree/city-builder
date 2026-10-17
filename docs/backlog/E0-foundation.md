@@ -385,7 +385,7 @@ in sequence order), unhandled commands, input log contents.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.2.3.3 — Determinism harness and headless runner CLI
+#### [x] T0.2.3.3 — Determinism harness and headless runner CLI
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.3.2
 ```
 Task T0.2.3.3 (Story S0.2.3, last task). Read docs/architecture.md §5.3 and §13.

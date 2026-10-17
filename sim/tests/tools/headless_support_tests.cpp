@@ -1,0 +1,120 @@
+#include "headless/cli_options.hpp"
+#include "headless/demo_scenario.hpp"
+#include "headless/input_log_text.hpp"
+
+#include <catch2/catch_test_macros.hpp>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <vector>
+
+using namespace citysim;
+using namespace citysim::headless;
+
+namespace {
+ParseResult parse(std::vector<std::string_view> args) {
+    return parse_options(args);
+}
+
+LogFile read_text(const std::string& text) {
+    std::istringstream in(text);
+    return read_log_file(in);
+}
+} // namespace
+
+TEST_CASE("CLI options: defaults and every flag", "[tools][headless]") {
+    const auto defaults = parse({});
+    REQUIRE(defaults.error.empty());
+    REQUIRE(defaults.options.seed == 1);
+    REQUIRE(defaults.options.ticks == 1000);
+    REQUIRE(defaults.options.hash_every == 100);
+    REQUIRE_FALSE(defaults.options.seed_given);
+
+    const auto all =
+        parse({"--seed", "42", "--ticks", "500", "--hash-every", "0", "--record-log", "out.txt"});
+    REQUIRE(all.error.empty());
+    REQUIRE(all.options.seed == 42);
+    REQUIRE(all.options.seed_given);
+    REQUIRE(all.options.ticks == 500);
+    REQUIRE(all.options.hash_every == 0);
+    REQUIRE(all.options.record_log == "out.txt");
+
+    const auto replay = parse({"--replay", "in.txt"});
+    REQUIRE(replay.options.replay == "in.txt");
+    REQUIRE(parse({"--help"}).options.help);
+}
+
+TEST_CASE("CLI options: bad input is reported, not guessed", "[tools][headless]") {
+    REQUIRE_FALSE(parse({"--bogus"}).error.empty());
+    REQUIRE_FALSE(parse({"--seed"}).error.empty());
+    REQUIRE_FALSE(parse({"--seed", "abc"}).error.empty());
+    REQUIRE_FALSE(parse({"--ticks", "-5"}).error.empty());
+    REQUIRE_FALSE(parse({"--ticks", "12x"}).error.empty());
+    REQUIRE_FALSE(parse({"--replay", "a", "--record-log", "b"}).error.empty());
+    REQUIRE(usage().find("--replay") != std::string::npos);
+}
+
+TEST_CASE("input log text round-trips", "[tools][headless]") {
+    LogFile log;
+    log.seed = 42;
+    log.ticks = 500;
+    log.entries.push_back({25, 1, core::DebugSetComponentValue{12, -40}});
+    log.entries.push_back({40, 2, core::NoOp{}});
+    log.entries.push_back({40, 3, core::DebugSetComponentValue{0, 2147483647}});
+
+    std::ostringstream out;
+    write_log_file(out, log);
+    REQUIRE(out.str() == "citysim-input-log 1\nseed 42\nticks 500\n"
+                         "25 1 DebugSetComponentValue 12 -40\n"
+                         "40 2 NoOp\n"
+                         "40 3 DebugSetComponentValue 0 2147483647\n");
+
+    const LogFile back = read_text(out.str());
+    REQUIRE(back.seed == 42);
+    REQUIRE(back.ticks == 500);
+    REQUIRE(back.entries.size() == 3);
+    REQUIRE(back.entries[0].tick == 25);
+    REQUIRE(back.entries[0].sequence == 1);
+    REQUIRE(std::get<core::DebugSetComponentValue>(back.entries[0].cmd).value == -40);
+    REQUIRE(std::holds_alternative<core::NoOp>(back.entries[1].cmd));
+}
+
+TEST_CASE("input log reader skips comments and blank lines", "[tools][headless]") {
+    const LogFile log =
+        read_text("# a comment\n\ncitysim-input-log 1\n\nseed 3\nticks 9\n# note\n5 1 NoOp\n");
+    REQUIRE(log.seed == 3);
+    REQUIRE(log.entries.size() == 1);
+}
+
+TEST_CASE("input log reader rejects malformed files with a line number", "[tools][headless]") {
+    const auto message_of = [](const std::string& text) -> std::string {
+        try {
+            (void)read_text(text);
+        } catch (const std::runtime_error& error) {
+            return error.what();
+        }
+        return {};
+    };
+    const std::string header = "citysim-input-log 1\nseed 1\nticks 10\n";
+
+    REQUIRE(message_of("not a log\n").find("line 1") != std::string::npos);
+    REQUIRE(message_of("citysim-input-log 2\nseed 1\nticks 1\n").find("unsupported") != std::string::npos);
+    REQUIRE_FALSE(message_of("citysim-input-log 1\nseed 1\n").empty()); // truncated header
+    REQUIRE(message_of(header + "5 1 Bogus\n").find("line 4") != std::string::npos);
+    REQUIRE_FALSE(message_of(header + "5 1 NoOp extra\n").empty());
+    REQUIRE_FALSE(message_of(header + "5 1 DebugSetComponentValue 1\n").empty());
+    REQUIRE_FALSE(message_of(header + "x 1 NoOp\n").empty());
+    REQUIRE_FALSE(message_of(header + "5 1 DebugSetComponentValue 1 99999999999\n").empty());
+    REQUIRE_FALSE(message_of(header + "9 1 NoOp\n5 2 NoOp\n").empty()); // out of tick order
+    REQUIRE_FALSE(message_of("").empty());
+}
+
+TEST_CASE("demo input depends only on the seed and tick", "[tools][headless]") {
+    REQUIRE(demo_input(42, 25).size() == 1);
+    REQUIRE(demo_input(42, 40).size() == 1);  // a NoOp
+    REQUIRE(demo_input(42, 200).size() == 2); // both
+    REQUIRE(demo_input(42, 7).empty());
+    REQUIRE(demo_input(42, 0).empty());
+    REQUIRE(std::get<core::DebugSetComponentValue>(demo_input(42, 25)[0]).value ==
+            std::get<core::DebugSetComponentValue>(demo_input(42, 25)[0]).value);
+}
