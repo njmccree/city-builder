@@ -479,8 +479,8 @@ void ContentDatabase::load_time_defines(const fs::path& path, const std::string&
         context.error("", "expected an object");
         return;
     }
-    context.warn_unknown_keys(json,
-                              {"base_tick_rate", "speed_multipliers", "movement_scale", "day_length_ticks"});
+    context.warn_unknown_keys(json, {"base_tick_rate", "speed_multipliers", "movement_scale",
+                                     "day_length_ticks", "autosave_interval_real_seconds", "autosave_slots"});
 
     // Fields that are absent keep their previous values: the built-in defaults, or what an earlier mod set.
     time::TimeDefines defines = time_defines_;
@@ -492,6 +492,12 @@ void ContentDatabase::load_time_defines(const fs::path& path, const std::string&
     }
     if (const auto value = context.read_u32(json, "day_length_ticks", false)) {
         defines.day_length_ticks = *value;
+    }
+    if (const auto value = context.read_u32(json, "autosave_interval_real_seconds", false)) {
+        defines.autosave_interval_real_seconds = *value;
+    }
+    if (const auto value = context.read_u32(json, "autosave_slots", false)) {
+        defines.autosave_slots = *value;
     }
     if (const auto it = json.find("speed_multipliers"); it != json.end()) {
         if (!it->is_array() || it->size() != defines.speed_multipliers.size()) {
@@ -520,6 +526,9 @@ void ContentDatabase::load_time_defines(const fs::path& path, const std::string&
     }
     if (json.contains("movement_scale") && !(defines.movement_scale > 0.0F)) {
         context.error("/movement_scale", "must be greater than 0");
+    }
+    if (json.contains("autosave_slots") && (defines.autosave_slots == 0 || defines.autosave_slots > 99)) {
+        context.error("/autosave_slots", "must be between 1 and 99");
     }
     for (std::size_t speed = 1; speed < defines.speed_multipliers.size(); ++speed) {
         if (defines.speed_multipliers[speed] == 0) {

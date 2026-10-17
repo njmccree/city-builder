@@ -235,3 +235,37 @@ TEST_CASE("the content hash changes when a file changes, but not for line ending
 
     fs::remove_all(work, ignored);
 }
+
+TEST_CASE("autosave settings come from the time defines and are validated", "[content][time]") {
+    namespace fs = std::filesystem;
+    const fs::path root = fs::temp_directory_path() / "citysim_autosave_defines";
+    std::error_code ignored;
+    fs::remove_all(root, ignored);
+    fs::create_directories(root / "defines");
+    const auto write = [&](const std::string& text) {
+        std::ofstream(root / "defines" / "time.json", std::ios::trunc) << text;
+    };
+
+    write(R"({"autosave_interval_real_seconds": 30, "autosave_slots": 5})");
+    {
+        ContentDatabase database;
+        REQUIRE(database.load({root}).ok());
+        CHECK(database.time_defines().autosave_interval_real_seconds == 30);
+        CHECK(database.time_defines().autosave_slots == 5);
+    }
+    write(R"({})");
+    {
+        ContentDatabase database;
+        REQUIRE(database.load({root}).ok());
+        CHECK(database.time_defines().autosave_interval_real_seconds == 600); // the built-in defaults
+        CHECK(database.time_defines().autosave_slots == 3);
+    }
+    write(R"({"autosave_slots": 0})");
+    {
+        ContentDatabase database;
+        const LoadResult result = database.load({root});
+        REQUIRE_FALSE(result.ok());
+        CHECK(has_message(result.errors, "between 1 and 99"));
+    }
+    fs::remove_all(root, ignored);
+}

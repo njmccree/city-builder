@@ -55,6 +55,23 @@ ParseResult parse_options(std::span<const std::string_view> args) {
                 return result;
             }
             (arg == "--record-log" ? options.record_log : options.replay) = std::string(value);
+        } else if (arg == "--load") {
+            if (!next_value(value)) {
+                return result;
+            }
+            options.load_file = std::string(value);
+        } else if (arg == "--save-at") {
+            std::string_view file;
+            if (!next_value(value) || !next_value(file)) {
+                return result;
+            }
+            std::uint64_t number = 0;
+            if (!parse_u64(value, number)) {
+                result.error = "invalid number for --save-at: '" + std::string(value) + "'";
+                return result;
+            }
+            options.save_at_tick = number;
+            options.save_at_file = std::string(file);
         } else {
             result.error = "unknown option: " + std::string(arg);
             return result;
@@ -63,6 +80,8 @@ ParseResult parse_options(std::span<const std::string_view> args) {
 
     if (options.replay && options.record_log) {
         result.error = "--replay and --record-log cannot be combined";
+    } else if (options.load_file && (options.replay || options.record_log)) {
+        result.error = "--load cannot be combined with --replay or --record-log";
     }
     return result;
 }
@@ -77,6 +96,8 @@ std::string usage() {
            "result)\n"
            "  --record-log F   write the input log of this run to F\n"
            "  --replay F       re-run the game recorded in F (seed and ticks come from the file)\n"
+           "  --save-at T F    after T ticks, save the game to F\n"
+           "  --load F         resume from the save F; --ticks is the final tick (seed comes from the file)\n"
            "  --help           show this text\n";
 }
 

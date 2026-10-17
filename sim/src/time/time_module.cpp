@@ -2,9 +2,11 @@
 
 #include "citysim/core/log.hpp"
 #include "citysim/core/state_hasher.hpp"
+#include "citysim/save/bind_serializer.hpp"
 #include "citysim/time/clock_system.hpp"
 #include "citysim/time/game_clock.hpp"
 #include "citysim/time/time_commands.hpp"
+#include "citysim/time/time_serialize.hpp"
 
 #include <memory>
 #include <stdexcept>
@@ -38,6 +40,9 @@ void validate(const TimeDefines& defines) {
     if (defines.day_length_ticks == 0) {
         throw std::invalid_argument("TimeDefines: day_length_ticks must be positive");
     }
+    if (defines.autosave_slots == 0 || defines.autosave_slots > 99) {
+        throw std::invalid_argument("TimeDefines: autosave_slots must be between 1 and 99");
+    }
     for (std::size_t speed = 1; speed < defines.speed_multipliers.size(); ++speed) {
         if (defines.speed_multipliers[speed] == 0) {
             throw std::invalid_argument("TimeDefines: every speed from 1 to 3 needs a positive multiplier");
@@ -51,9 +56,11 @@ void install(core::Simulation& simulation, const TimeDefines& defines) {
     auto& registry = simulation.world().registry();
     core::Hooks<GameClock> clock_hooks;
     clock_hooks.hash = &hash_game_clock;
+    save::bind_serializer(clock_hooks);
     registry.register_singleton<GameClock>("time.GameClock", clock_hooks);
     core::Hooks<TimeDefines> defines_hooks;
     defines_hooks.hash = &hash_time_defines;
+    save::bind_serializer(defines_hooks);
     registry.register_singleton<TimeDefines>("time.TimeDefines", defines_hooks);
 
     simulation.world().ctx().emplace<GameClock>();

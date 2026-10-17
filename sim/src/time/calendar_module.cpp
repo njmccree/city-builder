@@ -2,11 +2,13 @@
 
 #include "citysim/core/log.hpp"
 #include "citysim/core/state_hasher.hpp"
+#include "citysim/save/bind_serializer.hpp"
 #include "citysim/time/calendar_scheduler.hpp"
 #include "citysim/time/calendar_state.hpp"
 #include "citysim/time/calendar_system.hpp"
 #include "citysim/time/time_commands.hpp"
 #include "citysim/time/time_defines.hpp"
+#include "citysim/time/time_serialize.hpp"
 
 #include <memory>
 #include <stdexcept>
@@ -61,6 +63,7 @@ void install_calendar(core::Simulation& simulation, const content::ContentDataba
 
     core::Hooks<CalendarState> hooks;
     hooks.hash = &hash_calendar_state;
+    save::bind_serializer(hooks);
     simulation.world().registry().register_singleton<CalendarState>("time.CalendarState", hooks);
 
     CalendarState state;
@@ -70,6 +73,7 @@ void install_calendar(core::Simulation& simulation, const content::ContentDataba
 
     core::Hooks<CalendarScheduler> scheduler_hooks;
     scheduler_hooks.hash = &hash_calendar_scheduler;
+    save::bind_serializer(scheduler_hooks);
     simulation.world().registry().register_singleton<CalendarScheduler>("time.CalendarScheduler",
                                                                         scheduler_hooks);
     simulation.world().ctx().emplace<CalendarScheduler>();

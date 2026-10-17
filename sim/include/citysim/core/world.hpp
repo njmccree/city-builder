@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <entt/entt.hpp>
 #include <utility>
+#include <vector>
 
 namespace citysim::core {
 
@@ -26,6 +27,8 @@ class World {
     void destroy(Entity entity);
     bool valid(Entity entity) const;
     std::size_t entity_count() const;
+    // The live entities in ascending order of entity index; the order saves and hashes use.
+    std::vector<Entity> entities() const;
 
     // Fingerprint of all registered state (architecture §4, §13); see world.cpp for what it covers.
     std::uint64_t state_hash() const;
@@ -45,6 +48,11 @@ class World {
     // Singleton state (clock, calendar, map, ...).
     entt::registry::context& ctx() { return entities_.ctx(); }
     const entt::registry::context& ctx() const { return entities_.ctx(); }
+
+    // The underlying EnTT registry, for the save system, which creates components by registered type. Game
+    // code uses the typed members above.
+    entt::registry& entt_registry() { return entities_; }
+    const entt::registry& entt_registry() const { return entities_; }
 
     ComponentRegistry& registry() { return components_; }
     const ComponentRegistry& registry() const { return components_; }

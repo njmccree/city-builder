@@ -26,6 +26,18 @@ std::size_t World::entity_count() const {
     return storage != nullptr ? storage->free_list() : 0;
 }
 
+std::vector<World::Entity> World::entities() const {
+    std::vector<Entity> live;
+    if (const auto* storage = entities_.storage<Entity>()) {
+        for (const auto [entity] : storage->each()) {
+            live.push_back(entity);
+        }
+    }
+    std::sort(live.begin(), live.end(),
+              [](Entity a, Entity b) { return entt::to_entity(a) < entt::to_entity(b); });
+    return live;
+}
+
 std::uint64_t World::state_hash() const {
     // Everything is visited in an order that depends only on state, never on creation or registration
     // order (§4 rules 3 and 8): entities by ascending index, components and singletons by stable name.
@@ -34,13 +46,7 @@ std::uint64_t World::state_hash() const {
     const auto by_index = [](Entity a, Entity b) { return entt::to_entity(a) < entt::to_entity(b); };
     StateHasher hasher;
 
-    std::vector<Entity> live;
-    if (const auto* storage = entities_.storage<Entity>()) {
-        for (const auto [entity] : storage->each()) {
-            live.push_back(entity);
-        }
-    }
-    std::sort(live.begin(), live.end(), by_index);
+    const std::vector<Entity> live = entities();
     hasher.add("entities");
     hasher.add_pod(static_cast<std::uint64_t>(live.size()));
     for (const Entity entity : live) {

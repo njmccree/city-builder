@@ -27,6 +27,10 @@ class CalendarScheduler {
     // Schedules `action` for `when`. A time that has already passed fires on the next calendar tick.
     void schedule(CalendarTime when, ScheduledAction action);
 
+    // Replaces the contents with entries read from a save. They must already be in (when, sequence) order,
+    // with sequences below `next_sequence`; throws std::invalid_argument otherwise.
+    void restore(std::vector<Entry> entries, std::uint64_t next_sequence);
+
     // Removes and returns every entry with when <= now, in (when, sequence) order.
     std::vector<Entry> pop_due(CalendarTime now);
 

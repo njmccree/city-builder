@@ -53,6 +53,15 @@ TEST_CASE("CLI options: bad input is reported, not guessed", "[tools][headless]"
     REQUIRE_FALSE(parse({"--ticks", "-5"}).error.empty());
     REQUIRE_FALSE(parse({"--ticks", "12x"}).error.empty());
     REQUIRE_FALSE(parse({"--replay", "a", "--record-log", "b"}).error.empty());
+
+    const auto saving = parse({"--save-at", "400", "game.csav", "--load", "other.csav"});
+    REQUIRE(saving.error.empty());
+    REQUIRE(saving.options.save_at_tick == 400);
+    REQUIRE(saving.options.save_at_file == "game.csav");
+    REQUIRE(saving.options.load_file == "other.csav");
+    REQUIRE_FALSE(parse({"--save-at", "400"}).error.empty());
+    REQUIRE_FALSE(parse({"--save-at", "x", "f"}).error.empty());
+    REQUIRE_FALSE(parse({"--load", "a", "--replay", "b"}).error.empty());
     REQUIRE(usage().find("--replay") != std::string::npos);
 }
 

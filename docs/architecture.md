@@ -184,6 +184,8 @@ All of these values are **tunable through content data** (`game/content/base/def
 - Pause: the thread sleeps on a condition variable. Commands are still accepted and applied when the game unpauses, or immediately for "while paused" commands such as save and load.
 - The main thread (Godot) talks to the runner **only** through `CommandQueue` (in) and `SnapshotBuffer` (out).
 - A fake clock can be injected for tests. `IClock` has three operations: `now_seconds()`, `sleep_until(deadline)` and `interrupt()`. `interrupt()` makes the current or next sleep return early, once, so `stop()` and new commands never wait out a sleep. `SimulationRunner::wait_until_idle()` lets tests advance a `FakeClock` and then wait deterministically, with no real sleeping.
+- **Save and load** are the commands `SaveGame{path}` and `LoadGame{path}`. The runner executes them itself, strictly between ticks and also while paused; they never reach the `Simulation` and are not in the input log. A save includes the commands still waiting. A load builds a new `Simulation` (the runner repeats the setup given to `configure()`), loads the file into it and replaces the old one only on success, so a bad file changes nothing. The result reaches the UI as a `SaveCompleted` / `LoadCompleted` `UiEvent` (with `ok`, a failure message, and for loads the warnings such as changed content) in a snapshot published immediately; these events stay in snapshots until the consumer has read them, then are handed over exactly once.
+- **Autosave** runs on the runner's `IClock`, never on ticks: every `autosave_interval_real_seconds` (0 = off) it writes `autosave_1.csav` … `autosave_<autosave_slots>.csav` in rotation into the configured directory. It is skipped while paused and the interval restarts on resume and after a load. Both settings are in `defines/time.json`; they are not hashed or saved.
 - Ticks are scheduled as `origin + (n + 1) × interval`. The origin resets on a speed change and after unpausing. The first tick is one interval after the origin.
 
 ### 7.2 JobSystem
@@ -250,19 +252,28 @@ All of these values are **tunable through content data** (`game/content/base/def
     - content hash
     - mod list (id + version)
     - real-world save timestamp (metadata only)
-  - Body: **sections** (4-char tag + section version + length), zstd-compressed. Unknown sections are skipped with a warning.
+  - Body: **sections** (4-char tag, u16 section version, u32 compressed length, u32 raw length, then zstd bytes). Unknown sections are skipped with a warning. The header itself is uncompressed so a load menu can read it, and the file ends with an XXH3 checksum of everything before it.
   - Core sections:
-    - `META`
-    - `CLCK` (clock and calendar)
-    - `ENTS` (entity list)
-    - one section per registered component type (sorted by stable name)
+    - `META` (world seed and tick; also in the header)
+    - `WRLD`: the whole World. Entities, every registered component type and every singleton (the game clock and calendar among them), each as a block sorted by stable name (see `save_world`). One section rather than separate `CLCK`/`ENTS`/per-type sections, because the clock and calendar are registered singletons and per-type versions live inside the blocks.
     - `CMDQ` (pending commands)
     - `ILOG` (optional input log)
-- **Entity ids** are remapped on load. Components that reference entities serialize them through the archive's remap table.
+- **Entity ids** are remapped on load. Components that reference entities serialize them through the archive's remap table (`ar.entity`, or `io()` on an `entt::entity`). A save holds dense indices (0..n-1 in ascending entity order), so a load gives every entity a fresh, dense id. Consequences for simulation code:
+  - Entity ids and the storage order of views are not stable across a save/load. State must not depend on them beyond what is saved. Sort by something stable (an id stored in a component) when order matters.
+  - `World::state_hash()` hashes raw entity values, so a world that has destroyed and recycled entities hashes differently after a save and load, even though the data is the same. Round-trip and continuation tests therefore use worlds without recycled ids until the hash is made rank-based (open question for the owner).
+- **Content references** (`DefHandle`) are saved as ids and need the `ContentDatabase` on the archive (`BinaryWriter(nullptr, &content)`); loading an id the content lacks is a `SaveFormatError`.
+- **Per-type blocks:** `save_world` writes each component type and singleton as `name, version, byte length, payload`, so a type this build does not register is skipped and reported. A registered, non-empty type with no serialize hooks makes saving fail (§4 rule 8).
 - **Required tests:**
   - save → load → `state_hash` is equal
   - (run N ticks) vs (run k ticks, save, load, run N−k ticks) gives equal hashes
-- **Versioning:** each section has a version. `MigrationRegistry` holds `(section, from_version) → fn` upgrades, and fixture saves for old versions live in `sim/tests/fixtures/saves/`.
+- **Versioning:** each section, and each component or singleton type inside `WRLD`, has a version. `MigrationRegistry` holds upgrades one version at a time: per-type migrations (`add_type(stable_name, from_version, fn)`, which convert one instance from the layout of `from_version` to the next) and per-section migrations (`add_section(tag, from_version, fn)`). A load runs the chain up to the current version and then calls the current `serialize()`, so `serialize()` only ever describes the current layout. A missing step is an error naming the type and the versions.
+
+### Saves: when to bump a version
+- Bump a type's version (the `version` argument of `save::bind_serializer`) on **any** change to its serialized layout: adding, removing, reordering or retyping a field, or changing how a value is encoded. A change that leaves the bytes identical (renaming a C++ field) needs nothing.
+- In the same change: register a migration from the previous version (copy the old fields, write the new layout, fill new fields with a sensible default) and add a **fixture save** written with the old layout to `sim/tests/fixtures/saves/`. The migration is covered by a test that loads the fixture.
+- Fixtures are never regenerated with a newer layout: they are the proof that old saves still load. The generator that writes one is a hidden test (`citysim_tests "[generate]"`) holding a copy of the old struct. Fixtures are small binary files marked `binary` in `.gitattributes`, not Git LFS.
+- Releasing a version without its migration breaks every save made with the previous one; there is no “just this once”. A migration may be dropped only when the owner decides to stop supporting saves from that version, and the loader's error message for it must then say so.
+- `save_simulation` / `load_simulation` (`citysim/save/simulation_io.hpp`) write and read a whole `Simulation`: loading goes into a fresh `Simulation` with the same modules installed, and returns warnings (content hash, mod list or game version differ; unknown sections or types skipped) rather than refusing. The wall-clock save time is supplied by the caller, since simulation code never reads the clock.
 - Saving and loading are commands that the runner executes **between ticks**.
 
 ## 11. Godot Bridge & Rendering

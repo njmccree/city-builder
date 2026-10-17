@@ -2,6 +2,12 @@ find_package(Threads REQUIRED)
 add_executable(citysim_tests
     content/content_tests.cpp
     content/mods_tests.cpp
+    save/archive_tests.cpp
+    save/csav_tests.cpp
+    save/fixture_save_tests.cpp
+    save/simulation_io_tests.cpp
+    save/time_save_tests.cpp
+    save/world_io_tests.cpp
     content/layering_tests.cpp
     content/localization_tests.cpp
     core/commands_tests.cpp
@@ -16,6 +22,7 @@ add_executable(citysim_tests
     core/version_tests.cpp
     core/world_hash_tests.cpp
     core/world_tests.cpp
+    runner/runner_save_tests.cpp
     runner/runner_tests.cpp
     runner/triple_buffer_tests.cpp
     time/calendar_events_tests.cpp

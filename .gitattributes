@@ -1,5 +1,8 @@
 * text=auto eol=lf
 
+# Save fixtures are tiny binary files read byte for byte (never converted, never LFS).
+*.csav binary
+
 # Binary assets via Git LFS
 *.png  filter=lfs diff=lfs merge=lfs -text
 *.jpg  filter=lfs diff=lfs merge=lfs -text

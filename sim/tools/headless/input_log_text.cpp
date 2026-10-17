@@ -29,6 +29,13 @@ struct WriteCommand {
     }
     void operator()(const citysim::time::TogglePause&) const { out << "TogglePause"; }
     void operator()(const citysim::time::SetEra& cmd) const { out << "SetEra " << cmd.era_id; }
+    // The runner executes these between ticks and never records them, so a log cannot contain them.
+    void operator()(const citysim::core::SaveGame&) const {
+        throw std::logic_error("SaveGame is not part of an input log");
+    }
+    void operator()(const citysim::core::LoadGame&) const {
+        throw std::logic_error("LoadGame is not part of an input log");
+    }
 };
 
 [[noreturn]] void fail(std::size_t line, const std::string& message) {

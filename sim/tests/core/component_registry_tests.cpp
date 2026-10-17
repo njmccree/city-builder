@@ -11,7 +11,9 @@ using citysim::core::Hooks;
 using citysim::core::StateHasher;
 
 namespace {
-struct A {};
+struct A {
+    int value = 0; // not empty, so it has no automatic save hooks
+};
 struct B {};
 struct C {};
 
@@ -77,12 +79,12 @@ TEST_CASE("registry stores hooks type-erased", "[core][registry]") {
 
     const auto* with_hook = registry.find<A>();
     REQUIRE(with_hook->hash);
-    REQUIRE_FALSE(with_hook->serialize);
+    REQUIRE_FALSE(with_hook->serializable());
     REQUIRE_FALSE(registry.find<B>()->hash);
     g_hash_calls = 0;
     StateHasher hasher;
-    const A value;
-    with_hook->hash(hasher, &value);
+    const A hashed;
+    with_hook->hash(hasher, &hashed);
     REQUIRE(g_hash_calls == 1);
 }
 

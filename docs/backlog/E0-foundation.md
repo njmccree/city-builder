@@ -756,7 +756,7 @@ Run all tests and citysim_validate. Follow the Task workflow in CLAUDE.md (branc
 - Section versioning with migrations and a fixture save.
 - Save and load are commands executed between ticks, with an autosave interval.
 
-#### [ ] T0.5.1.1 ★ — Serialization framework (archives and component hooks)
+#### [x] T0.5.1.1 ★ — Serialization framework (archives and component hooks)
 - **Model:** **Opus** · **Session:** [Cloud] · **Depends on:** T0.3.2.3, T0.4.2.1
 ```
 Task T0.5.1.1 (Story S0.5.1). Architecture-critical. Read docs/architecture.md §5.1 and §10 fully.
@@ -783,7 +783,7 @@ Document the pattern with a worked example at the top of archive.hpp (later Sonn
 Follow the Task workflow in CLAUDE.md (branch story/S0.5.1-save).
 ```
 
-#### [ ] T0.5.1.2 — `.csav` container, compression, continuation tests
+#### [x] T0.5.1.2 — `.csav` container, compression, continuation tests
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.5.1.1
 ```
 Task T0.5.1.2 (Story S0.5.1). Read docs/architecture.md §10 and the archive.hpp example.
@@ -805,7 +805,7 @@ Task T0.5.1.2 (Story S0.5.1). Read docs/architecture.md §10 and the archive.hpp
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.5.1.3 — Save versioning and migrations
+#### [x] T0.5.1.3 — Save versioning and migrations
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.5.1.2
 ```
 Task T0.5.1.3 (Story S0.5.1). Read docs/architecture.md §10.
@@ -824,7 +824,7 @@ Task T0.5.1.3 (Story S0.5.1). Read docs/architecture.md §10.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.5.1.4 — Save and load commands in the runner, autosave
+#### [x] T0.5.1.4 — Save and load commands in the runner, autosave
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.5.1.3
 ```
 Task T0.5.1.4 (Story S0.5.1, last task). Read docs/architecture.md §7.1 and §10.

@@ -2,6 +2,8 @@
 
 #include "citysim/core/rng.hpp"
 #include "citysim/core/state_hasher.hpp"
+#include "citysim/save/archive.hpp"
+#include "citysim/save/bind_serializer.hpp"
 
 #include <memory>
 
@@ -19,6 +21,11 @@ struct DemoPosition {
 void hash_demo_position(StateHasher& hasher, const DemoPosition& position) {
     hasher.add_pod(position.x);
     hasher.add_pod(position.y);
+}
+
+template <class Ar> void serialize(Ar& ar, DemoPosition& position, std::uint32_t version) {
+    save::io(ar, position.x, version);
+    save::io(ar, position.y, version);
 }
 
 class SpawnSystem final : public ISystem {
@@ -54,6 +61,7 @@ class WanderSystem final : public ISystem {
 void setup_demo(Simulation& sim) {
     Hooks<DemoPosition> hooks;
     hooks.hash = &hash_demo_position;
+    save::bind_serializer(hooks);
     sim.world().registry().register_type<DemoPosition>("demo.Position", hooks);
 
     sim.add_system(Phase::ApplyCommands, std::make_unique<SpawnSystem>());

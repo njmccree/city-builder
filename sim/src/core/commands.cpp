@@ -17,6 +17,8 @@ struct Describe {
     }
     std::string operator()(const time::TogglePause&) const { return "TogglePause"; }
     std::string operator()(const time::SetEra& cmd) const { return "SetEra era=" + cmd.era_id; }
+    std::string operator()(const SaveGame& cmd) const { return "SaveGame path=" + cmd.path; }
+    std::string operator()(const LoadGame& cmd) const { return "LoadGame path=" + cmd.path; }
 };
 } // namespace
 
