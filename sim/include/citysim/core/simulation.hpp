@@ -4,6 +4,7 @@
 #include "citysim/core/commands.hpp"
 #include "citysim/core/event_bus.hpp"
 #include "citysim/core/input_log.hpp"
+#include "citysim/core/job_system.hpp"
 #include "citysim/core/scheduler.hpp"
 #include "citysim/core/system_observer.hpp"
 #include "citysim/core/world.hpp"
@@ -52,7 +53,9 @@ namespace citysim::core {
 
 class Simulation {
   public:
-    explicit Simulation(std::uint64_t world_seed);
+    // `worker_count` is passed to the JobSystem: 0 picks a default from the hardware, 1 means no helper
+    // threads. The simulation result never depends on it (architecture §7.2).
+    explicit Simulation(std::uint64_t world_seed, std::size_t worker_count = 0);
     Simulation(const Simulation&) = delete;
     Simulation& operator=(const Simulation&) = delete;
     // Not movable: the scheduler refers to the world this object owns.
@@ -88,8 +91,7 @@ class Simulation {
 
     // Not owned. Pass nullptr to remove.
     void set_observer(SystemObserver* observer) { observer_ = observer; }
-    // Not owned. Reserved for the JobSystem (S0.2.4); systems see it as TickContext::jobs.
-    void set_jobs(JobSystem* jobs) { jobs_ = jobs; }
+    JobSystem& jobs() { return jobs_; }
 
   private:
     void apply_commands(TickContext& context);
@@ -103,7 +105,7 @@ class Simulation {
     InputLog input_log_;
     std::vector<SequencedCommand> pending_commands_;
     SystemObserver* observer_ = nullptr;
-    JobSystem* jobs_ = nullptr;
+    JobSystem jobs_;
 };
 
 } // namespace citysim::core

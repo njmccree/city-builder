@@ -412,7 +412,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md; last task of S0.2.3, so op
 - `SimulationRunner` paces ticks for pause/1×/2×/4× and publishes triple-buffered snapshots.
 - Tests use a fake clock.
 
-#### [ ] T0.2.4.1 ★ — JobSystem with deterministic parallel_for
+#### [x] T0.2.4.1 ★ — JobSystem with deterministic parallel_for
 - **Model:** **Opus** · **Session:** [Cloud] · **Depends on:** T0.2.3.3
 ```
 Task T0.2.4.1 (Story S0.2.4). Architecture-critical. Read docs/architecture.md §4 and §7.2.

@@ -30,13 +30,15 @@ TEST_CASE("CLI options: defaults and every flag", "[tools][headless]") {
     REQUIRE(defaults.options.hash_every == 100);
     REQUIRE_FALSE(defaults.options.seed_given);
 
-    const auto all =
-        parse({"--seed", "42", "--ticks", "500", "--hash-every", "0", "--record-log", "out.txt"});
+    const auto all = parse(
+        {"--seed", "42", "--ticks", "500", "--hash-every", "0", "--threads", "8", "--record-log", "out.txt"});
     REQUIRE(all.error.empty());
     REQUIRE(all.options.seed == 42);
     REQUIRE(all.options.seed_given);
     REQUIRE(all.options.ticks == 500);
     REQUIRE(all.options.hash_every == 0);
+    REQUIRE(all.options.threads == 8);
+    REQUIRE(defaults.options.threads == 0);
     REQUIRE(all.options.record_log == "out.txt");
 
     const auto replay = parse({"--replay", "in.txt"});

@@ -96,7 +96,7 @@ TEST_CASE("TickContext carries the seed, tick and world", "[core][sim]") {
     sim.add_system(Phase::Update, make_system("probe", [&](TickContext& context) {
                        seen_world = &context.world;
                        seen_hash = context.rng.at(1, 2, 3);
-                       REQUIRE(context.jobs == nullptr);
+                       REQUIRE(&context.jobs == &sim.jobs());
                    }));
     sim.step();
     sim.step();
@@ -168,8 +168,8 @@ TEST_CASE("an observer is called around every system in order", "[core][sim]") {
     REQUIRE(recorder.log.empty());
 }
 
-TEST_CASE("parallel_for without a job system runs chunks serially in order", "[core][sim]") {
-    Simulation sim(1);
+TEST_CASE("parallel_for with a single worker runs chunks serially in order", "[core][sim]") {
+    Simulation sim(1, 1); // one worker: no helper threads, so chunk order is the call order
     std::vector<std::array<std::size_t, 3>> chunks;
     sim.add_system(
         Phase::Update, make_system("chunker", [&](TickContext& context) {

@@ -30,7 +30,7 @@ ParseResult parse_options(std::span<const std::string_view> args) {
         std::string_view value;
         if (arg == "--help" || arg == "-h") {
             options.help = true;
-        } else if (arg == "--seed" || arg == "--ticks" || arg == "--hash-every") {
+        } else if (arg == "--seed" || arg == "--ticks" || arg == "--hash-every" || arg == "--threads") {
             if (!next_value(value)) {
                 return result;
             }
@@ -45,6 +45,8 @@ ParseResult parse_options(std::span<const std::string_view> args) {
             } else if (arg == "--ticks") {
                 options.ticks = number;
                 options.ticks_given = true;
+            } else if (arg == "--threads") {
+                options.threads = number;
             } else {
                 options.hash_every = number;
             }
@@ -71,6 +73,8 @@ std::string usage() {
            "  --ticks N        number of ticks to run (default 1000)\n"
            "  --hash-every N   print \"tick hash\" every N ticks; 0 prints only the final hash (default "
            "100)\n"
+           "  --threads N      worker threads for the job system; 0 = hardware default (never changes the "
+           "result)\n"
            "  --record-log F   write the input log of this run to F\n"
            "  --replay F       re-run the game recorded in F (seed and ticks come from the file)\n"
            "  --help           show this text\n";

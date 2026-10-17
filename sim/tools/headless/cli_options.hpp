@@ -12,6 +12,7 @@ struct Options {
     std::uint64_t seed = 1;
     std::uint64_t ticks = 1000;
     std::uint64_t hash_every = 100; // 0 prints only the final hash
+    std::uint64_t threads = 0;      // JobSystem worker count; 0 = hardware default. Never changes the result
     std::optional<std::string> record_log;
     std::optional<std::string> replay;
     bool seed_given = false;
