@@ -48,13 +48,19 @@ struct Marker {};
 
 struct Score {
     std::uint32_t points = 0;
-    std::uint32_t bonus = 0; // version 2
+    std::uint32_t bonus = 0; // added in version 2
 };
 template <class Ar> void serialize(Ar& ar, Score& s, std::uint32_t version) {
     io(ar, s.points, version);
-    if (version >= 2) {
-        io(ar, s.bonus, version);
-    }
+    io(ar, s.bonus, version);
+}
+
+// What Score looked like in version 1, as an older build registered it.
+struct ScoreV1 {
+    std::uint32_t points = 0;
+};
+template <class Ar> void serialize(Ar& ar, ScoreV1& s, std::uint32_t version) {
+    io(ar, s.points, version);
 }
 void hash_score(core::StateHasher& hasher, const Score& s) {
     hasher.add_pod(s.points);
@@ -261,20 +267,143 @@ TEST_CASE("empty entities, tag components and absent singletons are kept", "[sav
     CHECK(loaded.state_hash() == original.state_hash());
 }
 
-TEST_CASE("an older section version is passed to serialize", "[save][world]") {
+namespace {
+
+void register_old_score(core::World& world) {
+    core::Hooks<ScoreV1> hooks;
+    bind_serializer(hooks, 1);
+    world.registry().register_type<ScoreV1>("test.Score", hooks);
+}
+
+MigrationRegistry score_migrations() {
+    MigrationRegistry migrations;
+    migrations.add_type("test.Score", 1, [](BinaryReader& in, BinaryWriter& out) {
+        std::uint32_t points = 0;
+        in.fixed(points);
+        out.fixed(points);
+        out.fixed(std::uint32_t{99}); // the bonus a version-1 score gets
+    });
+    return migrations;
+}
+
+} // namespace
+
+TEST_CASE("an older type version is migrated and read with the current layout", "[save][world][migration]") {
     core::World original;
-    register_all(original, /*score_version=*/1); // as an older build
-    const auto e = original.create();
-    original.emplace<Score>(e, Score{10, 0});
+    register_old_score(original);
+    original.emplace<ScoreV1>(original.create(), ScoreV1{10});
+    original.emplace<ScoreV1>(original.create(), ScoreV1{20});
     const auto bytes = save_bytes(original);
 
+    const MigrationRegistry migrations = score_migrations();
     core::World loaded;
     register_all(loaded, /*score_version=*/2);
     BinaryReader reader(bytes);
-    load_world(loaded, reader);
-    const auto entity = *loaded.view<Score>().begin();
-    CHECK(loaded.get<Score>(entity).points == 10);
-    CHECK(loaded.get<Score>(entity).bonus == 0); // default for the field the old save lacks
+    load_world(loaded, reader, &migrations);
+    REQUIRE(loaded.view<Score>().size() == 2);
+    std::uint32_t points = 0;
+    for (const auto entity : loaded.view<Score>()) {
+        CHECK(loaded.get<Score>(entity).bonus == 99);
+        points += loaded.get<Score>(entity).points;
+    }
+    CHECK(points == 30);
+}
+
+TEST_CASE("a missing migration step names the type and the versions", "[save][world][migration]") {
+    core::World original;
+    register_old_score(original);
+    original.emplace<ScoreV1>(original.create(), ScoreV1{10});
+    const auto bytes = save_bytes(original);
+
+    const MigrationRegistry empty;
+    for (const MigrationRegistry* migrations : {static_cast<const MigrationRegistry*>(nullptr), &empty}) {
+        core::World loaded;
+        register_all(loaded, 2);
+        BinaryReader reader(bytes);
+        try {
+            load_world(loaded, reader, migrations);
+            FAIL("expected an error");
+        } catch (const SaveFormatError& error) {
+            const std::string message = error.what();
+            CHECK(message.find("test.Score") != std::string::npos);
+            CHECK(message.find("version 1") != std::string::npos);
+            CHECK(message.find("version 2") != std::string::npos);
+            CHECK(message.find("no migration from 1 to 2") != std::string::npos);
+        }
+    }
+}
+
+TEST_CASE("migrations chain through every version", "[save][world][migration]") {
+    core::World original;
+    register_old_score(original);
+    original.emplace<ScoreV1>(original.create(), ScoreV1{5});
+    const auto bytes = save_bytes(original);
+
+    // Pretend the current build is at version 3: 1 -> 2 adds a bonus, 2 -> 3 doubles it.
+    MigrationRegistry migrations = score_migrations();
+    migrations.add_type("test.Score", 2, [](BinaryReader& in, BinaryWriter& out) {
+        std::uint32_t points = 0;
+        std::uint32_t bonus = 0;
+        in.fixed(points);
+        in.fixed(bonus);
+        out.fixed(points);
+        out.fixed(bonus * 2);
+    });
+    core::World loaded;
+    register_all(loaded, /*score_version=*/3);
+    BinaryReader reader(bytes);
+    load_world(loaded, reader, &migrations);
+    CHECK(loaded.get<Score>(*loaded.view<Score>().begin()).bonus == 198);
+}
+
+TEST_CASE("a migration that leaves bytes unread is an error", "[save][world][migration]") {
+    core::World original;
+    register_old_score(original);
+    original.emplace<ScoreV1>(original.create(), ScoreV1{5});
+    const auto bytes = save_bytes(original);
+
+    MigrationRegistry migrations;
+    migrations.add_type("test.Score", 1, [](BinaryReader& in, BinaryWriter& out) {
+        std::uint32_t points = 0;
+        in.fixed(points);
+        out.fixed(points);
+        out.fixed(std::uint32_t{0});
+        out.fixed(std::uint32_t{0}); // an extra field the current layout does not read
+    });
+    core::World loaded;
+    register_all(loaded, 2);
+    BinaryReader reader(bytes);
+    CHECK_THROWS_AS(load_world(loaded, reader, &migrations), SaveFormatError);
+}
+
+TEST_CASE("duplicate migrations are rejected", "[save][world][migration]") {
+    MigrationRegistry migrations;
+    migrations.add_type("a.B", 1, [](BinaryReader&, BinaryWriter&) {});
+    CHECK_THROWS_AS(migrations.add_type("a.B", 1, [](BinaryReader&, BinaryWriter&) {}), std::logic_error);
+    migrations.add_section("WRLD", 1, [](BinaryReader&, BinaryWriter&) {});
+    CHECK_THROWS_AS(migrations.add_section("WRLD", 1, [](BinaryReader&, BinaryWriter&) {}), std::logic_error);
+    CHECK(migrations.find_type("a.B", 1) != nullptr);
+    CHECK(migrations.find_type("a.B", 2) == nullptr);
+}
+
+TEST_CASE("section migrations transform the whole section", "[save][migration]") {
+    MigrationRegistry migrations;
+    migrations.add_section("TEST", 1, [](BinaryReader& in, BinaryWriter& out) {
+        std::uint8_t value = 0;
+        in.fixed(value);
+        out.fixed(static_cast<std::uint8_t>(value + 1));
+    });
+    migrations.add_section("TEST", 2, [](BinaryReader& in, BinaryWriter& out) {
+        std::uint8_t value = 0;
+        in.fixed(value);
+        out.fixed(static_cast<std::uint8_t>(value * 10));
+    });
+    const std::byte start[] = {std::byte{4}};
+    CHECK(migrate_section(&migrations, "TEST", 3, 3, start) == std::vector<std::byte>{std::byte{4}});
+    CHECK(migrate_section(&migrations, "TEST", 1, 3, start) == std::vector<std::byte>{std::byte{50}});
+    CHECK(migrate_section(&migrations, "TEST", 2, 3, start) == std::vector<std::byte>{std::byte{40}});
+    CHECK_THROWS_AS(migrate_section(&migrations, "TEST", 1, 4, start), SaveFormatError);
+    CHECK_THROWS_AS(migrate_section(nullptr, "TEST", 1, 2, start), SaveFormatError);
 }
 
 TEST_CASE("a section from a newer build is refused", "[save][world]") {

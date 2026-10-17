@@ -69,11 +69,17 @@ void check_section_version(const RawSection& section) {
     }
 }
 
-// Reads a whole section with `read`, requiring that it uses every byte.
-template <class Fn>
-void read_section(const RawSection& section, const content::ContentDatabase* content, Fn&& read) {
+// Reads a whole section with `read`, requiring that it uses every byte. A section from an older build is
+// first run through its migrations.
+template <class Fn> void read_section(const RawSection& section, const LoadOptions& options, Fn&& read) {
     check_section_version(section);
-    BinaryReader reader(section.data, nullptr, content);
+    std::vector<std::byte> migrated;
+    std::span<const std::byte> data = section.data;
+    if (section.version < k_section_version) {
+        migrated = migrate_section(options.migrations, section.tag, section.version, k_section_version, data);
+        data = migrated;
+    }
+    BinaryReader reader(data, nullptr, options.content);
     read(reader);
     if (!reader.at_end()) {
         reader.fail("section " + section.tag + " has " + std::to_string(reader.remaining()) +
@@ -164,7 +170,7 @@ LoadOutcome load_simulation_bytes(core::Simulation& simulation, std::span<const 
 
     std::uint64_t seed = 0;
     std::uint64_t tick = 0;
-    read_section(require_section(contents, "META"), options.content, [&](BinaryReader& reader) {
+    read_section(require_section(contents, "META"), options, [&](BinaryReader& reader) {
         io(reader, seed);
         io(reader, tick);
     });
@@ -172,8 +178,8 @@ LoadOutcome load_simulation_bytes(core::Simulation& simulation, std::span<const 
         throw SaveFormatError("the header and the META section disagree about the seed or tick", 0);
     }
 
-    read_section(require_section(contents, "WRLD"), options.content, [&](BinaryReader& reader) {
-        const WorldLoadReport report = load_world(simulation.world(), reader);
+    read_section(require_section(contents, "WRLD"), options, [&](BinaryReader& reader) {
+        const WorldLoadReport report = load_world(simulation.world(), reader, options.migrations);
         for (const std::string& name : report.skipped_types) {
             outcome.warnings.push_back("skipped saved data for '" + name +
                                        "', which this build does not have");
@@ -182,11 +188,11 @@ LoadOutcome load_simulation_bytes(core::Simulation& simulation, std::span<const 
 
     std::vector<core::SequencedCommand> pending;
     if (const RawSection* section = find_section(contents, "CMDQ")) {
-        read_section(*section, options.content, [&](BinaryReader& reader) { io(reader, pending); });
+        read_section(*section, options, [&](BinaryReader& reader) { io(reader, pending); });
     }
     std::vector<core::InputLogEntry> log;
     if (const RawSection* section = find_section(contents, "ILOG")) {
-        read_section(*section, options.content, [&](BinaryReader& reader) { io(reader, log); });
+        read_section(*section, options, [&](BinaryReader& reader) { io(reader, log); });
     }
 
     simulation.restore_loop_state(seed, tick, std::move(pending), std::move(log));

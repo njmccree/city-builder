@@ -264,7 +264,13 @@ All of these values are **tunable through content data** (`game/content/base/def
 - **Required tests:**
   - save → load → `state_hash` is equal
   - (run N ticks) vs (run k ticks, save, load, run N−k ticks) gives equal hashes
-- **Versioning:** each section has a version. `MigrationRegistry` holds `(section, from_version) → fn` upgrades, and fixture saves for old versions live in `sim/tests/fixtures/saves/`.
+- **Versioning:** each section, and each component or singleton type inside `WRLD`, has a version. `MigrationRegistry` holds upgrades one version at a time: per-type migrations (`add_type(stable_name, from_version, fn)`, which convert one instance from the layout of `from_version` to the next) and per-section migrations (`add_section(tag, from_version, fn)`). A load runs the chain up to the current version and then calls the current `serialize()`, so `serialize()` only ever describes the current layout. A missing step is an error naming the type and the versions.
+
+### Saves: when to bump a version
+- Bump a type's version (the `version` argument of `save::bind_serializer`) on **any** change to its serialized layout: adding, removing, reordering or retyping a field, or changing how a value is encoded. A change that leaves the bytes identical (renaming a C++ field) needs nothing.
+- In the same change: register a migration from the previous version (copy the old fields, write the new layout, fill new fields with a sensible default) and add a **fixture save** written with the old layout to `sim/tests/fixtures/saves/`. The migration is covered by a test that loads the fixture.
+- Fixtures are never regenerated with a newer layout: they are the proof that old saves still load. The generator that writes one is a hidden test (`citysim_tests "[generate]"`) holding a copy of the old struct. Fixtures are small binary files marked `binary` in `.gitattributes`, not Git LFS.
+- Releasing a version without its migration breaks every save made with the previous one; there is no “just this once”. A migration may be dropped only when the owner decides to stop supporting saves from that version, and the loader's error message for it must then say so.
 - `save_simulation` / `load_simulation` (`citysim/save/simulation_io.hpp`) write and read a whole `Simulation`: loading goes into a fresh `Simulation` with the same modules installed, and returns warnings (content hash, mod list or game version differ; unknown sections or types skipped) rather than refusing. The wall-clock save time is supplied by the caller, since simulation code never reads the clock.
 - Saving and loading are commands that the runner executes **between ticks**.
 

@@ -805,7 +805,7 @@ Task T0.5.1.2 (Story S0.5.1). Read docs/architecture.md §10 and the archive.hpp
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.5.1.3 — Save versioning and migrations
+#### [x] T0.5.1.3 — Save versioning and migrations
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.5.1.2
 ```
 Task T0.5.1.3 (Story S0.5.1). Read docs/architecture.md §10.

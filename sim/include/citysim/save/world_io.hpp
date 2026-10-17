@@ -2,6 +2,7 @@
 
 #include "citysim/save/binary_reader.hpp"
 #include "citysim/save/binary_writer.hpp"
+#include "citysim/save/migration_registry.hpp"
 
 #include <string>
 #include <vector>
@@ -33,6 +34,11 @@ void save_world(const core::World& world, BinaryWriter& out);
 // entities are created for the saved ones; singletons are overwritten in place. Throws SaveFormatError on
 // truncated, corrupt or newer-than-supported data, or data that refers to something that does not exist.
 // On an error the world is left partly loaded and must be discarded.
-WorldLoadReport load_world(core::World& world, BinaryReader& in);
+//
+// A type saved at an older version than this build's is upgraded through `migrations` (see
+// MigrationRegistry) and read with the current serialize(), which is always called with the current
+// version; without a migration for every step the load fails with a message naming the type.
+WorldLoadReport load_world(core::World& world, BinaryReader& in,
+                           const MigrationRegistry* migrations = nullptr);
 
 } // namespace citysim::save

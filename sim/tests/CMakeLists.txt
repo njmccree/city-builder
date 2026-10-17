@@ -4,6 +4,7 @@ add_executable(citysim_tests
     content/mods_tests.cpp
     save/archive_tests.cpp
     save/csav_tests.cpp
+    save/fixture_save_tests.cpp
     save/simulation_io_tests.cpp
     save/time_save_tests.cpp
     save/world_io_tests.cpp

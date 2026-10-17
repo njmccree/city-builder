@@ -111,7 +111,7 @@ void save_world(const core::World& world, BinaryWriter& out) {
     }
 }
 
-WorldLoadReport load_world(core::World& world, BinaryReader& in) {
+WorldLoadReport load_world(core::World& world, BinaryReader& in, const MigrationRegistry* migrations) {
     require_serializable(world);
     if (world.entity_count() != 0) {
         throw std::logic_error("load_world needs a world with no entities");
@@ -181,7 +181,9 @@ WorldLoadReport load_world(core::World& world, BinaryReader& in) {
                              ", which does not exist");
             }
             void* component = info->create(world.entt_registry(), entity);
-            info->read(payload, component, version);
+            read_migrated_instance(
+                migrations, name, version, info->version, payload,
+                [&](BinaryReader& current) { info->read(current, component, info->version); });
         }
         if (!payload.at_end()) {
             payload.fail("'" + name + "' has " + std::to_string(payload.remaining()) + " unread bytes");
@@ -210,7 +212,9 @@ WorldLoadReport load_world(core::World& world, BinaryReader& in) {
         if (!info->get_or_create) {
             in.fail("'" + name + "' cannot be loaded because it is not default-constructible");
         }
-        info->read(payload, info->get_or_create(world.ctx()), version);
+        void* singleton = info->get_or_create(world.ctx());
+        read_migrated_instance(migrations, name, version, info->version, payload,
+                               [&](BinaryReader& current) { info->read(current, singleton, info->version); });
         if (!payload.at_end()) {
             payload.fail("'" + name + "' has " + std::to_string(payload.remaining()) + " unread bytes");
         }

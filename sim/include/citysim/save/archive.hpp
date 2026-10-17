@@ -11,29 +11,30 @@
 //         std::string name;
 //         std::vector<std::int32_t> yields;
 //         std::optional<entt::entity> owner;  // a reference to another entity
-//         std::uint8_t irrigation = 0;        // added in version 2
 //     };
 //
 //     template <class Ar> void serialize(Ar& ar, Farm& farm, std::uint32_t version) {
-//         io(ar, farm.workers);   // io() picks the right encoding for the type of the field
-//         io(ar, farm.name);
-//         io(ar, farm.yields);
-//         io(ar, farm.owner);     // entities go through the archive's remap, never as raw ids
-//         if (version >= 2) {
-//             io(ar, farm.irrigation);
-//         }                       // older saves: the field keeps its default
+//         io(ar, farm.workers, version);   // io() picks the right encoding for the type of the field
+//         io(ar, farm.name, version);
+//         io(ar, farm.yields, version);
+//         io(ar, farm.owner, version);     // entities go through the archive's remap, never as raw ids
 //     }
 //
-//     // At registration (see bind_serializer): the current version is what is written; `version` in
-//     // serialize() is what a save being loaded was written with.
+//     // At registration (see bind_serializer). `version` is the layout version this build writes.
 //     core::Hooks<Farm> hooks;
 //     hooks.hash = &hash_farm;
-//     save::bind_serializer(hooks, /*version=*/2);
+//     save::bind_serializer(hooks, /*version=*/1);
 //     registry.register_type<Farm>("farm.Farm", hooks);
 //
+// serialize() describes only the CURRENT layout. When the layout changes, bump the version passed to
+// bind_serializer and register a migration (migration_registry.hpp) that turns the old bytes into the new
+// layout; old saves are upgraded before serialize() sees them, so `version` is always the current one when
+// loading. Commit a save written with the old layout as a fixture (architecture §10, "Saves").
+//
 // Rules:
-//   * Write every field that is part of the hashed state, in a fixed order. Never reorder or reuse a field;
-//     bump the version and branch on it. Old versions must keep loading (migrations: S0.5.1).
+//   * Write every field that is part of the hashed state, in a fixed order. To change the layout in any way
+//     (add, remove, reorder or retype a field), bump the version and add a migration; never edit the layout
+//     of a released version in place.
 //   * Never write unordered containers by iteration; sort them first. Never write pointers, handles or raw
 //     entity ids: use entities through io() (remapped) and content definitions as DefHandle (saved as ids).
 //   * Collections are length-prefixed; the reader rejects a length larger than the bytes left.

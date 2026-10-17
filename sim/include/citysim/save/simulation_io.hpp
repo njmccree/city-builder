@@ -1,6 +1,7 @@
 #pragma once
 
 #include "citysim/save/csav_file.hpp"
+#include "citysim/save/migration_registry.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -40,6 +41,8 @@ struct SaveOptions {
 
 struct LoadOptions {
     const content::ContentDatabase* content = nullptr;
+    // Upgrades for saves written by older builds (see MigrationRegistry); null means none are available.
+    const MigrationRegistry* migrations = nullptr;
 };
 
 struct LoadOutcome {
