@@ -279,11 +279,14 @@ All of these values are **tunable through content data** (`game/content/base/def
 ## 11. Godot Bridge & Rendering
 
 - **`CitySim`** is a GDExtension class (Node). The game registers it as the autoload `Sim`. Its API:
-  - lifecycle: `new_game`, `load_game`, `save_game`, `shutdown`
-  - `submit_command(Dictionary)`, which converts to typed commands and **validates in C++**
-  - `get_snapshot_info()` for UI data
-  - stats
-  - signals emitted on the main thread from snapshot events
+  - lifecycle: `new_game(seed, content_roots, enabled_mods, era_id)` → `{ok, errors, warnings}`, `shutdown()`, `is_running()`. Loading and saving are commands (below).
+  - `submit_command(Dictionary)`, which converts to typed commands (`gdext/src/command_marshal.cpp`, one table line per command) and **validates in C++**: unknown types, missing, extra or wrongly typed fields, out-of-range values and unknown content ids are rejected with `push_error`. Commands: `set_speed`, `toggle_pause`, `set_era`, `save_game`, `load_game`.
+  - `get_stats()` → `{tick, tps, tick_ms_avg, tick_ms_last, entity_count, speed, paused, date_text, time_text}` from the newest snapshot
+  - signals emitted from `_process` on the main thread when a snapshot changes: `tick_advanced(tick)`, `date_changed(text)`, `speed_changed(speed, paused)`, `save_completed(path, ok, msg)`, `load_completed(path, ok, msg)`
+  - The loaded localization tables are given to Godot as `Translation`s, so `tr("key")` works.
+  - The game never uses `CitySim` directly: the autoload `Sim` (`game/scripts/autoload/sim.gd`) owns it, supplies the default content and forwards the signals.
+  - Content is read from real folders, so it works in the editor and in a build that ships `content/` next to the executable. Reading it from a packed `.pck` is not supported yet.
+  - The glue that is not Godot-specific (loading content, creating the runner, installing the time module and calendar) is `runner::GameSession` in `sim/`, which has native tests.
 - **Fast renderers** are C++ GDExtension nodes (e.g., `AgentRenderer`). They read snapshot arrays and write `MultiMesh` instance buffers directly (`set_buffer`), with no per-agent GDScript.
 - **GDScript** handles UI, camera, input mapping, scene composition, and tool modes. It never runs per-entity loops.
 - **Units and coordinates:**

@@ -46,6 +46,16 @@ TEST_CASE("lookup falls back from the current language to en to the key", "[cont
     CHECK(localizer.get("hello") == "Hello");
 }
 
+TEST_CASE("text() reads one language exactly, without fallback or counting", "[content][loc]") {
+    Localizer localizer;
+    localizer.set("en", "k", "English");
+    localizer.set("de", "other", "Anderes");
+    CHECK(localizer.text("en", "k") == "English");
+    CHECK(localizer.text("de", "k").empty()); // no fallback to en
+    CHECK(localizer.text("fr", "k").empty());
+    CHECK(localizer.missing_key_count() == 0);
+}
+
 TEST_CASE("a later set replaces the text", "[content][loc]") {
     Localizer localizer;
     localizer.set("en", "k", "first");

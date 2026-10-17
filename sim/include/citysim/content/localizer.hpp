@@ -39,6 +39,10 @@ class Localizer {
     // Every key of a language, sorted; empty for an unknown language.
     std::vector<std::string> keys(const std::string& language) const;
 
+    // The text of `key` in exactly `language`, or an empty string if it has none (no fallback, no counting).
+    // For exporting a table, such as the Godot Translation bridge.
+    std::string text(const std::string& language, const std::string& key) const;
+
     // The text for `key`: current language, then "en", then the key itself.
     std::string get(const std::string& key) const;
 

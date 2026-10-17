@@ -1,5 +1,7 @@
 #pragma once
 
+#include "citysim/time/calendar.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -43,6 +45,11 @@ struct RenderSnapshot {
     bool paused = false;
     double published_at = 0.0; // runner clock seconds, for interpolating between snapshots
     SimStats stats;
+    // The calendar date and time of day, when the calendar is installed.
+    bool has_date = false;
+    time::Date date;
+    std::uint8_t hour = 0;   // 0..23
+    std::uint8_t minute = 0; // 0..59
     std::vector<UiEvent> ui_events;
 };
 

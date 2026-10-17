@@ -39,6 +39,7 @@ add_library(citysim_core STATIC
     src/save/simulation_io.cpp
     src/save/world_io.cpp
     src/runner/clock.cpp
+    src/runner/game_session.cpp
     src/runner/simulation_runner.cpp)
 target_include_directories(citysim_core PUBLIC include)
 target_compile_features(citysim_core PUBLIC cxx_std_20)

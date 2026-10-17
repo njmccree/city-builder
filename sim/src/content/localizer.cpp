@@ -34,6 +34,15 @@ std::vector<std::string> Localizer::keys(const std::string& language) const {
     return result;
 }
 
+std::string Localizer::text(const std::string& language, const std::string& key) const {
+    const auto table = tables_.find(language);
+    if (table == tables_.end()) {
+        return {};
+    }
+    const auto found = table->second.find(key);
+    return found == table->second.end() ? std::string() : found->second;
+}
+
 std::string Localizer::get(const std::string& key) const {
     const auto find_in = [&](const std::string& language) -> const std::string* {
         const auto table = tables_.find(language);

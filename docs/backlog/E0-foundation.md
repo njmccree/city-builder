@@ -928,7 +928,7 @@ example, the editor Output panel). Follow the Task workflow in CLAUDE.md; last t
 - Snapshot interpolation alpha is available.
 - Command dictionaries are validated in C++.
 
-#### [ ] T0.6.2.1 — CitySim API and Sim autoload
+#### [x] T0.6.2.1 — CitySim API and Sim autoload
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.6.1.3
 ```
 Task T0.6.2.1 (Story S0.6.2). Read docs/architecture.md §5.3, §7, §11.
