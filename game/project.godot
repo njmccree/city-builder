@@ -11,7 +11,8 @@ config_version=5
 [application]
 
 config/name="CityBuilder (working title)"
-run/main_scene="res://scenes/main.tscn"
+; The simulation test scene is the main scene for now; the camera and debug-tool Tasks replace it with main.tscn.
+run/main_scene="res://scenes/test_sim.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
 ; `Sim` wraps the CitySim node; the UI talks to it and never to the simulation directly.

@@ -75,6 +75,8 @@ jobs:
         run: tools/godot_prepare.sh
       - name: Godot smoke test
         run: tools/godot.sh --headless --path game -s res://tests/smoke.gd
+      - name: Godot test scene (keys and buttons reach the simulation)
+        run: tools/godot.sh --headless --path game -s res://tests/test_scene.gd
 
   windows:
     runs-on: windows-latest

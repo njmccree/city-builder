@@ -9,3 +9,8 @@ the end of the first scan that finds a GDExtension registering a class. `tools/g
 extension first, which avoids that, and then imports the project:
 
     tools/godot_prepare.sh
+
+`test_scene.gd` loads the temporary simulation test scene (`res://scenes/test_sim.tscn`), presses its keys, and checks
+that pause, speed, era, save and load reach the simulation:
+
+    tools/godot.sh --headless --path game -s res://tests/test_scene.gd
