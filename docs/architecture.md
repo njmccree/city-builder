@@ -258,7 +258,11 @@ All of these values are **tunable through content data** (`game/content/base/def
     - one section per registered component type (sorted by stable name)
     - `CMDQ` (pending commands)
     - `ILOG` (optional input log)
-- **Entity ids** are remapped on load. Components that reference entities serialize them through the archive's remap table.
+- **Entity ids** are remapped on load. Components that reference entities serialize them through the archive's remap table (`ar.entity`, or `io()` on an `entt::entity`). A save holds dense indices (0..n-1 in ascending entity order), so a load gives every entity a fresh, dense id. Consequences for simulation code:
+  - Entity ids and the storage order of views are not stable across a save/load. State must not depend on them beyond what is saved. Sort by something stable (an id stored in a component) when order matters.
+  - `World::state_hash()` hashes raw entity values, so a world that has destroyed and recycled entities hashes differently after a save and load, even though the data is the same. Round-trip and continuation tests therefore use worlds without recycled ids until the hash is made rank-based (open question for the owner).
+- **Content references** (`DefHandle`) are saved as ids and need the `ContentDatabase` on the archive (`BinaryWriter(nullptr, &content)`); loading an id the content lacks is a `SaveFormatError`.
+- **Per-type blocks:** `save_world` writes each component type and singleton as `name, version, byte length, payload`, so a type this build does not register is skipped and reported. A registered, non-empty type with no serialize hooks makes saving fail (§4 rule 8).
 - **Required tests:**
   - save → load → `state_hash` is equal
   - (run N ticks) vs (run k ticks, save, load, run N−k ticks) gives equal hashes

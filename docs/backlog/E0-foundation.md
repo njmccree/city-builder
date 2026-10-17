@@ -756,7 +756,7 @@ Run all tests and citysim_validate. Follow the Task workflow in CLAUDE.md (branc
 - Section versioning with migrations and a fixture save.
 - Save and load are commands executed between ticks, with an autosave interval.
 
-#### [ ] T0.5.1.1 ★ — Serialization framework (archives and component hooks)
+#### [x] T0.5.1.1 ★ — Serialization framework (archives and component hooks)
 - **Model:** **Opus** · **Session:** [Cloud] · **Depends on:** T0.3.2.3, T0.4.2.1
 ```
 Task T0.5.1.1 (Story S0.5.1). Architecture-critical. Read docs/architecture.md §5.1 and §10 fully.

@@ -2,6 +2,9 @@ find_package(Threads REQUIRED)
 add_executable(citysim_tests
     content/content_tests.cpp
     content/mods_tests.cpp
+    save/archive_tests.cpp
+    save/time_save_tests.cpp
+    save/world_io_tests.cpp
     content/layering_tests.cpp
     content/localization_tests.cpp
     core/commands_tests.cpp

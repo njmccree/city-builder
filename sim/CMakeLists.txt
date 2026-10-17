@@ -31,6 +31,10 @@ add_library(citysim_core STATIC
     src/time/clock_system.cpp
     src/time/game_clock.cpp
     src/time/time_module.cpp
+    src/save/binary_reader.cpp
+    src/save/binary_writer.cpp
+    src/save/entity_remap.cpp
+    src/save/world_io.cpp
     src/runner/clock.cpp
     src/runner/simulation_runner.cpp)
 target_include_directories(citysim_core PUBLIC include)

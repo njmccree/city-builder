@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <stdexcept>
 #include <utility>
 
 namespace citysim::time {
@@ -12,6 +13,24 @@ void CalendarScheduler::schedule(CalendarTime when, ScheduledAction action) {
     const auto position = std::upper_bound(entries_.begin(), entries_.end(), when,
                                            [](CalendarTime value, const Entry& e) { return value < e.when; });
     entries_.insert(position, std::move(entry));
+}
+
+void CalendarScheduler::restore(std::vector<Entry> entries, std::uint64_t next_sequence) {
+    for (std::size_t i = 0; i < entries.size(); ++i) {
+        if (entries[i].sequence >= next_sequence) {
+            throw std::invalid_argument(
+                "scheduled action has a sequence number the scheduler has not issued");
+        }
+        if (i > 0) {
+            const Entry& before = entries[i - 1];
+            if (entries[i].when < before.when ||
+                (entries[i].when == before.when && entries[i].sequence <= before.sequence)) {
+                throw std::invalid_argument("scheduled actions are not in (time, sequence) order");
+            }
+        }
+    }
+    entries_ = std::move(entries);
+    next_sequence_ = next_sequence;
 }
 
 std::vector<CalendarScheduler::Entry> CalendarScheduler::pop_due(CalendarTime now) {
