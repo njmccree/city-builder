@@ -1,6 +1,7 @@
 add_library(citysim_core STATIC
     src/core/component_registry.cpp
     src/core/rng.cpp
+    src/core/state_hasher.cpp
     src/core/version.cpp
     src/core/world.cpp)
 target_include_directories(citysim_core PUBLIC include)

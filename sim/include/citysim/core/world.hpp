@@ -3,6 +3,7 @@
 #include "citysim/core/component_registry.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <entt/entt.hpp>
 #include <utility>
 
@@ -25,6 +26,9 @@ class World {
     void destroy(Entity entity);
     bool valid(Entity entity) const;
     std::size_t entity_count() const;
+
+    // Fingerprint of all registered state (architecture §4, §13); see world.cpp for what it covers.
+    std::uint64_t state_hash() const;
 
     // Returns void for empty (tag) types, as EnTT does.
     template <class T, class... Args> decltype(auto) emplace(Entity entity, Args&&... args) {

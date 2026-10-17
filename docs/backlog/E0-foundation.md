@@ -302,7 +302,7 @@ Tests (sim/tests/core/rng_tests.cpp):
 Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.2.2-rng-hash).
 ```
 
-#### [ ] T0.2.2.2 — State hashing
+#### [x] T0.2.2.2 — State hashing
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.2.1
 ```
 Task T0.2.2.2 (Story S0.2.2, last task). Read docs/architecture.md §4, §5.1, §13.
