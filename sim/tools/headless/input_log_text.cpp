@@ -1,6 +1,8 @@
 #include "headless/input_log_text.hpp"
 
 #include <charconv>
+#include <cstdlib>
+#include <iomanip>
 #include <istream>
 #include <ostream>
 #include <sstream>
@@ -23,6 +25,10 @@ struct WriteCommand {
     void operator()(const NoOp&) const { out << "NoOp"; }
     void operator()(const DebugSetComponentValue& cmd) const {
         out << "DebugSetComponentValue " << cmd.entity << ' ' << cmd.value;
+    }
+    void operator()(const citysim::time::SetTimeScale& cmd) const {
+        // Nine significant digits are enough to read a float back exactly.
+        out << "SetTimeScale " << std::setprecision(9) << cmd.movement_scale << ' ' << cmd.day_length_ticks;
     }
     void operator()(const citysim::time::SetSpeed& cmd) const {
         out << "SetSpeed " << static_cast<unsigned>(cmd.speed);
@@ -59,6 +65,15 @@ template <class T> T parse_number(const std::string& text, std::size_t line, con
     return value;
 }
 
+float parse_float(const std::string& text, std::size_t line, const char* what) {
+    char* end = nullptr;
+    const float value = std::strtof(text.c_str(), &end);
+    if (text.empty() || end != text.c_str() + text.size()) {
+        fail(line, std::string("invalid ") + what + " '" + text + "'");
+    }
+    return value;
+}
+
 std::vector<std::string> split(const std::string& line) {
     std::istringstream stream(line);
     std::vector<std::string> tokens;
@@ -88,6 +103,11 @@ Command parse_command(const std::vector<std::string>& tokens, std::size_t line) 
     if (name == "SetSpeed") {
         expect_arg_count(tokens, 1, line);
         return citysim::time::SetSpeed{parse_number<std::uint8_t>(tokens[3], line, "speed")};
+    }
+    if (name == "SetTimeScale") {
+        expect_arg_count(tokens, 2, line);
+        return citysim::time::SetTimeScale{parse_float(tokens[3], line, "movement_scale"),
+                                           parse_number<std::uint32_t>(tokens[4], line, "day_length_ticks")};
     }
     if (name == "SetEra") {
         expect_arg_count(tokens, 1, line);

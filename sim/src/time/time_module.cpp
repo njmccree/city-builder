@@ -76,6 +76,23 @@ void install(core::Simulation& simulation, const TimeDefines& defines) {
         }
         context.world.ctx().get<GameClock>().speed = cmd.speed;
     });
+    simulation.dispatcher().register_handler<SetTimeScale>(
+        [](core::TickContext& context, const SetTimeScale& cmd) {
+            constexpr float k_most_scale = 100.0F;
+            constexpr std::uint32_t k_fewest_day_ticks = 24; // an hour must last at least one tick
+            if (!(cmd.movement_scale > 0.0F) || cmd.movement_scale > k_most_scale ||
+                cmd.day_length_ticks < k_fewest_day_ticks) {
+                CS_LOG_WARN(Sim, "SetTimeScale {} / {} is out of range; ignored", cmd.movement_scale,
+                            cmd.day_length_ticks);
+                return;
+            }
+            auto& defines = context.world.ctx().get<TimeDefines>();
+            defines.movement_scale = cmd.movement_scale;
+            defines.day_length_ticks = cmd.day_length_ticks;
+            // A shorter day must not leave the clock past its end.
+            auto& clock = context.world.ctx().get<GameClock>();
+            clock.day_tick %= defines.day_length_ticks;
+        });
     simulation.dispatcher().register_handler<TogglePause>([](core::TickContext& context, const TogglePause&) {
         auto& clock = context.world.ctx().get<GameClock>();
         clock.paused = !clock.paused;

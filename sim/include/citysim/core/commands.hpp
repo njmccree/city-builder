@@ -42,9 +42,9 @@ struct LoadGame {
 // UiEvent. Also handled by the runner and not recorded in the input log. For tests and the developer console.
 struct RequestStateHash {};
 
-using Command =
-    std::variant<NoOp, DebugSetComponentValue, time::SetSpeed, time::TogglePause, time::SetEra, SaveGame,
-                 LoadGame, debug::SpawnDebugAgents, debug::ClearDebugAgents, RequestStateHash>;
+using Command = std::variant<NoOp, DebugSetComponentValue, time::SetSpeed, time::TogglePause, time::SetEra,
+                             SaveGame, LoadGame, debug::SpawnDebugAgents, debug::ClearDebugAgents,
+                             RequestStateHash, time::SetTimeScale>;
 
 struct SequencedCommand {
     std::uint64_t sequence = 0;   // assigned by CommandQueue::submit, strictly increasing

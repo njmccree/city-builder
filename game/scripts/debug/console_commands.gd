@@ -154,6 +154,9 @@ func _register_builtins() -> void:
 	register("quit", _cmd_quit, "Quit the game.")
 	register("spawn_agents", _cmd_spawn_agents, "Add debug agents that wander the test map.", ["int"])
 	register("clear_agents", _cmd_clear_agents, "Remove every debug agent.")
+	register("time_scale", _cmd_time_scale,
+		"Set movement_scale (simulated seconds of walking per real second at 1x) and day_length_ticks (20 ticks = 1 s at 1x).",
+		["float", "int"])
 	register("new_test_map", _cmd_new_test_map,
 		"Start a new game on a fresh test map: new_test_map <seed> <cells per side, 16-1024>.", ["int", "int"])
 
@@ -201,6 +204,14 @@ func _cmd_new_test_map(map_seed: int, size: int) -> String:
 	if not bool(result["ok"]):
 		return "The game could not start: %s" % str(result["errors"])
 	return "New game: seed %d, map %d x %d cells (%d m)." % [map_seed, size, size, size * 4]
+
+
+func _cmd_time_scale(movement_scale: float, day_length_ticks: int) -> String:
+	if movement_scale <= 0.0 or movement_scale > 100.0 or day_length_ticks < 24:
+		return "movement_scale must be in (0, 100] and day_length_ticks at least 24."
+	if Sim.submit_command({"type": "set_time_scale", "movement_scale": movement_scale, "day_length_ticks": day_length_ticks}):
+		return "Time scale requested: movement_scale %s, day_length_ticks %d." % [str(movement_scale), day_length_ticks]
+	return ""
 
 
 func _cmd_help(command_name: String = "") -> String:

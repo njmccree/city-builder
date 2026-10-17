@@ -1170,7 +1170,7 @@ S0.8.1, so open the PR.
 **Acceptance criteria**
 - `docs/spikes/time-scale.md` compares at least 3 settings, with measurements and a recommendation for the designer to approve.
 
-#### [ ] T0.8.2.1 — Time-scale spike
+#### [x] T0.8.2.1 — Time-scale spike
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.8.1.4
 ```
 Task T0.8.2.1 (Story S0.8.2). Read docs/architecture.md §6 and docs/gdd.md §3.3 (time cadence) and §10.11

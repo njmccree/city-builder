@@ -70,6 +70,25 @@ func _run() -> void:
 	_console.execute("era base:era.colonial")
 	_console.execute("era base:era.ancient")
 
+	# time_scale changes the hashed time settings through a command; bad values are refused.
+	_check(_console.has_command("time_scale"), "time_scale is registered")
+	_console.execute("time_scale 0 100")
+	_check(_last().contains("movement_scale must"), "a zero scale is refused")
+	_console.execute("time_scale 3 10")
+	_check(_last().contains("movement_scale must"), "a day under 24 ticks is refused")
+	_lines.clear()
+	_console.execute("hash")
+	await create_timer(0.5).timeout
+	var before_scale: String = _hash_in_output()
+	_console.execute("time_scale 6 28800")
+	_check(_last().contains("Time scale requested"), "a good time_scale is accepted")
+	await create_timer(0.5).timeout
+	_lines.clear()
+	_console.execute("hash")
+	await create_timer(0.5).timeout
+	_check(_hash_in_output() != before_scale, "the time scale is part of the game state hash")
+	_console.execute("time_scale 3 14400")
+
 	# Save names are plain file names.
 	_console.execute("save ../evil")
 	_check(_last().contains("letters, digits"), "a save name with a path is refused")

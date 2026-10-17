@@ -24,6 +24,10 @@ struct Describe {
     }
     std::string operator()(const debug::ClearDebugAgents&) const { return "ClearDebugAgents"; }
     std::string operator()(const RequestStateHash&) const { return "RequestStateHash"; }
+    std::string operator()(const time::SetTimeScale& cmd) const {
+        return "SetTimeScale movement_scale=" + std::to_string(cmd.movement_scale) +
+               " day_length_ticks=" + std::to_string(cmd.day_length_ticks);
+    }
 };
 } // namespace
 
