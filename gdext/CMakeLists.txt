@@ -12,12 +12,26 @@ endif()
 set(GODOTCPP_API_VERSION "4.7" CACHE STRING "Godot API version to bind (see docs/versions.md)" FORCE)
 set(GODOTCPP_DISABLE_EXCEPTIONS OFF CACHE BOOL "" FORCE)
 set(GODOTCPP_SYSTEM_HEADERS ON CACHE BOOL "" FORCE)
-# Debug builds bind the debug template (usable in the editor and in debug exports); anything else binds release.
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(GODOTCPP_TARGET "template_debug" CACHE STRING "" FORCE)
+# Which godot-cpp flavor to bind (and so which .gdextension library entry the file is for):
+#   editor           the Godot editor and anything it launches (needed for the editor to load the library)
+#   template_debug   debug export templates
+#   template_release release export templates
+# Default: Debug builds bind `editor`, others `template_release`.
+set(CITYSIM_GODOT_TARGET "" CACHE STRING "godot-cpp target: editor, template_debug or template_release (default by build type)")
+if(NOT CITYSIM_GODOT_TARGET)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(CITYSIM_GODOT_TARGET "editor")
+    else()
+        set(CITYSIM_GODOT_TARGET "template_release")
+    endif()
+endif()
+set(GODOTCPP_TARGET "${CITYSIM_GODOT_TARGET}" CACHE STRING "" FORCE)
+# The part of the library file name Godot's feature tags select by.
+if(CITYSIM_GODOT_TARGET STREQUAL "editor")
+    set(CITYSIM_GDEXT_CONFIG "editor")
+elseif(CITYSIM_GODOT_TARGET STREQUAL "template_debug")
     set(CITYSIM_GDEXT_CONFIG "debug")
 else()
-    set(GODOTCPP_TARGET "template_release" CACHE STRING "" FORCE)
     set(CITYSIM_GDEXT_CONFIG "release")
 endif()
 
@@ -30,7 +44,7 @@ target_link_libraries(citysim_gdext PRIVATE citysim_core godot-cpp)
 target_compile_features(citysim_gdext PRIVATE cxx_std_20)
 citysim_set_warnings(citysim_gdext)
 
-# libcitysim_gdext.linux.<debug|release>.x86_64.so / citysim_gdext.windows.<debug|release>.x86_64.dll
+# libcitysim_gdext.linux.<editor|debug|release>.x86_64.so / citysim_gdext.windows.<editor|debug|release>.x86_64.dll
 if(WIN32)
     set(CITYSIM_GDEXT_PLATFORM "windows")
     set(CITYSIM_GDEXT_PREFIX "")
