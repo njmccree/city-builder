@@ -28,6 +28,7 @@ struct WriteCommand {
         out << "SetSpeed " << static_cast<unsigned>(cmd.speed);
     }
     void operator()(const citysim::time::TogglePause&) const { out << "TogglePause"; }
+    void operator()(const citysim::time::SetEra& cmd) const { out << "SetEra " << cmd.era_id; }
 };
 
 [[noreturn]] void fail(std::size_t line, const std::string& message) {
@@ -73,6 +74,10 @@ Command parse_command(const std::vector<std::string>& tokens, std::size_t line) 
     if (name == "SetSpeed") {
         expect_arg_count(tokens, 1, line);
         return citysim::time::SetSpeed{parse_number<std::uint8_t>(tokens[3], line, "speed")};
+    }
+    if (name == "SetEra") {
+        expect_arg_count(tokens, 1, line);
+        return citysim::time::SetEra{tokens[3]};
     }
     if (name == "TogglePause") {
         expect_arg_count(tokens, 0, line);

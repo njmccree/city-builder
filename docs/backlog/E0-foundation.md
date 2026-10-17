@@ -541,7 +541,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.3.1-clock)
 - BCE/CE formatting uses localization keys.
 - Calendar boundary events fire in a deterministic order.
 
-#### [ ] T0.3.2.1 — Calendar date math and formatting
+#### [x] T0.3.2.1 — Calendar date math and formatting
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.3.1.1
 ```
 Task T0.3.2.1 (Story S0.3.2). Read docs/architecture.md §6 and §9.
@@ -561,7 +561,7 @@ Implement citysim::time::Calendar types:
 Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.3.2-calendar).
 ```
 
-#### [ ] T0.3.2.2 — Era cadence: exact calendar advance per tick
+#### [x] T0.3.2.2 — Era cadence: exact calendar advance per tick
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.3.2.1, T0.4.1.1
 ```
 Task T0.3.2.2 (Story S0.3.2). Read docs/architecture.md §6 and §8.
@@ -583,7 +583,7 @@ Task T0.3.2.2 (Story S0.3.2). Read docs/architecture.md §6 and §8.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.3.2.3 — Calendar scheduler (day/month/year boundaries, dated triggers)
+#### [x] T0.3.2.3 — Calendar scheduler (day/month/year boundaries, dated triggers)
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.3.2.2
 ```
 Task T0.3.2.3 (Story S0.3.2, last task). Read docs/architecture.md §5.2, §5.5, §6.

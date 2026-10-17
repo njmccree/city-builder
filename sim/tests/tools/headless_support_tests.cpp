@@ -101,6 +101,21 @@ TEST_CASE("input log text round-trips the clock commands", "[tools][headless]") 
     REQUIRE_THROWS(read_text("citysim-input-log 1\nseed 1\nticks 1\n1 1 SetSpeed 300\n"));
 }
 
+TEST_CASE("input log text round-trips SetEra", "[tools][headless]") {
+    LogFile log;
+    log.seed = 1;
+    log.ticks = 10;
+    log.entries.push_back({3, 1, citysim::time::SetEra{"base:era.modern"}});
+
+    std::ostringstream out;
+    write_log_file(out, log);
+    REQUIRE(out.str() == "citysim-input-log 1\nseed 1\nticks 10\n3 1 SetEra base:era.modern\n");
+    const LogFile back = read_text(out.str());
+    REQUIRE(back.entries.size() == 1);
+    REQUIRE(std::get<citysim::time::SetEra>(back.entries[0].cmd).era_id == "base:era.modern");
+    REQUIRE_THROWS(read_text("citysim-input-log 1\nseed 1\nticks 1\n1 1 SetEra\n")); // missing its argument
+}
+
 TEST_CASE("input log reader skips comments and blank lines", "[tools][headless]") {
     const LogFile log =
         read_text("# a comment\n\ncitysim-input-log 1\n\nseed 3\nticks 9\n# note\n5 1 NoOp\n");

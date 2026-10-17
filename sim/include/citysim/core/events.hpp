@@ -1,5 +1,7 @@
 #pragma once
 
+#include "citysim/time/calendar_events.hpp"
+
 #include <string>
 #include <variant>
 
@@ -11,6 +13,7 @@ struct DebugEvent {
     std::string text;
 };
 
-using Event = std::variant<DebugEvent>;
+using Event = std::variant<DebugEvent, time::DayStarted, time::MonthStarted, time::YearStarted,
+                           time::ScheduledActionDue>;
 
 } // namespace citysim::core

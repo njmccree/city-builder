@@ -16,6 +16,7 @@ struct Describe {
         return "SetSpeed speed=" + std::to_string(cmd.speed);
     }
     std::string operator()(const time::TogglePause&) const { return "TogglePause"; }
+    std::string operator()(const time::SetEra& cmd) const { return "SetEra era=" + cmd.era_id; }
 };
 } // namespace
 
