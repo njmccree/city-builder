@@ -167,7 +167,7 @@ Follow the Task workflow in CLAUDE.md (branch story/S0.1.2-session-hook); last t
 - `tools/check-env.ps1` reports pass or fail for every required tool.
 - The `windows-debug` preset builds and tests pass on the PC.
 
-#### [ ] T0.1.3.1 — Windows setup guide and environment check
+#### [x] T0.1.3.1 — Windows setup guide and environment check
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.1.1.2
 ```
 Task T0.1.3.1 (Story S0.1.3). Read CLAUDE.md and docs/versions.md.
