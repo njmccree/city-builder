@@ -1144,7 +1144,7 @@ Run on this PC: spawn 1,000 then 10,000 agents; confirm smooth interpolated moti
 when paused. Report FPS from the debug overlay. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.8.1.4 — End-to-end verification and PC performance baseline
+#### [x] T0.8.1.4 — End-to-end verification and PC performance baseline
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.8.1.3
 ```
 Task T0.8.1.4 (Story S0.8.1, last task). Read docs/architecture.md §13–§14 and docs/perf.md.
@@ -1195,3 +1195,23 @@ review the recommendation.
 
 ## Follow-ups
 _Filled in by T0.8.1.4 and later reviews._
+
+No budget was missed on the reference machine (see `docs/perf.md`), so there are no performance fixes to propose.
+Findings from the measurements and from building the PC Tasks:
+
+- **F-1 Decide cross-platform determinism (owner question).** The same seed and commands give a different final hash
+  on MSVC/Windows than on GCC/Linux (10,000 agents: `749e8cfc1ebb0243` vs `c854ee2a1160dd12`), although every
+  thread count agrees on one machine. Saves and replays are therefore not portable between compilers. Decide whether
+  that matters (multiplayer, shared bug reports, cloud-made saves played on the PC) and, if it does, plan fixed-point
+  or otherwise compiler-independent math for simulation state.
+- **F-2 Spread path requests over time.** Both machines show the same shape: after spawning, the first few hundred
+  ticks are 5 to 8 times costlier than the steady state because every agent searches for its first path on one
+  thread. Real citizens will need queued or hierarchical pathfinding before the Citizens epic.
+- **F-3 Interpolation when ticks run late.** The renderer blends over one nominal tick interval. When the simulation
+  cannot keep up (Debug builds) motion stutters because the blend clamps at 1 and waits. Consider blending over the
+  measured interval, or showing a "simulation behind" warning in the overlay.
+- **F-4 Make the Debug build usable.** A Debug simulation is tens of times slower than Release (10,000 agents: about 65 ms per tick against under 1 ms), too slow to judge anything, which
+  makes the editor experience misleading. Consider building the core with optimization (for example `/O2` with debug
+  info) in a "dev" preset for everyday work.
+- **F-5 Hash after entity recycling** (already noted in `docs/architecture.md`): still open until the hash is
+  rank-based.

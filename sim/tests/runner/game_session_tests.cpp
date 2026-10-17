@@ -9,6 +9,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <filesystem>
 #include <string>
+#include <utility>
 
 using namespace citysim;
 using citysim::runner::FakeClock;
@@ -178,4 +179,90 @@ TEST_CASE("a game without a test map publishes no agents or grid", "[runner][ses
     const runner::RenderSnapshot snapshot = outcome.session->latest_snapshot();
     CHECK(snapshot.find_channel(debug::k_agent_channel) == nullptr);
     CHECK(snapshot.find_grid(debug::k_test_map_grid) == nullptr);
+}
+
+namespace {
+
+// Runs a game session tick by tick on a fake clock (20 ticks per second at 1x) and reads state hashes back.
+struct AgentGame {
+    FakeClock clock;
+    runner::NewGameOutcome outcome;
+    double base = 0.0;
+    int steps = 0;
+
+    AgentGame() {
+        NewGameRequest request = base_request(clock);
+        request.test_map_size = 64;
+        outcome = runner::start_new_game(request);
+        REQUIRE(outcome.ok());
+        REQUIRE(outcome.session->runner().wait_until_idle());
+    }
+    runner::SimulationRunner& runner() { return outcome.session->runner(); }
+
+    // Advances `ticks` ticks, a tick at a time so none is dropped as backlog.
+    void run(int ticks) {
+        for (int i = 0; i < ticks; ++i) {
+            ++steps;
+            clock.set_time(base + static_cast<double>(steps) * (1.0 / 20.0));
+            REQUIRE(runner().wait_until_idle());
+        }
+    }
+    // The pace starts over after a load: the next tick is one interval after it.
+    void rebase() {
+        base = clock.now_seconds();
+        steps = 0;
+    }
+    std::pair<std::uint64_t, std::uint64_t> hash() { // {hash, tick}
+        runner().submit(core::RequestStateHash{});
+        REQUIRE(runner().wait_until_idle());
+        const runner::RenderSnapshot snapshot = outcome.session->latest_snapshot();
+        for (const runner::UiEvent& event : snapshot.ui_events) {
+            if (event.kind == runner::UiEventKind::StateHash) {
+                return {event.hash, event.tick};
+            }
+        }
+        FAIL("no StateHash event");
+        return {0, 0};
+    }
+};
+
+} // namespace
+
+TEST_CASE("a game with agents ends in the same state with or without a save and load in the middle",
+          "[runner][session][save]") {
+    const fs::path dir = fs::temp_directory_path() / "citysim_agents_save";
+    std::error_code ignored;
+    fs::remove_all(dir, ignored);
+    fs::create_directories(dir);
+    const std::string file = (dir / "mid_walk.csav").generic_string();
+
+    // A: spawn, walk 60 ticks, save, walk 60 more.
+    AgentGame a;
+    a.runner().submit(debug::SpawnDebugAgents{2000});
+    a.run(60);
+    const auto [a_mid_hash, a_mid_tick] = a.hash();
+    a.runner().submit(core::SaveGame{file});
+    REQUIRE(a.runner().wait_until_idle());
+    a.run(60);
+    const auto [a_end_hash, a_end_tick] = a.hash();
+    CHECK(a_mid_tick == 60);
+    CHECK(a_end_tick == 120);
+    CHECK(a_mid_hash != a_end_hash);
+
+    // B: the same game walked straight through, no save.
+    AgentGame b;
+    b.runner().submit(debug::SpawnDebugAgents{2000});
+    b.run(120);
+    CHECK(b.hash() == std::pair{a_end_hash, a_end_tick});
+
+    // C: a fresh game that loads the save and walks the remaining 60 ticks.
+    AgentGame c;
+    c.runner().submit(core::LoadGame{file});
+    REQUIRE(c.runner().wait_until_idle());
+    CHECK(c.hash() == std::pair{a_mid_hash, a_mid_tick});
+    c.rebase();
+    c.run(60);
+    CHECK(c.hash() == std::pair{a_end_hash, a_end_tick});
+
+    fs::remove_all(dir, ignored);
 }

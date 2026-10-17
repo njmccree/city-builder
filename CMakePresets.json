@@ -131,6 +131,15 @@
       }
     },
     {
+      "name": "windows-release-gdext",
+      "inherits": "windows-release",
+      "description": "Optimized build that also builds the GDExtension into game/bin/, bound to the editor target so the editor can load it (used for performance measurements).",
+      "cacheVariables": {
+        "CITYSIM_BUILD_GDEXT": "ON",
+        "CITYSIM_GODOT_TARGET": "editor"
+      }
+    },
+    {
       "name": "linux-tracy",
       "inherits": "linux-debug",
       "description": "Debug build with Tracy profiler zones enabled.",
@@ -187,6 +196,10 @@
     {
       "name": "windows-debug-gdext",
       "configurePreset": "windows-debug-gdext"
+    },
+    {
+      "name": "windows-release-gdext",
+      "configurePreset": "windows-release-gdext"
     },
     {
       "name": "ci-linux-gdext",
