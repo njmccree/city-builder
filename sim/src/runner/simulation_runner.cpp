@@ -1,6 +1,8 @@
 #include "citysim/runner/simulation_runner.hpp"
 
 #include "citysim/core/log.hpp"
+#include "citysim/time/game_clock.hpp"
+#include "citysim/time/time_module.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -11,14 +13,12 @@ namespace citysim::runner {
 SimulationRunner::SimulationRunner(std::uint64_t world_seed, IClock& clock, RunnerConfig config,
                                    std::size_t worker_count)
     : clock_(clock), config_(config), simulation_(world_seed, worker_count) {
-    for (std::size_t speed = 1; speed < config_.ticks_per_second.size(); ++speed) {
-        if (!(config_.ticks_per_second[speed] > 0.0)) {
-            throw std::invalid_argument("every speed in the table needs a positive tick rate");
-        }
-    }
     if (config_.max_catchup_ticks == 0) {
         throw std::invalid_argument("max_catchup_ticks must be at least 1");
     }
+    // Validates the defines (throws std::invalid_argument) and gives the simulation its GameClock, which
+    // owns speed and pause.
+    time::install(simulation_, config_.time);
 }
 
 SimulationRunner::~SimulationRunner() {
@@ -57,25 +57,6 @@ std::uint64_t SimulationRunner::submit(core::Command cmd) {
     const std::uint64_t sequence = queue_.submit(std::move(cmd), published_tick_.load());
     note_stimulus();
     return sequence;
-}
-
-void SimulationRunner::set_speed(std::uint8_t speed) {
-    if (speed < 1 || speed >= config_.ticks_per_second.size()) {
-        throw std::out_of_range("speed must be 1..3");
-    }
-    {
-        const std::lock_guard lock(mutex_);
-        speed_ = speed;
-    }
-    note_stimulus();
-}
-
-void SimulationRunner::set_paused(bool paused) {
-    {
-        const std::lock_guard lock(mutex_);
-        paused_ = paused;
-    }
-    note_stimulus();
 }
 
 RenderSnapshot SimulationRunner::latest_snapshot() {
@@ -154,11 +135,12 @@ void SimulationRunner::record_tick_stats(double started, double finished) {
         (stats_count_ >= 2 && span > 0.0) ? static_cast<double>(stats_count_ - 1) / span : 0.0;
 }
 
-void SimulationRunner::publish_snapshot(std::uint8_t speed, bool paused) {
+void SimulationRunner::publish_snapshot() {
+    const auto& game_clock = simulation_.world().ctx().get<time::GameClock>();
     RenderSnapshot& snapshot = snapshots_.back();
     snapshot.tick = simulation_.tick();
-    snapshot.speed = speed;
-    snapshot.paused = paused;
+    snapshot.speed = game_clock.speed;
+    snapshot.paused = game_clock.paused;
     snapshot.published_at = clock_.now_seconds();
     snapshot.stats = stats_;
     snapshot.stats.entity_count = simulation_.world().entity_count();
@@ -178,6 +160,14 @@ void SimulationRunner::loop_body() {
         simulation_.enqueue(batch);
         return !batch.empty();
     };
+    // Speed and pause belong to the simulation (GameClock), so they replay like any other input.
+    const auto read_clock = [&]() -> const time::GameClock& {
+        return simulation_.world().ctx().get<time::GameClock>();
+    };
+    const auto tick_rate = [&](std::uint8_t speed) {
+        return static_cast<double>(config_.time.base_tick_rate) *
+               static_cast<double>(config_.time.speed_multipliers[speed]);
+    };
 
     // Ticks are scheduled as origin + (n + 1) * interval, a multiplication rather than a running sum, so
     // the schedule does not accumulate rounding error. The origin is reset whenever the pace changes.
@@ -190,21 +180,22 @@ void SimulationRunner::loop_body() {
         // Read the stimulus counter first, then the state it covers. Anything that arrives later bumps the
         // counter again and (via the sticky interrupt or the wait predicate) brings us around once more.
         std::uint64_t seq = 0;
-        std::uint8_t speed = 0;
-        bool paused = false;
         {
             const std::lock_guard lock(mutex_);
             seq = stimulus_seq_;
-            speed = speed_;
-            paused = paused_;
         }
+        drain_into_simulation();
 
-        if (paused) {
-            // Commands still apply, without advancing the tick, so the UI can see their effect.
-            if (drain_into_simulation()) {
+        if (read_clock().paused) {
+            // Commands still apply, without advancing the tick, so the UI can see their effect. One of them
+            // may be the TogglePause that ends the pause.
+            if (simulation_.pending_command_count() > 0) {
                 simulation_.apply_commands_only();
             }
-            publish_snapshot(speed, true);
+            publish_snapshot(); // the UI sees the commands' effects, including a pause that just ended
+            if (!read_clock().paused) {
+                continue; // unpaused: go around again and start ticking
+            }
             need_rebase = true; // no catch-up burst for the time spent paused
 
             std::unique_lock lock(mutex_);
@@ -216,6 +207,7 @@ void SimulationRunner::loop_body() {
             continue;
         }
 
+        const std::uint8_t speed = read_clock().speed;
         if (need_rebase || speed != origin_speed) {
             origin = clock_.now_seconds();
             ticks_since_origin = 0;
@@ -223,7 +215,7 @@ void SimulationRunner::loop_body() {
             need_rebase = false;
         }
 
-        const double interval = 1.0 / config_.ticks_per_second[speed];
+        const double interval = 1.0 / tick_rate(speed);
         const auto next_deadline = [&] {
             return origin + static_cast<double>(ticks_since_origin + 1) * interval;
         };
@@ -237,6 +229,7 @@ void SimulationRunner::loop_body() {
 
         // Due. Run what is owed, but never more than max_catchup_ticks in a row.
         std::uint32_t ran = 0;
+        bool pace_changed = false;
         while (ran < config_.max_catchup_ticks && !stop_.load() && clock_.now_seconds() >= next_deadline()) {
             drain_into_simulation();
             const double started = clock_.now_seconds();
@@ -245,9 +238,13 @@ void SimulationRunner::loop_body() {
             ++ticks_since_origin;
             ++ran;
             record_tick_stats(started, finished);
-            publish_snapshot(speed, false);
+            publish_snapshot();
+            if (read_clock().paused || read_clock().speed != speed) {
+                pace_changed = true; // a command in that tick changed the pace: start over from the top
+                break;
+            }
         }
-        if (clock_.now_seconds() >= next_deadline()) {
+        if (!pace_changed && clock_.now_seconds() >= next_deadline()) {
             // Still behind: drop the backlog and slow the game down rather than spiral.
             origin = clock_.now_seconds();
             ticks_since_origin = 0;

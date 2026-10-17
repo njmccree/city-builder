@@ -25,5 +25,17 @@ check 'std::chrono'
 # Diagnostics go through CS_LOG_* (citysim/core/log.hpp); stdout belongs to command-line tools.
 check 'std::cout|std::cerr|std::clog|(^|[^A-Za-z0-9_])f?printf[[:space:]]*\(|(^|[^A-Za-z0-9_])puts[[:space:]]*\('
 
+# Test names must be plain ASCII: ctest passes them back through the command line, and on Windows a
+# character such as a section sign is mangled, so the test "matches nothing" and fails.
+tests="$root/sim/tests"
+if [ -d "$tests" ]; then
+    bad_names=$(grep -rnP --include='*.cpp' 'TEST_CASE\("[^"]*[^\x00-\x7F]' "$tests" || true)
+    if [ -n "$bad_names" ]; then
+        echo "lint: non-ASCII character in a TEST_CASE name (breaks ctest on Windows):" >&2
+        echo "$bad_names" >&2
+        status=1
+    fi
+fi
+
 [ "$status" -eq 0 ] && echo "determinism lint: OK"
 exit "$status"

@@ -81,6 +81,26 @@ TEST_CASE("input log text round-trips", "[tools][headless]") {
     REQUIRE(std::holds_alternative<core::NoOp>(back.entries[1].cmd));
 }
 
+TEST_CASE("input log text round-trips the clock commands", "[tools][headless]") {
+    LogFile log;
+    log.seed = 1;
+    log.ticks = 10;
+    log.entries.push_back({3, 1, citysim::time::SetSpeed{3}});
+    log.entries.push_back({4, 2, citysim::time::TogglePause{}});
+
+    std::ostringstream out;
+    write_log_file(out, log);
+    REQUIRE(out.str() == "citysim-input-log 1\nseed 1\nticks 10\n3 1 SetSpeed 3\n4 2 TogglePause\n");
+
+    const LogFile back = read_text(out.str());
+    REQUIRE(back.entries.size() == 2);
+    REQUIRE(std::get<citysim::time::SetSpeed>(back.entries[0].cmd).speed == 3);
+    REQUIRE(std::holds_alternative<citysim::time::TogglePause>(back.entries[1].cmd));
+
+    // Speeds that do not fit the field are rejected by the parser, not wrapped around.
+    REQUIRE_THROWS(read_text("citysim-input-log 1\nseed 1\nticks 1\n1 1 SetSpeed 300\n"));
+}
+
 TEST_CASE("input log reader skips comments and blank lines", "[tools][headless]") {
     const LogFile log =
         read_text("# a comment\n\ncitysim-input-log 1\n\nseed 3\nticks 9\n# note\n5 1 NoOp\n");

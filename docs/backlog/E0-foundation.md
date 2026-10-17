@@ -511,7 +511,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.2.5-loggin
 - Time of day is derived from ticks and `day_length_ticks`.
 - Values come from `defines/time.json`, with built-in defaults as a fallback until content loading exists.
 
-#### [ ] T0.3.1.1 — GameClock: speeds, pause, daily cycle
+#### [x] T0.3.1.1 — GameClock: speeds, pause, daily cycle
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.4.2
 ```
 Task T0.3.1.1 (Story S0.3.1). Read docs/architecture.md §5.3, §6, §7.1.

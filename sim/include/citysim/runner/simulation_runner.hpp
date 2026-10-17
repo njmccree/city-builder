@@ -5,6 +5,7 @@
 #include "citysim/runner/clock.hpp"
 #include "citysim/runner/render_snapshot.hpp"
 #include "citysim/runner/triple_buffer.hpp"
+#include "citysim/time/time_defines.hpp"
 
 #include <array>
 #include <atomic>
@@ -20,9 +21,10 @@
 namespace citysim::runner {
 
 struct RunnerConfig {
-    // Ticks per real second for speed 0 (unused: pause is a separate flag) and speeds 1..3 = 1x, 2x, 4x
-    // (architecture §6). Content will be able to override this table later.
-    std::array<double, 4> ticks_per_second{0.0, 20.0, 40.0, 80.0};
+    // The pace comes from the time defines (architecture §6): ticks per second = base_tick_rate x the
+    // multiplier of the current speed (speed 1..3 = 1x, 2x, 4x by default). Content overrides them through
+    // defines/time.json.
+    time::TimeDefines time;
     // When the runner falls behind it runs at most this many ticks back to back, then drops the backlog
     // so the game slows down instead of spiralling.
     std::uint32_t max_catchup_ticks = 5;
@@ -32,7 +34,10 @@ struct RunnerConfig {
 // only place real time enters the simulation, and it does so only through the IClock it is given. The
 // UI thread talks to it through submit() (in) and latest_snapshot() (out) and nothing else.
 //
-// Threading: submit(), set_speed(), set_paused() may be called from any thread. latest_snapshot() from
+// Speed and pause live in the simulation's GameClock and are changed with SetSpeed / TogglePause commands
+// like every other input, so they are recorded in the input log and replay correctly.
+//
+// Threading: submit() may be called from any thread. latest_snapshot() from
 // ONE consumer thread. simulation() and set_publish_hook() only while the runner is not running.
 class SimulationRunner {
   public:
@@ -58,12 +63,9 @@ class SimulationRunner {
     void stop();
 
     // Queues a command for the next tick (or applies it immediately while paused, without advancing the
-    // tick). Returns its sequence number.
+    // tick). Returns its sequence number. A SetSpeed or TogglePause takes effect from the tick that consumes
+    // it.
     std::uint64_t submit(core::Command cmd);
-
-    // Minimal runner-level controls for now; they will route through commands with the core clock (T0.3.1.1).
-    void set_speed(std::uint8_t speed); // 1..3, else std::out_of_range
-    void set_paused(bool paused);
 
     // The newest published snapshot (a copy). Call from one consumer thread only.
     RenderSnapshot latest_snapshot();
@@ -81,7 +83,7 @@ class SimulationRunner {
 
     void run_loop();
     void loop_body();
-    void publish_snapshot(std::uint8_t speed, bool paused);
+    void publish_snapshot();
     void record_tick_stats(double started, double finished);
     void set_state(State state, std::uint64_t handled_seq, double deadline = 0.0);
     void note_stimulus();
@@ -102,10 +104,8 @@ class SimulationRunner {
     mutable std::mutex mutex_;
     std::condition_variable wake_cv_;  // wakes the runner while paused
     std::condition_variable state_cv_; // wakes wait_until_idle()
-    std::uint8_t speed_ = 1;
-    bool paused_ = false;
-    std::uint64_t stimulus_seq_ = 0; // bumped by every submit / set_speed / set_paused / stop
-    std::uint64_t handled_seq_ = 0;  // the stimulus the runner last fully handled before going idle
+    std::uint64_t stimulus_seq_ = 0;   // bumped by every submit and by stop
+    std::uint64_t handled_seq_ = 0;    // the stimulus the runner last fully handled before going idle
     State state_ = State::Running;
     double sleep_deadline_ = 0.0;
     std::string failure_;

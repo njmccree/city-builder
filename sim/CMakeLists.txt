@@ -14,6 +14,9 @@ add_library(citysim_core STATIC
     src/core/state_hasher.cpp
     src/core/version.cpp
     src/core/world.cpp
+    src/time/clock_system.cpp
+    src/time/game_clock.cpp
+    src/time/time_module.cpp
     src/runner/clock.cpp
     src/runner/simulation_runner.cpp)
 target_include_directories(citysim_core PUBLIC include)
