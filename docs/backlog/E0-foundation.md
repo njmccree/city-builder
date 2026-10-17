@@ -561,7 +561,7 @@ Implement citysim::time::Calendar types:
 Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.3.2-calendar).
 ```
 
-#### [ ] T0.3.2.2 — Era cadence: exact calendar advance per tick
+#### [x] T0.3.2.2 — Era cadence: exact calendar advance per tick
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.3.2.1, T0.4.1.1
 ```
 Task T0.3.2.2 (Story S0.3.2). Read docs/architecture.md §6 and §8.

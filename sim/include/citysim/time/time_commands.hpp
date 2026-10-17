@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace citysim::time {
 
@@ -13,5 +14,10 @@ struct SetSpeed {
 };
 
 struct TogglePause {};
+
+// Switch the calendar to another era's cadence, by content id (e.g. "base:era.modern").
+struct SetEra {
+    std::string era_id;
+};
 
 } // namespace citysim::time

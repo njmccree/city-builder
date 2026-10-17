@@ -28,7 +28,7 @@ struct DebugSetComponentValue {
     std::int32_t value = 0;
 };
 
-using Command = std::variant<NoOp, DebugSetComponentValue, time::SetSpeed, time::TogglePause>;
+using Command = std::variant<NoOp, DebugSetComponentValue, time::SetSpeed, time::TogglePause, time::SetEra>;
 
 struct SequencedCommand {
     std::uint64_t sequence = 0;   // assigned by CommandQueue::submit, strictly increasing
