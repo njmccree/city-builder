@@ -1021,7 +1021,7 @@ final message, list the controls and what the user should try. Follow the Task w
 - The `~` console with a command registry and history.
 - All UI text uses loc keys.
 
-#### [ ] T0.7.2.1 — Debug overlay and speed controls
+#### [x] T0.7.2.1 — Debug overlay and speed controls
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.7.1.1
 ```
 Task T0.7.2.1 (Story S0.7.2). Read CLAUDE.md and docs/architecture.md §9, §11.
