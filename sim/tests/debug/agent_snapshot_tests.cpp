@@ -135,7 +135,9 @@ TEST_CASE("the test map grid is published once and shared between snapshots", "[
     std::size_t blocked = 0;
     for (std::uint32_t index = 0; index < map.cell_count(); ++index) {
         CHECK((*grid->cells)[index] == (map.walkable(index) ? 1 : 0));
-        blocked += map.walkable(index) ? 0 : 1;
+        if (!map.walkable(index)) {
+            ++blocked;
+        }
     }
     CHECK(blocked > 0);
 }

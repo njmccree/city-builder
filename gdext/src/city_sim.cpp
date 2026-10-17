@@ -5,6 +5,8 @@
 #include "command_marshal.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cstdio>
 #include <filesystem>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/translation_server.hpp>
@@ -213,8 +215,10 @@ void CitySim::_process(double) {
         }
         if (event.kind == runner::UiEventKind::StateHash) {
             // Hex text, because a Godot int is signed 64-bit and the hash is unsigned.
-            emit_signal("state_hash_ready", static_cast<int64_t>(event.tick),
-                        godot::String::num_uint64(event.hash, 16).lpad(16, "0"));
+            std::array<char, 17> digits{};
+            std::snprintf(digits.data(), digits.size(), "%016llx",
+                          static_cast<unsigned long long>(event.hash));
+            emit_signal("state_hash_ready", static_cast<int64_t>(event.tick), String::utf8(digits.data()));
             continue;
         }
         String message = to_godot(event.text);
