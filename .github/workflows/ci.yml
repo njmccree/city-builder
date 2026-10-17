@@ -40,8 +40,8 @@ jobs:
         run: cmake --build --preset ${{ matrix.preset }}
       - name: Test
         run: ctest --preset ${{ matrix.preset }}
-      # - name: Validate content (enable when citysim_validate exists)
-      #   run: build/${{ matrix.preset }}/sim/tools/validate/citysim_validate game/content
+      - name: Validate content
+        run: build/${{ matrix.preset }}/sim/tools/validate/citysim_validate game/content --strict
       # - name: Godot smoke test (enable when game/tests/smoke.gd exists)
       #   run: godot --headless --path game -s res://tests/smoke.gd
 

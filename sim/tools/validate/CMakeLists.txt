@@ -1,0 +1,29 @@
+add_executable(citysim_validate main.cpp)
+target_link_libraries(citysim_validate PRIVATE citysim_core)
+citysim_set_warnings(citysim_validate)
+
+if(CITYSIM_BUILD_TESTS)
+    set(fixtures ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/fixtures/content)
+    set(runner ${CMAKE_CURRENT_SOURCE_DIR}/test_validate.cmake)
+    function(validate_test name expected_exit)
+        add_test(NAME validate_${name}
+            COMMAND ${CMAKE_COMMAND} -DVALIDATE=$<TARGET_FILE:citysim_validate> -DEXPECTED_EXIT=${expected_exit}
+                    "-DARGS=${ARGN}" -P ${runner})
+    endfunction()
+
+    # The shipped base game must always validate, with warnings counted as errors.
+    validate_test(base_game_content_is_valid 0 ${CMAKE_SOURCE_DIR}/game/content --strict)
+    validate_test(accepts_good_content 0 ${fixtures}/happy)
+    validate_test(accepts_several_mods 0 ${fixtures}/multi)
+    validate_test(accepts_resolved_references 0 ${fixtures}/refs_ok)
+    validate_test(rejects_duplicate_ids 1 ${fixtures}/duplicate_id)
+    validate_test(rejects_unresolved_references 1 ${fixtures}/refs_bad)
+    validate_test(rejects_failed_validation 1 ${fixtures}/validation_fail)
+    validate_test(rejects_bad_time_values 1 ${fixtures}/time_values_bad)
+    validate_test(warnings_pass_by_default 0 ${fixtures}/unknown_field)
+    validate_test(warnings_fail_in_strict_mode 1 ${fixtures}/unknown_field --strict)
+    validate_test(usage_error_without_arguments 2)
+    validate_test(usage_error_for_unknown_option 2 ${fixtures}/happy --bogus)
+    validate_test(missing_directory_is_an_error 2 ${fixtures}/does_not_exist)
+    validate_test(directory_without_mods_is_an_error 2 ${CMAKE_CURRENT_SOURCE_DIR})
+endif()

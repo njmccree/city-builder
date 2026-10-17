@@ -1,0 +1,14 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "test:era.colour",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 1,
+      "colour": "red"
+    }
+  ]
+}

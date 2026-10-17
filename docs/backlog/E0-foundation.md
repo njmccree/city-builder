@@ -615,7 +615,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md; last task of S0.3.2, so op
 - The `citysim_validate` CLI runs in CI.
 - Base era definitions exist.
 
-#### [ ] T0.4.1.1 — Content loader and DefRegistry
+#### [x] T0.4.1.1 — Content loader and DefRegistry
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.1.1
 ```
 Task T0.4.1.1 (Story S0.4.1). Read docs/architecture.md §8 carefully.
@@ -640,7 +640,7 @@ Implement namespace citysim::content (single mod root for now; mod layering is T
 Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.4.1-content).
 ```
 
-#### [ ] T0.4.1.2 — References, validation, citysim_validate CLI
+#### [x] T0.4.1.2 — References, validation, citysim_validate CLI
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.4.1.1
 ```
 Task T0.4.1.2 (Story S0.4.1). Read docs/architecture.md §8 and §13.
@@ -658,7 +658,7 @@ Task T0.4.1.2 (Story S0.4.1). Read docs/architecture.md §8 and §13.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.4.1.3 — Author base era definitions and time defines (data entry)
+#### [x] T0.4.1.3 — Author base era definitions and time defines (data entry)
 - **Model:** **Haiku** · **Session:** [Cloud] · **Depends on:** T0.4.1.2
 ```
 Task T0.4.1.3 (Story S0.4.1, last task). Data entry only — do not change C++ code.
