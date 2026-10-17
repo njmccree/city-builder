@@ -71,14 +71,14 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
                 debug::install(simulation, skeleton);
             }
         });
-        std::vector<SimulationRunner::PublishHook> hooks = request.publish_hooks;
+        std::vector<SimulationRunner::PublishHook> all_hooks = request.publish_hooks;
         if (test_map_size > 0) {
-            hooks.emplace_back(&debug::publish_agent_snapshot);
-            hooks.emplace_back(debug::TestMapPublisher{});
+            all_hooks.emplace_back(&debug::publish_agent_snapshot);
+            all_hooks.emplace_back(debug::TestMapPublisher{});
         }
-        if (!hooks.empty()) {
+        if (!all_hooks.empty()) {
             session->runner_->set_publish_hook(
-                [hooks = std::move(hooks)](core::Simulation& simulation, RenderSnapshot& snapshot) {
+                [hooks = std::move(all_hooks)](core::Simulation& simulation, RenderSnapshot& snapshot) {
                     for (const SimulationRunner::PublishHook& hook : hooks) {
                         hook(simulation, snapshot);
                     }

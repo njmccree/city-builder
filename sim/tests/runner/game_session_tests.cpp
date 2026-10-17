@@ -216,13 +216,11 @@ struct AgentGame {
         runner().submit(core::RequestStateHash{});
         REQUIRE(runner().wait_until_idle());
         const runner::RenderSnapshot snapshot = outcome.session->latest_snapshot();
-        for (const runner::UiEvent& event : snapshot.ui_events) {
-            if (event.kind == runner::UiEventKind::StateHash) {
-                return {event.hash, event.tick};
-            }
-        }
-        FAIL("no StateHash event");
-        return {0, 0};
+        const auto found = std::find_if(
+            snapshot.ui_events.begin(), snapshot.ui_events.end(),
+            [](const runner::UiEvent& event) { return event.kind == runner::UiEventKind::StateHash; });
+        REQUIRE(found != snapshot.ui_events.end());
+        return {found->hash, found->tick};
     }
 };
 

@@ -86,12 +86,13 @@ void install(core::Simulation& simulation, const TimeDefines& defines) {
                             cmd.day_length_ticks);
                 return;
             }
-            auto& defines = context.world.ctx().get<TimeDefines>();
-            defines.movement_scale = cmd.movement_scale;
-            defines.day_length_ticks = cmd.day_length_ticks;
+            // Not called `defines`: that is install()'s parameter, and -Wshadow would object.
+            auto& live_defines = context.world.ctx().get<TimeDefines>();
+            live_defines.movement_scale = cmd.movement_scale;
+            live_defines.day_length_ticks = cmd.day_length_ticks;
             // A shorter day must not leave the clock past its end.
             auto& clock = context.world.ctx().get<GameClock>();
-            clock.day_tick %= defines.day_length_ticks;
+            clock.day_tick %= live_defines.day_length_ticks;
         });
     simulation.dispatcher().register_handler<TogglePause>([](core::TickContext& context, const TogglePause&) {
         auto& clock = context.world.ctx().get<GameClock>();
