@@ -1,5 +1,8 @@
 #include "citysim/core/scheduler.hpp"
 
+#include "citysim/core/log.hpp"
+#include "citysim/profiling/profile.hpp"
+
 #include <stdexcept>
 #include <string>
 
@@ -22,6 +25,7 @@ ISystem& Scheduler::add(Phase phase, std::unique_ptr<ISystem> system) {
     // on_register leaves the scheduler unchanged.
     system->on_register(world_);
 
+    CS_LOG_DEBUG(Core, "registered system '{}' in phase {}", system->name(), phase_name(phase));
     auto& list = phases_[static_cast<std::size_t>(phase)];
     list.push_back(std::move(system));
     return *list.back();
@@ -32,7 +36,10 @@ void Scheduler::run_phase(Phase phase, TickContext& context, SystemObserver* obs
         if (observer != nullptr) {
             observer->before_system(phase, system->name());
         }
-        system->update(context);
+        {
+            CS_PROFILE_ZONE_DYNAMIC(system->name());
+            system->update(context);
+        }
         if (observer != nullptr) {
             observer->after_system(phase, system->name());
         }

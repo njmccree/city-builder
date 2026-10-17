@@ -93,6 +93,14 @@
         "CMAKE_SHARED_LINKER_FLAGS": "-fsanitize=thread",
         "CITYSIM_WARNINGS_AS_ERRORS": "ON"
       }
+    },
+    {
+      "name": "linux-tracy",
+      "inherits": "linux-debug",
+      "description": "Debug build with Tracy profiler zones enabled.",
+      "cacheVariables": {
+        "CITYSIM_TRACY": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -127,6 +135,10 @@
     {
       "name": "linux-tsan",
       "configurePreset": "linux-tsan"
+    },
+    {
+      "name": "linux-tracy",
+      "configurePreset": "linux-tracy"
     }
   ],
   "testPresets": [
@@ -187,6 +199,13 @@
       },
       "environment": {
         "TSAN_OPTIONS": "halt_on_error=1 second_deadlock_stack=1"
+      }
+    },
+    {
+      "name": "linux-tracy",
+      "configurePreset": "linux-tracy",
+      "output": {
+        "outputOnFailure": true
       }
     }
   ]

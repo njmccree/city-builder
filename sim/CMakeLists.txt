@@ -7,6 +7,7 @@ add_library(citysim_core STATIC
     src/core/input_log.cpp
     src/core/isystem.cpp
     src/core/job_system.cpp
+    src/core/log.cpp
     src/core/rng.cpp
     src/core/scheduler.cpp
     src/core/simulation.cpp
@@ -19,10 +20,15 @@ target_include_directories(citysim_core PUBLIC include)
 target_compile_features(citysim_core PUBLIC cxx_std_20)
 find_package(Threads REQUIRED)
 target_link_libraries(citysim_core
-    PUBLIC Threads::Threads
-    PUBLIC EnTT::EnTT nlohmann_json::nlohmann_json
-    PRIVATE spdlog::spdlog zstd::libzstd xxHash::xxhash)
+    PUBLIC Threads::Threads EnTT::EnTT nlohmann_json::nlohmann_json spdlog::spdlog
+    PRIVATE zstd::libzstd xxHash::xxhash)
 citysim_set_warnings(citysim_core)
+
+# Profiler zones compile to nothing unless this is on (see citysim/profiling/profile.hpp).
+if(CITYSIM_TRACY)
+    target_link_libraries(citysim_core PUBLIC Tracy::TracyClient)
+    target_compile_definitions(citysim_core PUBLIC CITYSIM_TRACY_ENABLED=1)
+endif()
 
 # Tools come first: the unit tests also link the headless support library when it exists.
 if(CITYSIM_BUILD_TOOLS)

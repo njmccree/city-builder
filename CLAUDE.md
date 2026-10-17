@@ -39,6 +39,7 @@ Read the architecture sections that a Task cites before writing code.
   - headers use `#pragma once`
 - One class per header/source pair. Public headers go in `sim/include/citysim/<module>/`, implementations in `sim/src/<module>/`, tests in `sim/tests/<module>/`.
 - GDScript: follow the official Godot style guide, use static typing everywhere (`var x: int`), and `class_name` for reusable scripts.
+- Diagnostics in `sim/` use `CS_LOG_*(Category, ...)` from `citysim/core/log.hpp`, never `std::cout`/`printf` (the lint enforces it). Log arguments must have no side effects. Profiler zones use `CS_PROFILE_ZONE`.
 - Comments explain *why*. Each system's header comment states which clock it runs on (architecture §6).
 
 ## Build & test

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Grep-based determinism lint (docs/architecture.md §4). Run from anywhere; exits non-zero on violations.
+# Grep-based lint (docs/architecture.md §4). Run from anywhere; exits non-zero on violations.
 # runner/ and profiling/ may use wall-clock time for pacing and profiling.
 set -uo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -22,6 +22,8 @@ check '(^|[^A-Za-z0-9_])rand[[:space:]]*\('
 check 'std::random_device'
 check '#[[:space:]]*include[[:space:]]*<random>'
 check 'std::chrono'
+# Diagnostics go through CS_LOG_* (citysim/core/log.hpp); stdout belongs to command-line tools.
+check 'std::cout|std::cerr|std::clog|(^|[^A-Za-z0-9_])f?printf[[:space:]]*\(|(^|[^A-Za-z0-9_])puts[[:space:]]*\('
 
 [ "$status" -eq 0 ] && echo "determinism lint: OK"
 exit "$status"
