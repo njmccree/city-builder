@@ -113,6 +113,16 @@
       }
     },
     {
+      "name": "ci-windows-gdext",
+      "inherits": "ci-windows",
+      "description": "CI: build only the GDExtension library on Windows (no Godot run); the unit tests are covered by ci-windows.",
+      "cacheVariables": {
+        "CITYSIM_BUILD_GDEXT": "ON",
+        "CITYSIM_BUILD_TESTS": "OFF",
+        "CITYSIM_BUILD_TOOLS": "OFF"
+      }
+    },
+    {
       "name": "windows-debug-gdext",
       "inherits": "windows-debug",
       "description": "Debug build that also builds the GDExtension library into game/bin/ (needs the godot-cpp submodule).",
@@ -157,6 +167,10 @@
     {
       "name": "ci-windows",
       "configurePreset": "ci-windows"
+    },
+    {
+      "name": "ci-windows-gdext",
+      "configurePreset": "ci-windows-gdext"
     },
     {
       "name": "linux-tsan",

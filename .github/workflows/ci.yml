@@ -96,6 +96,11 @@ jobs:
         run: cmake --build --preset ci-windows
       - name: Test
         run: ctest --preset ci-windows
+      # Build only: the Godot smoke test runs on Linux CI. This catches MSVC-only errors in the bridge.
+      - name: Configure GDExtension
+        run: cmake --preset ci-windows-gdext -DFETCHCONTENT_BASE_DIR="$env:FETCHCONTENT_BASE_DIR"
+      - name: Build GDExtension
+        run: cmake --build --preset ci-windows-gdext --target citysim_gdext
 
   lint:
     runs-on: ubuntu-latest
