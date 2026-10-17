@@ -75,6 +75,11 @@ class Simulation {
     const Scheduler& scheduler() const { return scheduler_; }
     const EventBus& events() const { return events_; }
 
+    // Applies the pending commands now, without running a tick or advancing tick(): used by the runner
+    // while the game is paused so the UI can see the effect. Only the dispatcher runs: no systems, and
+    // events emitted by handlers are discarded, since nothing is listening between ticks.
+    void apply_commands_only();
+
     // Called by the runner between ticks with commands drained from a CommandQueue. They are applied
     // in sequence order during the next step(), whatever order they arrive in. Simulation itself is
     // not thread-safe: only the thread that calls step() may call this.

@@ -25,6 +25,13 @@ void Simulation::step() {
     ++tick_;
 }
 
+void Simulation::apply_commands_only() {
+    TickContext context{world_, tick_, rng::RngContext{world_seed_, tick_}, jobs_, events_};
+    events_.begin_phase();
+    apply_commands(context);
+    events_.clear();
+}
+
 void Simulation::enqueue(std::vector<SequencedCommand> commands) {
     pending_commands_.insert(pending_commands_.end(), std::make_move_iterator(commands.begin()),
                              std::make_move_iterator(commands.end()));

@@ -12,7 +12,9 @@ add_library(citysim_core STATIC
     src/core/simulation.cpp
     src/core/state_hasher.cpp
     src/core/version.cpp
-    src/core/world.cpp)
+    src/core/world.cpp
+    src/runner/clock.cpp
+    src/runner/simulation_runner.cpp)
 target_include_directories(citysim_core PUBLIC include)
 target_compile_features(citysim_core PUBLIC cxx_std_20)
 find_package(Threads REQUIRED)

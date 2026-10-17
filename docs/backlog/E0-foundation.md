@@ -440,7 +440,7 @@ Also run the tests under ThreadSanitizer: add a linux-tsan preset (clang, -fsani
 Follow the Task workflow in CLAUDE.md (branch story/S0.2.4-threading).
 ```
 
-#### [ ] T0.2.4.2 ★ — SimulationRunner and snapshot triple buffer
+#### [x] T0.2.4.2 ★ — SimulationRunner and snapshot triple buffer
 - **Model:** **Opus** · **Session:** [Cloud] · **Depends on:** T0.2.4.1
 ```
 Task T0.2.4.2 (Story S0.2.4, last task). Architecture-critical. Read docs/architecture.md §6, §7.1, §7.3.
