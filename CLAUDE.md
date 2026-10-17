@@ -74,3 +74,11 @@ ctest --preset windows-debug --output-on-failure
 - **Session tags:**
   - `[Cloud]` Tasks need only build and test.
   - `[PC]` Tasks need the Godot editor, a GPU, or Windows. Don't claim visual or manual verification you could not perform; say what the user should check instead.
+
+## Response format
+End every reply to the user with these five sections, in this order, in plain language. Assume the user hasn't read the code.
+1. **What changed:** the files, commits or PRs touched and what each change does ("nothing" if nothing changed).
+2. **Status:** what passed, what failed, what couldn't be verified. Report test and CI results as they are, with the failing output if something failed. Don't claim visual or manual checks you didn't perform.
+3. **Action needed from you:** the exact commands, where to run them (which terminal and folder), and what to click or look for ("none" if nothing).
+4. **What's next:** the next Task id, a one-line description, and whether it needs the user at the editor.
+5. **Overall progress:** where we are in the Epic, with Tasks done out of total.
