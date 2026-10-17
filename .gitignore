@@ -8,6 +8,7 @@ game/.godot/
 # Built extension libraries; the .gdextension descriptor next to them is source.
 game/bin/*
 !game/bin/citysim.gdextension
+!game/bin/citysim.gdextension.uid
 *.import
 
 # IDEs (keep the recommended-extensions list)

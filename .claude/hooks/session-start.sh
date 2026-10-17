@@ -72,23 +72,10 @@ fi
 godot_version=$(awk -F'|' '$2 ~ /^ *Godot *$/ {gsub(/ /, "", $3); print $3}' docs/versions.md)
 if [ -z "$godot_version" ] || [ "$godot_version" = "TBD" ]; then
     log "Godot version not pinned in docs/versions.md (TBD); skipping Godot download"
+elif tools/install_godot.sh; then
+    log "Godot $godot_version ready (tools/godot.sh)"
 else
-    dir="$HOME/.cache/citysim/godot/$godot_version"
-    if ls "$dir"/Godot_v* >/dev/null 2>&1; then
-        log "Godot $godot_version already cached"
-    else
-        mkdir -p "$dir"
-        zip="Godot_v${godot_version}-stable_linux.x86_64.zip"
-        url="https://github.com/godotengine/godot/releases/download/${godot_version}-stable/${zip}"
-        if curl -fsSL "$url" -o "$dir/$zip" && python3 -I -m zipfile -e "$dir/$zip" "$dir" 2>/dev/null; then
-            chmod +x "$dir"/Godot_v*linux.x86_64 2>/dev/null || true
-            rm -f "$dir/$zip"
-            log "Godot $godot_version cached in $dir"
-        else
-            rm -f "$dir/$zip"
-            warn "could not download Godot $godot_version"
-        fi
-    fi
+    warn "could not download Godot $godot_version"
 fi
 
 exit 0

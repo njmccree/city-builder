@@ -42,8 +42,39 @@ jobs:
         run: ctest --preset ${{ matrix.preset }}
       - name: Validate content
         run: build/${{ matrix.preset }}/sim/tools/validate/citysim_validate game/content --strict
-      # - name: Godot smoke test (enable when game/tests/smoke.gd exists)
-      #   run: godot --headless --path game -s res://tests/smoke.gd
+
+  # The C++ simulation running inside Godot: build the GDExtension, load it in a headless editor and check that
+  # GDScript can call into the core. Kept apart from the matrix above because building godot-cpp is slow.
+  godot:
+    runs-on: ubuntu-latest
+    env:
+      FETCHCONTENT_BASE_DIR: ${{ github.workspace }}/.fetchcontent
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Cache FetchContent downloads
+        uses: actions/cache@v4
+        with:
+          path: .fetchcontent
+          key: fetchcontent-linux-${{ hashFiles('cmake/Dependencies.cmake') }}
+      - name: Cache the Godot editor
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/citysim/godot
+          key: godot-${{ hashFiles('docs/versions.md') }}
+      - name: Configure
+        run: cmake --preset ci-linux-gdext -DFETCHCONTENT_BASE_DIR="$FETCHCONTENT_BASE_DIR"
+      - name: Build the GDExtension
+        run: cmake --build --preset ci-linux-gdext --target citysim_gdext
+      - name: Install Godot
+        run: tools/install_godot.sh
+      - name: Import the project
+        run: tools/godot.sh --headless --path game --import
+      - name: Godot smoke test
+        run: tools/godot.sh --headless --path game -s res://tests/smoke.gd
 
   windows:
     runs-on: windows-latest

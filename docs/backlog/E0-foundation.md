@@ -881,7 +881,7 @@ Verify the Linux build of the extension succeeds in this session. Follow the Tas
 (branch story/S0.6.1-gdext).
 ```
 
-#### [ ] T0.6.1.2 — Godot project skeleton and headless smoke test
+#### [x] T0.6.1.2 — Godot project skeleton and headless smoke test
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.6.1.1
 ```
 Task T0.6.1.2 (Story S0.6.1). Read docs/architecture.md §2 and §11. Godot files must be hand-written as
