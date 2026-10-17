@@ -21,7 +21,7 @@ core::SequencedCommand command(std::uint64_t sequence, core::Command cmd) {
 }
 } // namespace
 
-TEST_CASE("defaults match architecture §6", "[time][clock]") {
+TEST_CASE("time defaults match the architecture time model", "[time][clock]") {
     const TimeDefines defines;
     REQUIRE(defines.base_tick_rate == 20);
     REQUIRE(defines.speed_multipliers == std::array<std::uint32_t, 4>{0, 1, 2, 4});
