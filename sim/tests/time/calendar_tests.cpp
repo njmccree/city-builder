@@ -1,6 +1,7 @@
 #include "citysim/core/rng.hpp"
 #include "citysim/time/calendar.hpp"
 
+#include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 #include <limits>
 #include <stdexcept>
@@ -139,13 +140,11 @@ TEST_CASE("years far outside the usual range still work, and overflow is an erro
 
 TEST_CASE("dates format as keys and arguments, with BCE numbering", "[time][calendar]") {
     const auto arg = [](const FormattedDate& f, const std::string& name) {
-        for (const auto& a : f.args) {
-            if (a.name == name) {
-                return a;
-            }
-        }
-        FAIL("missing argument " << name);
-        return FormattedDateArg{};
+        const auto found = std::find_if(f.args.begin(), f.args.end(),
+                                        [&](const FormattedDateArg& a) { return a.name == name; });
+        INFO("looking for argument " << name);
+        REQUIRE(found != f.args.end());
+        return *found;
     };
 
     // Year 0 is 1 BCE; year -2999 is 3000 BCE.
