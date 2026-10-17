@@ -1103,7 +1103,7 @@ production-quality *engineering* (deterministic, tested, uses the job system):
 Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.8.1-walking-skeleton).
 ```
 
-#### [ ] T0.8.1.2 — Agent snapshot channel and headless benchmark
+#### [x] T0.8.1.2 — Agent snapshot channel and headless benchmark
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.8.1.1
 ```
 Task T0.8.1.2 (Story S0.8.1). Read docs/architecture.md §7.3, §13, §14.
