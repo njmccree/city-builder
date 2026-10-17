@@ -14,8 +14,10 @@ config/name="CityBuilder (working title)"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
-; Autoloads are added in T0.6.2.1 (the `Sim` singleton wrapping the CitySim node).
+; `Sim` wraps the CitySim node; the UI talks to it and never to the simulation directly.
 [autoload]
+
+Sim="*res://scripts/autoload/sim.gd"
 
 [debug]
 

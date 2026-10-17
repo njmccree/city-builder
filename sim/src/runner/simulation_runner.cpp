@@ -4,6 +4,7 @@
 #include "citysim/core/log.hpp"
 #include "citysim/save/save_format_error.hpp"
 #include "citysim/save/simulation_io.hpp"
+#include "citysim/time/calendar_state.hpp"
 #include "citysim/time/game_clock.hpp"
 #include "citysim/time/time_module.hpp"
 
@@ -174,7 +175,16 @@ void SimulationRunner::publish_snapshot() {
     snapshot.published_at = clock_.now_seconds();
     snapshot.stats = stats_;
     snapshot.stats.entity_count = simulation_->world().entity_count();
+    snapshot.has_date = false;
+    if (const auto* calendar = simulation_->world().ctx().find<time::CalendarState>()) {
+        const auto& defines = simulation_->world().ctx().get<time::TimeDefines>();
+        snapshot.has_date = true;
+        snapshot.date = time::current_date(*calendar);
+        snapshot.hour = static_cast<std::uint8_t>(time::hour(game_clock, defines));
+        snapshot.minute = static_cast<std::uint8_t>(time::minute(game_clock, defines));
+    }
     snapshot.ui_events.clear(); // the slot holds an older snapshot's data
+    snapshot.channels.clear();
     const std::uint64_t consumed = consumed_event_serial_.load();
     std::erase_if(pending_ui_events_, [consumed](const UiEvent& event) { return event.serial <= consumed; });
     snapshot.ui_events = pending_ui_events_; // a copy: they stay until the consumer has read them
@@ -313,6 +323,8 @@ void SimulationRunner::loop_body() {
     std::uint8_t origin_speed = 0;
     bool need_rebase = true;
     bool rearm_autosave = true; // at the start, after a pause and after a load
+
+    publish_snapshot(); // so the front end has the starting state (tick 0, the date) before the first tick
 
     while (!stop_.load()) {
         // Read the stimulus counter first, then the state it covers. Anything that arrives later bumps the

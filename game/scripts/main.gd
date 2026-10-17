@@ -1,8 +1,11 @@
 extends Node
-## Entry scene. For now it only proves the C++ simulation is reachable from GDScript.
+## Entry scene. Starts a new game with the default content and reports what the simulation does.
 
 
 func _ready() -> void:
-	var sim: CitySim = CitySim.new()
-	print("CitySim core version: ", sim.get_core_version())
-	sim.free()
+	var result: Dictionary = Sim.new_game()
+	if not result["ok"]:
+		printerr("The game could not start; see the errors above.")
+		return
+	print("CitySim core version: ", Sim.core.get_core_version())
+	Sim.date_changed.connect(func(text: String) -> void: print("Date: ", text))

@@ -928,7 +928,7 @@ example, the editor Output panel). Follow the Task workflow in CLAUDE.md; last t
 - Snapshot interpolation alpha is available.
 - Command dictionaries are validated in C++.
 
-#### [ ] T0.6.2.1 — CitySim API and Sim autoload
+#### [x] T0.6.2.1 — CitySim API and Sim autoload
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.6.1.3
 ```
 Task T0.6.2.1 (Story S0.6.2). Read docs/architecture.md §5.3, §7, §11.
@@ -957,7 +957,7 @@ Extend the CitySim GDExtension class (gdext/src/city_sim.*):
 Run the smoke test headless. Follow the Task workflow in CLAUDE.md (branch story/S0.6.2-sim-api).
 ```
 
-#### [ ] T0.6.2.2 — Snapshot access and interpolation for renderers
+#### [x] T0.6.2.2 — Snapshot access and interpolation for renderers
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.6.2.1
 ```
 Task T0.6.2.2 (Story S0.6.2, last task). Read docs/architecture.md §7.3 and §11.

@@ -4,7 +4,7 @@
 		The game's connection to the C++ simulation.
 	</brief_description>
 	<description>
-		The one node GDScript uses to control and observe the simulation (architecture §11). The game registers it as the autoload [code]Sim[/code]. For now it only reports the version of the simulation core it is linked with.
+		The one node GDScript uses to control and observe the simulation (architecture §11). The game wraps it in the autoload [code]Sim[/code]. It owns the running game: the loaded content and the simulation thread. GDScript submits commands as dictionaries, which are validated in C++, and reads statistics and signals; it never touches simulation state. Call it from the main thread only.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -15,5 +15,90 @@
 				Returns the version of the simulation core library, for example [code]0.0.1[/code].
 			</description>
 		</method>
+		<method name="get_channel" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<param index="0" name="name" type="String" />
+			<description>
+				Returns the snapshot channel called [param name] as a flat array of records, or an empty array if there is none. For debugging: the fast renderers read channels in C++ without copying. The built-in channel [code]debug.clock[/code] has one record of three numbers: tick, speed and paused (0 or 1).
+			</description>
+		</method>
+		<method name="get_interpolation_alpha" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns how far between the previous and the current simulation snapshot it is time to draw this frame, from 0.0 to 1.0. It is 1.0 while the game is paused and when no game runs. It is computed once per frame, so everything drawn in a frame agrees.
+			</description>
+		</method>
+		<method name="get_stats" qualifiers="const">
+			<return type="Dictionary" />
+			<description>
+				Returns [code]{tick, tps, tick_ms_avg, tick_ms_last, entity_count, speed, paused, date_text, time_text}[/code] from the newest snapshot. All numbers are 0 and the texts empty before a game starts.
+			</description>
+		</method>
+		<method name="is_running" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] while a game started with [method new_game] is running.
+			</description>
+		</method>
+		<method name="new_game">
+			<return type="Dictionary" />
+			<param index="0" name="seed" type="int" />
+			<param index="1" name="content_roots" type="PackedStringArray" />
+			<param index="2" name="enabled_mods" type="PackedStringArray" />
+			<param index="3" name="era_id" type="String" />
+			<description>
+				Loads the content found under [param content_roots] ([code]res://[/code] and [code]user://[/code] paths are fine), starts a game in the era [param era_id] and its simulation thread, replacing a running game. [param enabled_mods] lists the mods to load; empty means the ones enabled by default. Returns [code]{ok, errors, warnings}[/code]; on failure [code]errors[/code] says what is wrong and no game is running.
+			</description>
+		</method>
+		<method name="shutdown">
+			<return type="void" />
+			<description>
+				Stops the simulation thread and ends the game. Does nothing if no game is running.
+			</description>
+		</method>
+		<method name="submit_command">
+			<return type="bool" />
+			<param index="0" name="command" type="Dictionary" />
+			<description>
+				Validates [param command] in C++ and queues it for the next tick. Returns [code]false[/code], after printing the reason with [method @GlobalScope.push_error], if it was not accepted. Commands: [code]{"type": "set_speed", "speed": 1..3}[/code], [code]{"type": "toggle_pause"}[/code], [code]{"type": "set_era", "era_id": "base:era.modern"}[/code], [code]{"type": "save_game", "path": "user://saves/a.csav"}[/code] and [code]{"type": "load_game", "path": "..."}[/code]. [code]true[/code] means queued, not done: the result of a save or load arrives as a signal.
+			</description>
+		</method>
 	</methods>
+	<signals>
+		<signal name="date_changed">
+			<param index="0" name="text" type="String" />
+			<description>
+				Emitted when the calendar day changes, with the date written in the current language.
+			</description>
+		</signal>
+		<signal name="load_completed">
+			<param index="0" name="path" type="String" />
+			<param index="1" name="ok" type="bool" />
+			<param index="2" name="message" type="String" />
+			<description>
+				Emitted when a [code]load_game[/code] command has finished. [param message] is the failure reason, or the warnings (for example that the content changed since the save) when [param ok] is [code]true[/code].
+			</description>
+		</signal>
+		<signal name="save_completed">
+			<param index="0" name="path" type="String" />
+			<param index="1" name="ok" type="bool" />
+			<param index="2" name="message" type="String" />
+			<description>
+				Emitted when a [code]save_game[/code] command, or an autosave, has finished. [param message] is the failure reason when [param ok] is [code]false[/code].
+			</description>
+		</signal>
+		<signal name="speed_changed">
+			<param index="0" name="speed" type="int" />
+			<param index="1" name="paused" type="bool" />
+			<description>
+				Emitted when the game speed or the pause state changes (and once when a game starts).
+			</description>
+		</signal>
+		<signal name="tick_advanced">
+			<param index="0" name="tick" type="int" />
+			<description>
+				Emitted when the simulation has advanced to [param tick] since the last frame. Several ticks can pass between two frames.
+			</description>
+		</signal>
+	</signals>
 </class>
