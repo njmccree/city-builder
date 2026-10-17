@@ -1,4 +1,5 @@
 #include "citysim/core/component_registry.hpp"
+#include "citysim/core/state_hasher.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <stdexcept>
@@ -78,5 +79,22 @@ TEST_CASE("registry stores hooks type-erased", "[core][registry]") {
     REQUIRE(with_hook->hash);
     REQUIRE_FALSE(with_hook->serialize);
     REQUIRE_FALSE(registry.find<B>()->hash);
-    // Invoking the hook needs a real StateHasher; the task that implements it adds that coverage.
+    g_hash_calls = 0;
+    StateHasher hasher;
+    const A value;
+    with_hook->hash(hasher, &value);
+    REQUIRE(g_hash_calls == 1);
+}
+
+TEST_CASE("registry stores singletons sorted by name with duplicate checks", "[core][registry]") {
+    ComponentRegistry registry;
+    registry.register_singleton<C>("core.Zed", {});
+    registry.register_singleton<A>("core.Clock", {});
+
+    REQUIRE(registry.singletons().size() == 2);
+    REQUIRE(registry.singletons()[0].name == "core.Clock");
+    REQUIRE(registry.find_singleton("core.Zed") != nullptr);
+    REQUIRE(registry.find_singleton("core.Nope") == nullptr);
+    REQUIRE_THROWS_AS(registry.register_singleton<B>("core.Zed", {}), std::logic_error);
+    REQUIRE_THROWS_AS(registry.register_singleton<A>("core.Other", {}), std::logic_error);
 }

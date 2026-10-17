@@ -272,7 +272,7 @@ Follow the Task workflow in CLAUDE.md (branch story/S0.2.1-world); last task of 
 - The RNG API matches architecture §5.4, with golden-value tests.
 - `World::state_hash()` covers every registered component in a deterministic order.
 
-#### [ ] T0.2.2.1 — Deterministic RNG
+#### [x] T0.2.2.1 — Deterministic RNG
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.1.1
 ```
 Task T0.2.2.1 (Story S0.2.2). Read CLAUDE.md and docs/architecture.md §4 and §5.4.
@@ -302,7 +302,7 @@ Tests (sim/tests/core/rng_tests.cpp):
 Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.2.2-rng-hash).
 ```
 
-#### [ ] T0.2.2.2 — State hashing
+#### [x] T0.2.2.2 — State hashing
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.2.1
 ```
 Task T0.2.2.2 (Story S0.2.2, last task). Read docs/architecture.md §4, §5.1, §13.
