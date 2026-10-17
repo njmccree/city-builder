@@ -1,6 +1,6 @@
 // citysim_validate: checks game content without starting the game (architecture §8, §13).
 //
-//     citysim_validate <content_root> [--strict]
+//     citysim_validate <content_root> [--strict] [--verbose]
 //
 // <content_root> is either one mod (a folder with mod.json, defs/ or defines/) or a folder of mods. It prints
 // every problem as "path:json_pointer: severity: message" and exits 0 if the content is fine, 1 if there are
@@ -45,8 +45,9 @@ void print_issue(const content::ContentIssue& issue, const char* severity) {
 }
 
 void print_usage(std::ostream& out) {
-    out << "usage: citysim_validate <content_root> [--strict]\n"
-           "  --strict   treat warnings as errors\n";
+    out << "usage: citysim_validate <content_root> [--strict] [--verbose]\n"
+           "  --strict    treat warnings as errors\n"
+           "  --verbose   also list notes, such as unused localization keys\n";
 }
 
 } // namespace
@@ -54,10 +55,13 @@ void print_usage(std::ostream& out) {
 int main(int argc, char** argv) {
     std::vector<std::string_view> args(argv + 1, argv + argc);
     bool strict = false;
+    bool verbose = false;
     std::string root_arg;
     for (const std::string_view arg : args) {
         if (arg == "--strict") {
             strict = true;
+        } else if (arg == "--verbose" || arg == "-v") {
+            verbose = true;
         } else if (arg == "--help" || arg == "-h") {
             print_usage(std::cout);
             return 0;
@@ -100,6 +104,11 @@ int main(int argc, char** argv) {
     }
     for (const content::ContentIssue& issue : result.warnings) {
         print_issue(issue, "warning");
+    }
+    if (verbose) {
+        for (const content::ContentIssue& issue : result.infos) {
+            print_issue(issue, "info");
+        }
     }
     std::cout << database.mods().size() << " mod(s) checked: " << result.errors.size() << " error(s), "
               << result.warnings.size() << " warning(s)\n";

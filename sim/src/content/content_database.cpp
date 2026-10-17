@@ -5,7 +5,9 @@
 
 #include <algorithm>
 #include <fstream>
+#include <functional>
 #include <optional>
+#include <set>
 #include <sstream>
 
 namespace citysim::content {
@@ -129,6 +131,7 @@ LoadResult ContentDatabase::load_mods(const ModLoadRequest& request) {
     if (loaded_) {
         throw std::logic_error("ContentDatabase can only load once");
     }
+    check_loc_keys_enabled_ = request.check_localization;
     DiscoveryResult found = discover_mods(request.roots);
     LoadOrderResult order = resolve_load_order(found.mods, request.order);
 
@@ -189,12 +192,25 @@ LoadResult ContentDatabase::load_ordered(const std::vector<ModInfo>& mods, std::
             context.set_def_id(id);
             kind->second->parse_and_add(def.json, id, context);
         }
+        if (check_loc_keys_enabled_) {
+            check_loc_keys(mods, raw, issues);
+        }
     }
     finish(issues);
 
     LoadResult result;
     for (ContentIssue& issue : issues) {
-        (issue.severity == Severity::Error ? result.errors : result.warnings).push_back(std::move(issue));
+        switch (issue.severity) {
+        case Severity::Error:
+            result.errors.push_back(std::move(issue));
+            break;
+        case Severity::Warning:
+            result.warnings.push_back(std::move(issue));
+            break;
+        case Severity::Info:
+            result.infos.push_back(std::move(issue));
+            break;
+        }
     }
     return result;
 }
@@ -223,7 +239,127 @@ void ContentDatabase::finish(std::vector<ContentIssue>& issues) {
     }
 }
 
+void ContentDatabase::collect_loc_files(const ModInfo& mod, std::vector<ContentIssue>& issues) {
+    const fs::path loc_root = mod.root / "loc";
+    for (const fs::path& file : json_files_under(loc_root, mod.root)) {
+        const std::string display = display_path(file, mod.root);
+        ParseContext context(issues);
+        context.set_mod_root(mod.root.generic_string());
+        context.set_file(display);
+        // loc/<lang>/<anything>.json: the language is the first folder under loc/.
+        const fs::path relative = fs::relative(file, loc_root);
+        if (std::distance(relative.begin(), relative.end()) < 2) {
+            context.error("", "localization files go in loc/<language>/, e.g. loc/en/");
+            continue;
+        }
+        const std::string language = relative.begin()->generic_string();
+        const std::optional<nlohmann::json> parsed = read_json_file(file, context);
+        if (!parsed) {
+            continue;
+        }
+        if (!parsed->is_object()) {
+            context.error("", "expected an object of \"key\": \"text\" pairs");
+            continue;
+        }
+        for (const auto& [key, value] : parsed->items()) {
+            if (!value.is_string()) {
+                context.error(context.child_pointer(key), "localization text must be a string");
+                continue;
+            }
+            localizer_.set(language, key, value.get<std::string>());
+            loc_origins_[{language, key}] = {mod.root.generic_string(), display};
+        }
+    }
+}
+
+namespace {
+
+// Calls `visit(pointer, key_text)` for every string field named "*_key" anywhere in `json`, in document order
+// (object members are sorted by name, so the order never depends on how the file was written).
+void for_each_key_field(const nlohmann::json& json, ParseContext& context,
+                        const std::function<void(const std::string&, const std::string&)>& visit) {
+    const std::string here = context.pointer();
+    if (json.is_object()) {
+        for (const auto& [name, value] : json.items()) {
+            context.set_pointer(here);
+            const std::string child = context.child_pointer(name);
+            if (value.is_string() && name.size() > 4 && name.compare(name.size() - 4, 4, "_key") == 0) {
+                visit(child, value.get<std::string>());
+            } else {
+                context.set_pointer(child);
+                for_each_key_field(value, context, visit);
+            }
+        }
+    } else if (json.is_array()) {
+        for (std::size_t i = 0; i < json.size(); ++i) {
+            context.set_pointer(here + "/" + std::to_string(i));
+            for_each_key_field(json[i], context, visit);
+        }
+    }
+    context.set_pointer(here);
+}
+
+} // namespace
+
+// Every "*_key" field must name text in "en" (error), and ideally in every other loaded language (warning).
+// Keys in "en" that nothing refers to are reported as info: code looks some up directly (calendar names, UI),
+// so they are not a problem.
+void ContentDatabase::check_loc_keys(const std::vector<ModInfo>& mods, const RawDefs& raw,
+                                     std::vector<ContentIssue>& issues) const {
+    const std::string en(Localizer::k_fallback_language);
+    std::vector<std::string> other_languages;
+    for (std::string& language : localizer_.languages()) {
+        if (language != en) {
+            other_languages.push_back(std::move(language));
+        }
+    }
+    std::set<std::string> used;
+
+    ParseContext context(issues);
+    const auto check = [&](const std::string& pointer, const std::string& key) {
+        used.insert(key);
+        if (!localizer_.has(en, key)) {
+            context.error(pointer, "localization key '" + key + "' has no text in 'en'");
+            return; // the other languages cannot make up for it
+        }
+        for (const std::string& language : other_languages) {
+            if (!localizer_.has(language, key)) {
+                context.warning(pointer, "localization key '" + key + "' has no text in '" + language + "'");
+            }
+        }
+    };
+
+    for (const ModInfo& mod : mods) {
+        context.set_mod_root(mod.root.generic_string());
+        context.set_file("mod.json");
+        context.set_layering(mod.manifest.id, {mod.manifest.id});
+        context.set_pointer("");
+        if (mod.has_manifest_file) { // a folder accepted without mod.json has no name to look up
+            check("/name_key", mod.manifest.name_key);
+        }
+    }
+    for (const auto& [key, def] : raw) {
+        context.set_file(def.source.file);
+        context.set_mod_root(def.source.mod_root);
+        context.set_layering(def.source.mod_id, def.source.touched_by);
+        context.set_pointer(def.source.pointer);
+        for_each_key_field(def.json, context, check);
+    }
+
+    for (const std::string& key : localizer_.keys(en)) {
+        if (!used.contains(key)) {
+            const auto origin = loc_origins_.find({en, key});
+            const std::string file = origin != loc_origins_.end() ? origin->second.second : "";
+            const std::string root = origin != loc_origins_.end() ? origin->second.first : "";
+            issues.push_back(ContentIssue{Severity::Info, file, "/" + key,
+                                          "localization key '" + key + "' is not used by any definition",
+                                          root});
+        }
+    }
+}
+
 void ContentDatabase::collect_mod_defs(const ModInfo& mod, RawDefs& raw, std::vector<ContentIssue>& issues) {
+    collect_loc_files(mod, issues);
     for (const fs::path& file : json_files_under(mod.root / "defs", mod.root)) {
         collect_defs_file(mod, file, display_path(file, mod.root), raw, issues);
     }

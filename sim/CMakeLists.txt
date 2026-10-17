@@ -1,8 +1,10 @@
 add_library(citysim_core STATIC
     src/content/content_database.cpp
     src/content/content_id.cpp
+    src/content/date_text.cpp
     src/content/era_def.cpp
     src/content/json_merge_patch.cpp
+    src/content/localizer.cpp
     src/content/mod_discovery.cpp
     src/content/mod_load_order.cpp
     src/content/mod_manifest.cpp

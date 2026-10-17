@@ -232,10 +232,10 @@ All of these values are **tunable through content data** (`game/content/base/def
 ## 9. Localization
 
 - Every player-facing string is a key: definitions use `*_key` fields (e.g., `"name_key": "era.ancient.name"`).
-- Tables are stored at `loc/<lang>/*.json` as flat `{ "key": "text" }`, with `{named}` placeholders.
+- Tables are stored at `loc/<lang>/*.json` as flat `{ "key": "text" }`, with `{named}` placeholders (`{{` and `}}` are literal braces; a placeholder with no argument stays visible). Mods load in order, so a later mod's text replaces an earlier one.
 - `Localizer` looks up the current language, falls back to `en`, then falls back to the key itself (visible in debug builds).
 - The Godot UI uses `tr()`. At startup the bridge builds a Godot `Translation` from the loaded tables, so `.tscn` labels hold keys.
-- English only at launch. The validator flags missing `en` keys as errors and missing keys in other languages as warnings.
+- English only at launch. The validator flags missing `en` keys as errors and missing keys in other languages as warnings; `en` keys no definition refers to are reported only with `--verbose` (code looks some up directly, such as calendar names).
 
 ## 10. Save / Load
 

@@ -725,7 +725,7 @@ Run all tests and citysim_validate. Follow the Task workflow in CLAUDE.md (branc
 - The validator checks that every `*_key` exists in `en`.
 - Calendar formatting renders through the Localizer.
 
-#### [ ] T0.4.3.1 — Localizer and key validation
+#### [x] T0.4.3.1 — Localizer and key validation
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.4.2.1, T0.3.2.1
 ```
 Task T0.4.3.1 (Story S0.4.3). Read docs/architecture.md §9.
