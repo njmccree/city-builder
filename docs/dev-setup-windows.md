@@ -76,7 +76,7 @@ This builds the GDExtension into `game\bin\` (`citysim_gdext.windows.editor.x86_
 
 1. Open the editor: `& $env:GODOT_EXE --editor --path game` (or Godot's Project Manager → Import → `game\project.godot`).
 2. Check the **Output** panel: no errors about loading `citysim.gdextension`.
-3. Press **F5**. The Output panel prints the CitySim core version.
+3. Press **F5**. The project's main scene is the temporary simulation test scene (`game/scenes/test_sim.tscn`): a window with the date, speed, tick and timing numbers. Keys: **Space** pause or resume, **1 2 3** speed, **E** next era, **S** save, **L** load, **N** new game. The buttons do the same. The Output panel also prints a line for each thing you do, and the core version is shown when the game starts.
 
 First run on a fresh checkout: Godot 4.7.2 can abort at the end of its first scan when it discovers a GDExtension. Write `.godot\extension_list.cfg` containing `res://bin/citysim.gdextension` first (what `tools/godot_prepare.sh` does on Linux), or just start the editor a second time.
 
