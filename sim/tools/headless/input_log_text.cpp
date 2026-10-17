@@ -24,6 +24,10 @@ struct WriteCommand {
     void operator()(const DebugSetComponentValue& cmd) const {
         out << "DebugSetComponentValue " << cmd.entity << ' ' << cmd.value;
     }
+    void operator()(const citysim::time::SetSpeed& cmd) const {
+        out << "SetSpeed " << static_cast<unsigned>(cmd.speed);
+    }
+    void operator()(const citysim::time::TogglePause&) const { out << "TogglePause"; }
 };
 
 [[noreturn]] void fail(std::size_t line, const std::string& message) {
@@ -65,6 +69,14 @@ Command parse_command(const std::vector<std::string>& tokens, std::size_t line) 
         expect_arg_count(tokens, 2, line);
         return DebugSetComponentValue{parse_number<std::uint32_t>(tokens[3], line, "entity"),
                                       parse_number<std::int32_t>(tokens[4], line, "value")};
+    }
+    if (name == "SetSpeed") {
+        expect_arg_count(tokens, 1, line);
+        return citysim::time::SetSpeed{parse_number<std::uint8_t>(tokens[3], line, "speed")};
+    }
+    if (name == "TogglePause") {
+        expect_arg_count(tokens, 0, line);
+        return citysim::time::TogglePause{};
     }
     fail(line, "unknown command '" + name + "'");
 }

@@ -1,5 +1,7 @@
 #include "citysim/core/state_hasher.hpp"
 #include "citysim/runner/simulation_runner.hpp"
+#include "citysim/time/time_commands.hpp"
+#include "citysim/time/time_module.hpp"
 #include "support/fn_system.hpp"
 
 #include <atomic>
@@ -70,20 +72,26 @@ TEST_CASE("runner: at 1x, one fake second gives 20 ticks", "[runner]") {
 }
 
 TEST_CASE("runner: speeds 2x and 4x give 40 and 80 ticks per fake second", "[runner]") {
-    for (const auto& [speed, ticks] :
+    for (const auto& [speed, ticks_per_second] :
          {std::pair<std::uint8_t, int>{2, 40}, std::pair<std::uint8_t, int>{3, 80}}) {
         FakeClock clock;
         SimulationRunner runner(1, clock, {}, 1);
-        runner.set_speed(speed);
         runner.start();
         REQUIRE(runner.wait_until_idle());
 
-        const double interval = 1.0 / (speed == 2 ? 40.0 : 80.0);
-        for (int k = 1; k <= ticks; ++k) {
-            advance_to(clock, runner, k * interval);
-        }
-        REQUIRE(runner.latest_snapshot().tick == static_cast<std::uint64_t>(ticks));
+        // SetSpeed is a command, so it takes effect in the tick that consumes it: the first tick, at 1x.
+        runner.submit(time::SetSpeed{speed});
+        advance_to(clock, runner, 1.0 / 20.0);
+        REQUIRE(runner.latest_snapshot().tick == 1);
         REQUIRE(runner.latest_snapshot().speed == speed);
+
+        // From there, one fake second at the new speed gives exactly ticks_per_second ticks.
+        const double switch_time = 1.0 / 20.0;
+        const double interval = 1.0 / ticks_per_second;
+        for (int k = 1; k <= ticks_per_second; ++k) {
+            advance_to(clock, runner, switch_time + k * interval);
+        }
+        REQUIRE(runner.latest_snapshot().tick == 1 + static_cast<std::uint64_t>(ticks_per_second));
         runner.stop();
     }
 }
@@ -99,13 +107,15 @@ TEST_CASE("runner: changing speed mid-run restarts the pace from now", "[runner]
     }
     REQUIRE(runner.latest_snapshot().tick == 10);
 
-    runner.set_speed(3); // 4x from t = 0.5
+    runner.submit(time::SetSpeed{3}); // consumed by the next tick, at t = 0.55
     REQUIRE(runner.wait_until_idle());
-    for (int k = 1; k <= 8; ++k) {
-        advance_to(clock, runner, 0.5 + k * (1.0 / 80.0));
-    }
-    REQUIRE(runner.latest_snapshot().tick == 18);
+    advance_to(clock, runner, 0.55);
+    REQUIRE(runner.latest_snapshot().tick == 11);
     REQUIRE(runner.latest_snapshot().speed == 3);
+    for (int k = 1; k <= 8; ++k) { // 4x from t = 0.55
+        advance_to(clock, runner, 0.55 + k * (1.0 / 80.0));
+    }
+    REQUIRE(runner.latest_snapshot().tick == 19);
 }
 
 TEST_CASE("runner: paused makes no progress but still applies commands", "[runner]") {
@@ -120,33 +130,36 @@ TEST_CASE("runner: paused makes no progress but still applies commands", "[runne
     }
     REQUIRE(runner.latest_snapshot().tick == 10);
 
-    runner.set_paused(true);
-    REQUIRE(runner.wait_until_idle());
+    // The pause is a command: it is consumed by the next tick, which still completes, then ticking stops.
+    runner.submit(time::TogglePause{});
+    advance_to(clock, runner, 11 * (1.0 / 20.0));
+    REQUIRE(runner.latest_snapshot().tick == 11);
     REQUIRE(runner.latest_snapshot().paused);
 
     advance_to(clock, runner, 5.0); // a long stretch of fake time while paused
-    REQUIRE(runner.latest_snapshot().tick == 10);
+    REQUIRE(runner.latest_snapshot().tick == 11);
 
     runner.submit(set_counter(42));
     REQUIRE(runner.wait_until_idle());
     const RenderSnapshot while_paused = runner.latest_snapshot();
-    REQUIRE(while_paused.tick == 10); // applied without advancing the tick
+    REQUIRE(while_paused.tick == 11); // applied without advancing the tick
     REQUIRE(while_paused.paused);
     REQUIRE(while_paused.ui_events.size() == 1);
     REQUIRE(while_paused.ui_events[0].text == "counter=42");
 
-    // Unpausing resumes at the normal pace from now, with no burst for the time spent paused.
-    runner.set_paused(false);
+    // Unpausing is applied immediately even while paused, and ticking resumes at the normal pace from
+    // now, with no burst for the time spent paused.
+    runner.submit(time::TogglePause{});
     REQUIRE(runner.wait_until_idle());
-    REQUIRE(runner.latest_snapshot().tick == 10);
-    advance_to(clock, runner, 5.0 + 1.0 / 20.0);
-    REQUIRE(runner.latest_snapshot().tick == 11);
     REQUIRE_FALSE(runner.latest_snapshot().paused);
+    REQUIRE(runner.latest_snapshot().tick == 11);
+    advance_to(clock, runner, 5.0 + 1.0 / 20.0);
+    REQUIRE(runner.latest_snapshot().tick == 12);
 
     // Commands submitted while running are applied by the next tick.
     runner.submit(set_counter(7));
     advance_to(clock, runner, 5.0 + 2.0 / 20.0);
-    REQUIRE(runner.latest_snapshot().tick == 12);
+    REQUIRE(runner.latest_snapshot().tick == 13);
     REQUIRE(runner.latest_snapshot().ui_events[0].text == "counter=7");
 }
 
@@ -221,9 +234,11 @@ TEST_CASE("runner: stop is clean in every state", "[runner]") {
     SECTION("while paused") {
         FakeClock clock;
         SimulationRunner runner(1, clock, {}, 1);
-        runner.set_paused(true);
         runner.start();
-        REQUIRE(runner.wait_until_idle());
+        REQUIRE(runner.wait_until_idle()); // let the schedule start at t = 0 before time moves
+        runner.submit(time::TogglePause{});
+        advance_to(clock, runner, 1.0 / 20.0); // the tick that consumes the pause
+        REQUIRE(runner.latest_snapshot().paused);
         runner.stop();
     }
     SECTION("never started") {
@@ -253,13 +268,14 @@ TEST_CASE("runner: start twice and bad arguments are rejected", "[runner]") {
     SimulationRunner runner(1, clock, {}, 1);
     runner.start();
     REQUIRE_THROWS_AS(runner.start(), std::logic_error);
-    REQUIRE_THROWS_AS(runner.set_speed(0), std::out_of_range);
-    REQUIRE_THROWS_AS(runner.set_speed(4), std::out_of_range);
     runner.stop();
 
     RunnerConfig bad;
-    bad.ticks_per_second[2] = 0.0;
+    bad.time.speed_multipliers[2] = 0;
     REQUIRE_THROWS_AS(SimulationRunner(1, clock, bad, 1), std::invalid_argument);
+    RunnerConfig no_rate;
+    no_rate.time.base_tick_rate = 0;
+    REQUIRE_THROWS_AS(SimulationRunner(1, clock, no_rate, 1), std::invalid_argument);
     RunnerConfig no_catchup;
     no_catchup.max_catchup_ticks = 0;
     REQUIRE_THROWS_AS(SimulationRunner(1, clock, no_catchup, 1), std::invalid_argument);
@@ -306,6 +322,7 @@ TEST_CASE("runner: the result matches stepping the same simulation directly", "[
     };
 
     core::Simulation direct(77, 1);
+    time::install(direct); // the runner installs it too, so both worlds hold the same state
     make_sim_systems(direct);
     for (int i = 0; i < 40; ++i) {
         direct.step();
@@ -383,7 +400,7 @@ TEST_CASE("SteadyClock: monotonic, sleeps until the deadline, and can be interru
 TEST_CASE("runner: with the real clock it ticks, and stops promptly", "[runner][realtime]") {
     runner::SteadyClock clock;
     SimulationRunner runner(1, clock, {}, 1);
-    runner.set_speed(3); // 80 ticks per second
+    runner.submit(time::SetSpeed{3}); // 80 ticks per second once the first tick applies it
     runner.start();
 
     const auto give_up = std::chrono::steady_clock::now() + std::chrono::seconds(10);
