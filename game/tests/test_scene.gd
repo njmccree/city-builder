@@ -76,6 +76,8 @@ func _process(delta: float) -> bool:
 			var label: Label = _first_label_with(_scene, "Date:")
 			if label == null:
 				return _fail("the stats panel is missing")
+			if label.size.x <= 0.0 or label.size.y <= 0.0 or _scene.size.x <= 0.0:
+				return _fail("the stats panel has no size (scene %s, label %s)" % [_scene.size, label.size])
 			print("PASS: test scene works. Panel:\n", label.text)
 			quit(0)
 			return true

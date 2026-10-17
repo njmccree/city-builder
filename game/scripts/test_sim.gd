@@ -141,8 +141,15 @@ func _say(text: String) -> void:
 
 
 func _build_ui() -> void:
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# An opaque backdrop so it is obvious the scene is drawing, and text stays readable.
+	var backdrop: ColorRect = ColorRect.new()
+	backdrop.color = Color(0.10, 0.12, 0.16)
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(backdrop)
+
 	var margin: MarginContainer = MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side: String in ["left", "top", "right", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 24)
 	add_child(margin)
