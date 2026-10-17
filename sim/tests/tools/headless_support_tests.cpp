@@ -1,3 +1,4 @@
+#include "headless/bench.hpp"
 #include "headless/cli_options.hpp"
 #include "headless/demo_scenario.hpp"
 #include "headless/input_log_text.hpp"
@@ -163,4 +164,48 @@ TEST_CASE("demo input depends only on the seed and tick", "[tools][headless]") {
     REQUIRE(demo_input(42, 0).empty());
     REQUIRE(std::get<core::DebugSetComponentValue>(demo_input(42, 25)[0]).value ==
             std::get<core::DebugSetComponentValue>(demo_input(42, 25)[0]).value);
+}
+
+TEST_CASE("the bench option takes key=value pairs and keeps the other defaults", "[headless][bench]") {
+    const auto defaults = parse({"--bench", ""});
+    REQUIRE(defaults.error.empty());
+    REQUIRE(defaults.options.bench.has_value());
+    CHECK(defaults.options.bench->agents == 10000);
+    CHECK(defaults.options.bench->ticks == 2000);
+    CHECK(defaults.options.bench->map == 512);
+
+    const auto custom =
+        parse({"--bench", "agents=50000,ticks=300,threads=1,map=256,searches=100", "--seed", "5"});
+    REQUIRE(custom.error.empty());
+    CHECK(custom.options.bench->agents == 50000);
+    CHECK(custom.options.bench->ticks == 300);
+    CHECK(custom.options.bench->threads == 1);
+    CHECK(custom.options.bench->map == 256);
+    CHECK(custom.options.bench->searches == 100);
+    CHECK(custom.options.seed == 5);
+
+    CHECK_FALSE(parse({"--bench", "agents"}).error.empty());
+    CHECK_FALSE(parse({"--bench", "agents=many"}).error.empty());
+    CHECK_FALSE(parse({"--bench", "colour=3"}).error.empty());
+    CHECK_FALSE(parse({"--bench", "ticks=0"}).error.empty());
+    CHECK_FALSE(parse({"--bench"}).error.empty());
+    CHECK_FALSE(parse({"--bench", "agents=1", "--replay", "x"}).error.empty());
+    CHECK(usage().find("--bench") != std::string::npos);
+}
+
+TEST_CASE("timing summaries use nearest-rank percentiles", "[headless][bench]") {
+    std::vector<double> values;
+    for (int i = 100; i >= 1; --i) {
+        values.push_back(static_cast<double>(i)); // 1..100, unsorted
+    }
+    const auto summary = citysim::headless::summarize(values);
+    CHECK(summary.avg == 50.5);
+    CHECK(summary.p50 == 50.0);
+    CHECK(summary.p95 == 95.0);
+    CHECK(summary.max == 100.0);
+
+    const auto one = citysim::headless::summarize({7.0});
+    CHECK(one.p50 == 7.0);
+    CHECK(one.p95 == 7.0);
+    CHECK(citysim::headless::summarize({}).max == 0.0);
 }

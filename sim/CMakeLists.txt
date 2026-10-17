@@ -38,6 +38,7 @@ add_library(citysim_core STATIC
     src/save/migration_registry.cpp
     src/save/simulation_io.cpp
     src/save/world_io.cpp
+    src/debug/agent_snapshot.cpp
     src/debug/grid_pathfinder.cpp
     src/debug/movement_system.cpp
     src/debug/test_map.cpp

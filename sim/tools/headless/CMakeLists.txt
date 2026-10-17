@@ -1,5 +1,6 @@
 # Everything except main() lives in a library so the unit tests can use it too.
 add_library(citysim_headless_support STATIC
+    bench.cpp
     cli_options.cpp
     demo_scenario.cpp
     input_log_text.cpp)
@@ -20,5 +21,8 @@ if(CITYSIM_BUILD_TESTS)
                 -DWORKDIR=${CMAKE_CURRENT_BINARY_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/test_headless.cmake)
     add_test(NAME headless_resumes_from_a_save
         COMMAND ${CMAKE_COMMAND} -DHEADLESS=$<TARGET_FILE:citysim_headless> -DMODE=save_load
+                -DWORKDIR=${CMAKE_CURRENT_BINARY_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/test_headless.cmake)
+    add_test(NAME headless_bench_runs
+        COMMAND ${CMAKE_COMMAND} -DHEADLESS=$<TARGET_FILE:citysim_headless> -DMODE=bench
                 -DWORKDIR=${CMAKE_CURRENT_BINARY_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/test_headless.cmake)
 endif()

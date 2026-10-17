@@ -2,6 +2,7 @@ find_package(Threads REQUIRED)
 add_executable(citysim_tests
     content/content_tests.cpp
     content/mods_tests.cpp
+    debug/agent_snapshot_tests.cpp
     debug/pathfinding_tests.cpp
     debug/walking_skeleton_tests.cpp
     save/archive_tests.cpp
