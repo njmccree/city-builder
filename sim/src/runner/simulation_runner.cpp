@@ -1,5 +1,7 @@
 #include "citysim/runner/simulation_runner.hpp"
 
+#include "citysim/core/log.hpp"
+
 #include <algorithm>
 #include <chrono>
 #include <stdexcept>
@@ -28,6 +30,7 @@ void SimulationRunner::start() {
         throw std::logic_error("SimulationRunner already started");
     }
     started_ = true;
+    CS_LOG_INFO(Runner, "starting simulation thread");
     thread_ = std::thread([this] { run_loop(); });
 }
 
@@ -35,6 +38,7 @@ void SimulationRunner::stop() {
     if (!thread_.joinable()) {
         return;
     }
+    CS_LOG_INFO(Runner, "stopping simulation thread");
     stop_.store(true);
     note_stimulus(); // takes the lock, so a runner about to wait cannot miss the stop
     thread_.join();
@@ -114,6 +118,7 @@ void SimulationRunner::run_loop() {
     try {
         loop_body();
     } catch (const std::exception& error) {
+        CS_LOG_ERROR(Runner, "simulation thread failed: {}", error.what());
         const std::lock_guard lock(mutex_);
         failure_ = error.what();
     } catch (...) {

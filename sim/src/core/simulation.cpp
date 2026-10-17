@@ -1,19 +1,22 @@
 #include "citysim/core/simulation.hpp"
 
+#include "citysim/core/log.hpp"
+#include "citysim/profiling/profile.hpp"
+
 #include <algorithm>
 #include <iterator>
-#include <spdlog/spdlog.h>
-
 namespace citysim::core {
 
 Simulation::Simulation(std::uint64_t world_seed, std::size_t worker_count)
     : world_seed_(world_seed), scheduler_(world_), jobs_(worker_count) {}
 
 void Simulation::step() {
+    CS_PROFILE_ZONE("Simulation::step");
     // Built once per tick: tick_ keeps its value until the end, so every phase sees the same tick.
     TickContext context{world_, tick_, rng::RngContext{world_seed_, tick_}, jobs_, events_};
 
     for (const Phase phase : k_all_phases) {
+        CS_PROFILE_ZONE_DYNAMIC(phase_name(phase));
         events_.begin_phase();
         if (phase == Phase::ApplyCommands) {
             apply_commands(context);
@@ -23,6 +26,7 @@ void Simulation::step() {
 
     events_.clear();
     ++tick_;
+    CS_PROFILE_FRAME_MARK; // one tick is one profiler frame
 }
 
 void Simulation::apply_commands_only() {
@@ -49,8 +53,8 @@ void Simulation::apply_commands(TickContext& context) {
     batch.swap(pending_commands_);
     for (const SequencedCommand& command : batch) {
         if (!dispatcher_.dispatch(context, command.cmd)) {
-            spdlog::warn("no handler for command '{}' (sequence {}); ignored", describe(command.cmd),
-                         command.sequence);
+            CS_LOG_WARN(Sim, "no handler for command '{}' (sequence {}); ignored", describe(command.cmd),
+                        command.sequence);
         }
         input_log_.record(tick_, command.sequence, command.cmd);
     }

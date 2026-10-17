@@ -480,7 +480,7 @@ Follow the Task workflow in CLAUDE.md; last task of S0.2.4, so open the PR.
 - Tracy zones compile to nothing unless `CITYSIM_TRACY=ON`.
 - Logging never changes simulation state.
 
-#### [ ] T0.2.5.1 — Logging and optional Tracy
+#### [x] T0.2.5.1 — Logging and optional Tracy
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.4.2
 ```
 Task T0.2.5.1 (Story S0.2.5). Read CLAUDE.md and docs/architecture.md §3–§4.

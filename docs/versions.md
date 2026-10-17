@@ -12,3 +12,4 @@
 | spdlog | v1.17.0 | Logging | 2026-10-09 |
 | zstd | v1.5.7 | Save compression (static lib only) | 2026-10-09 |
 | xxHash | v0.8.4 | State and content hashing | 2026-10-09 |
+| Tracy (optional, `CITYSIM_TRACY=ON`) | v0.14.1 | Profiler zones; only fetched when enabled | 2026-10-17 |

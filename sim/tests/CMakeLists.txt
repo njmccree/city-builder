@@ -4,6 +4,7 @@ add_executable(citysim_tests
     core/component_registry_tests.cpp
     core/determinism_harness_tests.cpp
     core/job_system_tests.cpp
+    core/log_tests.cpp
     core/rng_tests.cpp
     core/simulation_determinism_tests.cpp
     core/simulation_tests.cpp

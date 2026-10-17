@@ -62,6 +62,19 @@ set(ENTT_INSTALL OFF CACHE BOOL "" FORCE)
 set(CATCH_INSTALL_DOCS OFF CACHE BOOL "" FORCE)
 set(CATCH_INSTALL_EXTRAS OFF CACHE BOOL "" FORCE)
 
+# Tracy: only fetched when profiling is requested (-DCITYSIM_TRACY=ON).
+if(CITYSIM_TRACY)
+    FetchContent_Declare(Tracy
+        GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+        GIT_TAG v0.14.1
+        GIT_SHALLOW TRUE
+        SYSTEM)
+    # Collect data only while a profiler is connected, so an idle build pays almost nothing.
+    set(TRACY_ON_DEMAND ON CACHE BOOL "" FORCE)
+    set(TRACY_ENABLE ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(Tracy)
+endif()
+
 FetchContent_MakeAvailable(EnTT nlohmann_json spdlog zstd xxHash)
 if(CITYSIM_BUILD_TESTS)
     FetchContent_MakeAvailable(Catch2)
