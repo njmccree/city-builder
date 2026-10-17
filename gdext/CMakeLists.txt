@@ -44,6 +44,16 @@ target_link_libraries(citysim_gdext PRIVATE citysim_core godot-cpp)
 target_compile_features(citysim_gdext PRIVATE cxx_std_20)
 citysim_set_warnings(citysim_gdext)
 
+# Class documentation shown in the editor's help. The editor can crash in headless import when a registered
+# class has none (seen with Godot 4.7.2), and only the editor and debug flavors carry documentation.
+if(GODOTCPP_TARGET MATCHES "editor|template_debug")
+    # target_doc_sources() runs Python, and godot-cpp finds it only inside its own directory scope.
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    file(GLOB_RECURSE CITYSIM_GDEXT_DOC_XML LIST_DIRECTORIES NO CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/doc_classes/*.xml")
+    target_doc_sources(citysim_gdext "${CITYSIM_GDEXT_DOC_XML}")
+endif()
+
 # libcitysim_gdext.linux.<editor|debug|release>.x86_64.so / citysim_gdext.windows.<editor|debug|release>.x86_64.dll
 if(WIN32)
     set(CITYSIM_GDEXT_PLATFORM "windows")

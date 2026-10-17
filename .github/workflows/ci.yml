@@ -71,8 +71,8 @@ jobs:
         run: cmake --build --preset ci-linux-gdext --target citysim_gdext
       - name: Install Godot
         run: tools/install_godot.sh
-      - name: Import the project
-        run: tools/godot.sh --headless --path game --import
+      - name: Prepare and import the project
+        run: tools/godot_prepare.sh
       - name: Godot smoke test
         run: tools/godot.sh --headless --path game -s res://tests/smoke.gd
 

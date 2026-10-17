@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="CitySim" inherits="Node" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		The game's connection to the C++ simulation.
+	</brief_description>
+	<description>
+		The one node GDScript uses to control and observe the simulation (architecture §11). The game registers it as the autoload [code]Sim[/code]. For now it only reports the version of the simulation core it is linked with.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_core_version" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns the version of the simulation core library, for example [code]0.0.1[/code].
+			</description>
+		</method>
+	</methods>
+</class>

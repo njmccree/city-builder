@@ -4,6 +4,8 @@ Headless Godot tests. `smoke.gd` checks that the GDExtension loads and the C++ c
 
     tools/godot.sh --headless --path game -s res://tests/smoke.gd
 
-The first run in a fresh checkout needs `--import` once (CI does this):
+A fresh checkout needs preparing once (CI does this). Do not use `godot --import` for it: Godot 4.7.2 aborts at
+the end of the first scan that finds a GDExtension registering a class. `tools/godot_prepare.sh` lists the
+extension first, which avoids that, and then imports the project:
 
-    tools/godot.sh --headless --path game --import
+    tools/godot_prepare.sh
