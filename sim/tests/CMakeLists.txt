@@ -15,6 +15,7 @@ add_executable(citysim_tests
     core/world_tests.cpp
     runner/runner_tests.cpp
     runner/triple_buffer_tests.cpp
+    time/calendar_tests.cpp
     time/clock_tests.cpp)
 target_include_directories(citysim_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(citysim_tests PRIVATE CITYSIM_TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
