@@ -1,6 +1,9 @@
 #pragma once
 
+#include "citysim/core/command_dispatcher.hpp"
+#include "citysim/core/commands.hpp"
 #include "citysim/core/event_bus.hpp"
+#include "citysim/core/input_log.hpp"
 #include "citysim/core/scheduler.hpp"
 #include "citysim/core/system_observer.hpp"
 #include "citysim/core/world.hpp"
@@ -8,6 +11,7 @@
 #include <cstdint>
 #include <memory>
 #include <utility>
+#include <vector>
 
 // ============================================================================================
 // THE TICK CONTRACT (architecture §4-§7)
@@ -17,8 +21,10 @@
 // Simulation knows nothing about threads or wall-clock time: the runner decides when to call step().
 //
 //   ApplyCommands  The only place external input (UI, console, load/save requests) changes state,
-//                  and it arrives as commands applied in sequence order. Other systems must not
-//                  react to input any other way.
+//                  and it arrives as commands. Before any system registered in this phase runs,
+//                  Simulation applies the commands passed to enqueue() in sequence order, through
+//                  the handlers registered on dispatcher(), and records each in the input log.
+//                  Other systems must not react to input any other way.
 //   PreUpdate      Read state and prepare this tick's inputs (derived caches, per-tick buffers).
 //                  May read events emitted by ApplyCommands.
 //   Update         The main simulation work. May change components and singletons, create and
@@ -66,6 +72,15 @@ class Simulation {
     const Scheduler& scheduler() const { return scheduler_; }
     const EventBus& events() const { return events_; }
 
+    // Called by the runner between ticks with commands drained from a CommandQueue. They are applied
+    // in sequence order during the next step(), whatever order they arrive in. Simulation itself is
+    // not thread-safe: only the thread that calls step() may call this.
+    void enqueue(std::vector<SequencedCommand> commands);
+    std::size_t pending_command_count() const { return pending_commands_.size(); }
+
+    CommandDispatcher& dispatcher() { return dispatcher_; }
+    const InputLog& input_log() const { return input_log_; }
+
     // Convenience for scheduler().add(...).
     ISystem& add_system(Phase phase, std::unique_ptr<ISystem> system) {
         return scheduler_.add(phase, std::move(system));
@@ -77,11 +92,16 @@ class Simulation {
     void set_jobs(JobSystem* jobs) { jobs_ = jobs; }
 
   private:
+    void apply_commands(TickContext& context);
+
     std::uint64_t world_seed_;
     std::uint64_t tick_ = 0;
     World world_;
     Scheduler scheduler_;
     EventBus events_;
+    CommandDispatcher dispatcher_;
+    InputLog input_log_;
+    std::vector<SequencedCommand> pending_commands_;
     SystemObserver* observer_ = nullptr;
     JobSystem* jobs_ = nullptr;
 };

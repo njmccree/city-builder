@@ -1,6 +1,10 @@
 add_library(citysim_core STATIC
+    src/core/command_dispatcher.cpp
+    src/core/command_queue.cpp
+    src/core/commands.cpp
     src/core/component_registry.cpp
     src/core/event_bus.cpp
+    src/core/input_log.cpp
     src/core/isystem.cpp
     src/core/rng.cpp
     src/core/scheduler.cpp

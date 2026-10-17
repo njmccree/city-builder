@@ -362,7 +362,7 @@ small test system that mutates components with rng).
 Run all tests and the determinism lint. Follow the Task workflow in CLAUDE.md (branch story/S0.2.3-kernel).
 ```
 
-#### [ ] T0.2.3.2 — Commands, CommandQueue, input log
+#### [x] T0.2.3.2 — Commands, CommandQueue, input log
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.3.1
 ```
 Task T0.2.3.2 (Story S0.2.3). Read docs/architecture.md §5.3 and the kernel in sim/include/citysim/core/.
