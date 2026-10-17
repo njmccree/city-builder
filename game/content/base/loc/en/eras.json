@@ -1,0 +1,11 @@
+{
+  "mod.base.name": "Base Game",
+  "era.ancient.name": "Ancient Era",
+  "era.ancient.desc": "The age of river valleys and the first cities, when kingdoms were built on irrigated grain, organized labor and monumental construction.",
+  "era.colonial.name": "Colonial Era",
+  "era.colonial.desc": "Three centuries of settlement, trade and conflict, as colonies, ports and native nations reshaped the lands around them.",
+  "era.modern.name": "Modern Era",
+  "era.modern.desc": "The industrial city of the early twentieth century, with its railways, factories, crowded neighborhoods and rapidly growing populations.",
+  "era.utopian.name": "Utopian Era",
+  "era.utopian.desc": "From the present day to 2100 and beyond: humanity's future, utopian or otherwise."
+}

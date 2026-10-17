@@ -17,7 +17,8 @@ add_executable(citysim_tests
     runner/triple_buffer_tests.cpp
     time/clock_tests.cpp)
 target_include_directories(citysim_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_definitions(citysim_tests PRIVATE CITYSIM_TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
+target_compile_definitions(citysim_tests PRIVATE CITYSIM_TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
+    CITYSIM_GAME_CONTENT_DIR="${CMAKE_SOURCE_DIR}/game/content")
 target_link_libraries(citysim_tests PRIVATE citysim_core Catch2::Catch2WithMain Threads::Threads)
 citysim_set_warnings(citysim_tests)
 

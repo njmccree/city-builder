@@ -436,7 +436,62 @@ TEST_CASE("a definition type can supply its own resolve and validate steps", "[c
     REQUIRE(result.errors.size() == 1);
     REQUIRE(result.errors[0].pointer == "/defs/1/weight");
     const auto& nodes = db.registry<Node>();
-    REQUIRE(
-        nodes.get(nodes.find("t:n.child")->index == 0 ? *nodes.find("t:n.child") : *nodes.find("t:n.child"))
-            .parent.resolved());
+    const auto child = nodes.find("t:n.child");
+    REQUIRE(child.has_value());
+    REQUIRE(nodes.get(*child).parent.resolved());
+}
+
+// ---- the shipped base game
+// ---------------------------------------------------------------------------------
+
+TEST_CASE("the base game's eras match the architecture's era cadence", "[content][base]") {
+    ContentDatabase db;
+    const LoadResult result = db.load({std::filesystem::path(CITYSIM_GAME_CONTENT_DIR) / "base"});
+    REQUIRE(result.errors.empty());
+    REQUIRE(result.warnings.empty());
+
+    const auto& eras = db.registry<EraDef>();
+    REQUIRE(eras.size() == 4);
+
+    struct Expected {
+        const char* id;
+        std::uint32_t seconds_per_year;
+        std::int32_t start_year;
+        std::int32_t order;
+        const char* next;
+    };
+    // Architecture §6: Ancient 120, Colonial 300, Modern 720, Utopian 900 real seconds per game year.
+    for (const Expected& want : {Expected{"base:era.ancient", 120, -3000, 1, "base:era.colonial"},
+                                 Expected{"base:era.colonial", 300, 1600, 2, "base:era.modern"},
+                                 Expected{"base:era.modern", 720, 1900, 3, "base:era.utopian"},
+                                 Expected{"base:era.utopian", 900, 2025, 4, nullptr}}) {
+        const auto handle = eras.find(want.id);
+        REQUIRE(handle.has_value());
+        const EraDef& era = eras.get(*handle);
+        REQUIRE(era.real_seconds_per_year == want.seconds_per_year);
+        REQUIRE(era.default_start_year == want.start_year);
+        REQUIRE(era.order == want.order);
+        if (want.next == nullptr) {
+            REQUIRE_FALSE(era.next_era.has_value());
+        } else {
+            REQUIRE(era.next_era.resolved());
+            REQUIRE(eras.id(era.next_era.handle).str() == want.next);
+        }
+        // Keys follow the era.<name>.name / .desc convention.
+        REQUIRE(era.name_key.rfind("era.", 0) == 0);
+        REQUIRE(era.desc_key.rfind("era.", 0) == 0);
+    }
+}
+
+TEST_CASE("the base game's time defines equal the built-in defaults", "[content][base]") {
+    // The defaults in code are only a fallback; the data file is the source of truth. They must agree, or a
+    // missing file would silently change the pace of the game.
+    ContentDatabase db;
+    REQUIRE(db.load({std::filesystem::path(CITYSIM_GAME_CONTENT_DIR) / "base"}).ok());
+    const citysim::time::TimeDefines defaults;
+    const citysim::time::TimeDefines& loaded = db.time_defines();
+    REQUIRE(loaded.base_tick_rate == defaults.base_tick_rate);
+    REQUIRE(loaded.speed_multipliers == defaults.speed_multipliers);
+    REQUIRE(loaded.movement_scale == defaults.movement_scale);
+    REQUIRE(loaded.day_length_ticks == defaults.day_length_ticks);
 }

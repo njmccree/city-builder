@@ -11,6 +11,8 @@ if(CITYSIM_BUILD_TESTS)
                     "-DARGS=${ARGN}" -P ${runner})
     endfunction()
 
+    # The shipped base game must always validate, with warnings counted as errors.
+    validate_test(base_game_content_is_valid 0 ${CMAKE_SOURCE_DIR}/game/content --strict)
     validate_test(accepts_good_content 0 ${fixtures}/happy)
     validate_test(accepts_several_mods 0 ${fixtures}/multi)
     validate_test(accepts_resolved_references 0 ${fixtures}/refs_ok)

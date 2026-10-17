@@ -1,0 +1,6 @@
+{
+  "id": "base",
+  "name_key": "mod.base.name",
+  "version": "0.0.1",
+  "depends_on": []
+}

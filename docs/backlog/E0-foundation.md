@@ -658,7 +658,7 @@ Task T0.4.1.2 (Story S0.4.1). Read docs/architecture.md §8 and §13.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.4.1.3 — Author base era definitions and time defines (data entry)
+#### [x] T0.4.1.3 — Author base era definitions and time defines (data entry)
 - **Model:** **Haiku** · **Session:** [Cloud] · **Depends on:** T0.4.1.2
 ```
 Task T0.4.1.3 (Story S0.4.1, last task). Data entry only — do not change C++ code.
