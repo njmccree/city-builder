@@ -17,13 +17,11 @@ var _speed_buttons: Array[Button] = []
 
 
 func _ready() -> void:
-	_pause_button.text = tr("ui.time.pause")
 	_pause_button.toggle_mode = true
 	_pause_button.focus_mode = Control.FOCUS_NONE
 	_pause_button.pressed.connect(request_toggle_pause)
 	for index: int in SPEED_MULTIPLIERS.size():
 		var button: Button = Button.new()
-		button.text = tr("ui.time.speed").format({"multiplier": SPEED_MULTIPLIERS[index]})
 		button.toggle_mode = true
 		button.focus_mode = Control.FOCUS_NONE
 		button.pressed.connect(request_speed.bind(index + 1))
@@ -62,6 +60,11 @@ func request_speed(speed: int) -> void:
 func refresh() -> void:
 	if not Sim.is_running():
 		return
+	# The text tables are installed when a game starts, which can be after this node became ready, so the
+	# captions are set here and not once in _ready().
+	_pause_button.text = tr("ui.time.pause")
+	for index: int in _speed_buttons.size():
+		_speed_buttons[index].text = tr("ui.time.speed").format({"multiplier": SPEED_MULTIPLIERS[index]})
 	var stats: Dictionary = Sim.get_stats()
 	var paused: bool = stats["paused"]
 	var speed: int = stats["speed"]
@@ -78,6 +81,14 @@ func get_active_speed() -> int:
 		if _speed_buttons[index].button_pressed:
 			return index + 1
 	return 0
+
+
+## The captions of Pause and the speed buttons, in order. For tests.
+func get_button_texts() -> PackedStringArray:
+	var texts: PackedStringArray = [_pause_button.text]
+	for button: Button in _speed_buttons:
+		texts.append(button.text)
+	return texts
 
 
 func is_pause_lit() -> bool:

@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -47,6 +48,18 @@ struct SnapshotChannel {
     std::size_t record_count() const { return stride == 0 ? 0 : data.size() / stride; }
 };
 
+// A fixed 2D grid for a renderer, such as which cells of the test map are walkable. Big and rarely changing,
+// so it is shared rather than copied: a publish hook keeps the same `cells` pointer until the grid changes,
+// and a renderer rebuilds only when the pointer differs from the one it last saw.
+struct SnapshotGrid {
+    std::string name;
+    std::uint32_t width = 0;
+    std::uint32_t height = 0;
+    float cell_size = 1.0F; // meters
+    std::shared_ptr<const std::vector<std::uint8_t>>
+        cells; // width * height values, row by row (y * width + x)
+};
+
 struct SimStats {
     double last_tick_ms = 0.0;
     double avg_tick_ms = 0.0; // over the last 60 ticks
@@ -71,12 +84,23 @@ struct RenderSnapshot {
     std::vector<UiEvent> ui_events;
     // Data for renderers, added by publish hooks. Cleared before every publish: a hook fills it each time.
     std::vector<SnapshotChannel> channels;
+    // Shared grids for renderers, added by publish hooks. Cleared before every publish.
+    std::vector<SnapshotGrid> grids;
 
     // The channel with this name, or nullptr.
     const SnapshotChannel* find_channel(const std::string& name) const {
         for (const SnapshotChannel& channel : channels) {
             if (channel.name == name) {
                 return &channel;
+            }
+        }
+        return nullptr;
+    }
+
+    const SnapshotGrid* find_grid(const std::string& name) const {
+        for (const SnapshotGrid& grid : grids) {
+            if (grid.name == name) {
+                return &grid;
             }
         }
         return nullptr;

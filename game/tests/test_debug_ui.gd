@@ -55,6 +55,10 @@ func _run() -> void:
 	await _press("debug_overlay")
 	_check(overlay.is_shown(), "F3 shows it again")
 
+	# The captions are translated (not raw keys) even though the game started after the node was ready.
+	var captions: PackedStringArray = controls.get_button_texts()
+	_check(captions == PackedStringArray(["Pause", "1x", "2x", "4x"]), "the buttons read Pause 1x 2x 4x (%s)" % str(captions))
+
 	# Speed buttons and hotkeys reach the simulation, and the highlight follows its state.
 	controls.request_speed(2)
 	await create_timer(0.4).timeout

@@ -170,18 +170,41 @@ MarshalResult parse_state_hash(const Dictionary& dictionary, const MarshalContex
     return success(core::RequestStateHash{});
 }
 
+MarshalResult parse_spawn_agents(const Dictionary& dictionary, const MarshalContext&) {
+    std::string error;
+    int64_t count = 0;
+    if (!only_keys(dictionary, {"type", "count"}, error) || !read_int(dictionary, "count", count, error)) {
+        return failure(error);
+    }
+    constexpr int64_t k_most_agents = 1000000;
+    if (count < 1 || count > k_most_agents) {
+        return failure("'count' must be between 1 and " + std::to_string(k_most_agents));
+    }
+    return success(debug::SpawnDebugAgents{static_cast<std::uint32_t>(count)});
+}
+
+MarshalResult parse_clear_agents(const Dictionary& dictionary, const MarshalContext&) {
+    std::string error;
+    if (!only_keys(dictionary, {"type"}, error)) {
+        return failure(error);
+    }
+    return success(debug::ClearDebugAgents{});
+}
+
 // The conversion table: one line per command type.
 struct Entry {
     std::string_view type;
     MarshalResult (*parse)(const Dictionary&, const MarshalContext&);
 };
-constexpr std::array<Entry, 6> k_entries{{
+constexpr std::array<Entry, 8> k_entries{{
     {"set_speed", &parse_set_speed},
     {"toggle_pause", &parse_toggle_pause},
     {"set_era", &parse_set_era},
     {"save_game", &parse_save_game},
     {"load_game", &parse_load_game},
     {"state_hash", &parse_state_hash},
+    {"spawn_agents", &parse_spawn_agents},
+    {"clear_agents", &parse_clear_agents},
 }};
 
 } // namespace

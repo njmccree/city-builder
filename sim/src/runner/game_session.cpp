@@ -1,6 +1,8 @@
 #include "citysim/runner/game_session.hpp"
 
 #include "citysim/content/era_def.hpp"
+#include "citysim/debug/agent_snapshot.hpp"
+#include "citysim/debug/walking_skeleton.hpp"
 #include "citysim/time/calendar_module.hpp"
 
 #include <exception>
@@ -59,12 +61,24 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
         // Repeated by the runner on the new Simulation whenever a save is loaded.
         const content::ContentDatabase* content = session->content_.get();
         const std::string era_id = request.era_id;
-        session->runner_->configure([content, era_id](core::Simulation& simulation) {
+        const std::uint32_t test_map_size = request.test_map_size;
+        session->runner_->configure([content, era_id, test_map_size](core::Simulation& simulation) {
             time::install_calendar(simulation, *content, era_id);
+            if (test_map_size > 0) {
+                debug::WalkingSkeletonConfig skeleton;
+                skeleton.map_width = test_map_size;
+                skeleton.map_height = test_map_size;
+                debug::install(simulation, skeleton);
+            }
         });
-        if (!request.publish_hooks.empty()) {
+        std::vector<SimulationRunner::PublishHook> hooks = request.publish_hooks;
+        if (test_map_size > 0) {
+            hooks.emplace_back(&debug::publish_agent_snapshot);
+            hooks.emplace_back(debug::TestMapPublisher{});
+        }
+        if (!hooks.empty()) {
             session->runner_->set_publish_hook(
-                [hooks = request.publish_hooks](core::Simulation& simulation, RenderSnapshot& snapshot) {
+                [hooks = std::move(hooks)](core::Simulation& simulation, RenderSnapshot& snapshot) {
                     for (const SimulationRunner::PublishHook& hook : hooks) {
                         hook(simulation, snapshot);
                     }

@@ -1122,7 +1122,7 @@ Task T0.8.1.2 (Story S0.8.1). Read docs/architecture.md §7.3, §13, §14.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.8.1.3 — AgentRenderer (MultiMesh) and test map in Godot
+#### [x] T0.8.1.3 — AgentRenderer (MultiMesh) and test map in Godot
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.8.1.2, T0.7.2.2
 ```
 Task T0.8.1.3 (Story S0.8.1). Read docs/architecture.md §7.3, §11.

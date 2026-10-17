@@ -152,6 +152,10 @@ func _register_builtins() -> void:
 	register("hash", _cmd_hash, "Print the hash of the whole game state (taken between ticks).")
 	register("era", _cmd_era, "Change era, e.g. era base:era.colonial.", ["string"])
 	register("quit", _cmd_quit, "Quit the game.")
+	register("spawn_agents", _cmd_spawn_agents, "Add debug agents that wander the test map.", ["int"])
+	register("clear_agents", _cmd_clear_agents, "Remove every debug agent.")
+	register("new_test_map", _cmd_new_test_map,
+		"Start a new game on a fresh test map: new_test_map <seed> <cells per side, 16-1024>.", ["int", "int"])
 
 
 func _cmd_clear() -> String:
@@ -177,6 +181,26 @@ func _cmd_era(era_id: String) -> String:
 func _cmd_quit() -> String:
 	get_tree().quit()
 	return ""
+
+
+func _cmd_spawn_agents(count: int) -> String:
+	if Sim.submit_command({"type": "spawn_agents", "count": count}):
+		return "Spawning %d agents." % count
+	return ""
+
+
+func _cmd_clear_agents() -> String:
+	Sim.submit_command({"type": "clear_agents"})
+	return "Agents cleared."
+
+
+func _cmd_new_test_map(map_seed: int, size: int) -> String:
+	if size < 16 or size > 1024:
+		return "The map size must be between 16 and 1024 cells per side."
+	var result: Dictionary = Sim.new_game(map_seed, Sim.DEFAULT_ERA, Sim.DEFAULT_CONTENT_ROOTS, Sim.DEFAULT_MODS, size)
+	if not bool(result["ok"]):
+		return "The game could not start: %s" % str(result["errors"])
+	return "New game: seed %d, map %d x %d cells (%d m)." % [map_seed, size, size, size * 4]
 
 
 func _cmd_help(command_name: String = "") -> String:

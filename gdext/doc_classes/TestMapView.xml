@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="TestMapView" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Shows the debug test map: a ground plane and its blocked cells as boxes.
+	</brief_description>
+	<description>
+		Reads the shared grid [code]testmap.grid[/code] from the simulation snapshot and rebuilds its ground and its obstacle MultiMesh only when the map is a different one from before. Emits [signal map_changed] so the camera can set its bounds.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_map_size" qualifiers="const">
+			<return type="Vector2" />
+			<description>
+				Returns the map's extent in meters (width, depth), or zero before a map has been seen.
+			</description>
+		</method>
+		<method name="get_obstacle_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns how many blocked cells are drawn.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="sim_path" type="NodePath" setter="set_sim_path" getter="get_sim_path" default="NodePath(&quot;/root/Sim/CitySim&quot;)">
+			Where the [CitySim] node is. The default is the one inside the [code]Sim[/code] autoload.
+		</member>
+	</members>
+	<signals>
+		<signal name="map_changed">
+			<param index="0" name="size" type="Vector2" />
+			<description>
+				Emitted after the view was rebuilt for a new map, with the map's extent in meters.
+			</description>
+		</signal>
+	</signals>
+</class>

@@ -1,5 +1,7 @@
 #include "citysim/content/era_def.hpp"
 #include "citysim/core/commands.hpp"
+#include "citysim/debug/agent_snapshot.hpp"
+#include "citysim/debug/debug_commands.hpp"
 #include "citysim/runner/game_session.hpp"
 #include "citysim/time/time_commands.hpp"
 
@@ -144,4 +146,36 @@ TEST_CASE("a saved game loads back through the session", "[runner][session]") {
     CHECK(loaded.minute == saved.minute);
     CHECK(runner.failure().empty());
     fs::remove_all(dir, ignored);
+}
+
+TEST_CASE("a game with a test map has agents, their snapshot channel and the map grid", "[runner][session]") {
+    FakeClock clock;
+    NewGameRequest request = base_request(clock);
+    request.test_map_size = 48;
+    runner::NewGameOutcome outcome = runner::start_new_game(request);
+    REQUIRE(outcome.ok());
+    auto& session = *outcome.session;
+    REQUIRE(session.runner().wait_until_idle());
+
+    session.runner().submit(debug::SpawnDebugAgents{25});
+    clock.set_time(1.0 / 20.0);
+    REQUIRE(session.runner().wait_until_idle());
+    runner::RenderSnapshot snapshot = session.latest_snapshot();
+    const runner::SnapshotChannel* agents = snapshot.find_channel(debug::k_agent_channel);
+    REQUIRE(agents != nullptr);
+    CHECK(agents->record_count() == 25);
+    const runner::SnapshotGrid* grid = snapshot.find_grid(debug::k_test_map_grid);
+    REQUIRE(grid != nullptr);
+    CHECK(grid->width == 48);
+    CHECK(grid->height == 48);
+}
+
+TEST_CASE("a game without a test map publishes no agents or grid", "[runner][session]") {
+    FakeClock clock;
+    runner::NewGameOutcome outcome = runner::start_new_game(base_request(clock));
+    REQUIRE(outcome.ok());
+    REQUIRE(outcome.session->runner().wait_until_idle());
+    const runner::RenderSnapshot snapshot = outcome.session->latest_snapshot();
+    CHECK(snapshot.find_channel(debug::k_agent_channel) == nullptr);
+    CHECK(snapshot.find_grid(debug::k_test_map_grid) == nullptr);
 }

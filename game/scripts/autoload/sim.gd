@@ -17,6 +17,8 @@ const DEFAULT_CONTENT_ROOTS: PackedStringArray = ["res://content", "res://conten
 const DEFAULT_MODS: PackedStringArray = ["base"]
 const DEFAULT_ERA: String = "base:era.ancient"
 const DEFAULT_SEED: int = 1
+## Cells per side of the debug test map the walking-skeleton agents walk on (4 m per cell).
+const DEFAULT_TEST_MAP_SIZE: int = 256
 
 var core: CitySim
 
@@ -48,8 +50,9 @@ func new_game(
 	era_id: String = DEFAULT_ERA,
 	content_roots: PackedStringArray = DEFAULT_CONTENT_ROOTS,
 	enabled_mods: PackedStringArray = DEFAULT_MODS,
+	test_map_size: int = DEFAULT_TEST_MAP_SIZE,
 ) -> Dictionary:
-	var result: Dictionary = core.new_game(seed, content_roots, enabled_mods, era_id)
+	var result: Dictionary = core.new_game(seed, content_roots, enabled_mods, era_id, test_map_size)
 	for message: String in result["warnings"]:
 		push_warning("Sim.new_game: " + message)
 	for message: String in result["errors"]:

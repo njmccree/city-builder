@@ -57,6 +57,13 @@ func focus_on(point: Vector3) -> void:
 	_target_pivot = _clamp_to_bounds(Vector3(point.x, 0.0, point.z))
 
 
+## Sets the rectangle (x, z meters) the pivot may move in, and widens the zoom range so the whole of it fits.
+func set_bounds(bounds: Rect2) -> void:
+	settings.bounds = bounds
+	settings.zoom_max = maxf(settings.zoom_max, maxf(bounds.size.x, bounds.size.y) * 1.1)
+	_target_pivot = _clamp_to_bounds(_target_pivot)
+
+
 func set_zoom_distance(distance: float) -> void:
 	_target_zoom = clampf(distance, settings.zoom_min, settings.zoom_max)
 

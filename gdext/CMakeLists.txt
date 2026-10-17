@@ -38,9 +38,11 @@ endif()
 add_subdirectory("${CMAKE_SOURCE_DIR}/third_party/godot-cpp" "${CMAKE_BINARY_DIR}/godot-cpp")
 
 add_library(citysim_gdext SHARED
+    src/agent_renderer.cpp
     src/city_sim.cpp
     src/command_marshal.cpp
-    src/register_types.cpp)
+    src/register_types.cpp
+    src/test_map_view.cpp)
 target_link_libraries(citysim_gdext PRIVATE citysim_core godot-cpp)
 target_compile_features(citysim_gdext PRIVATE cxx_std_20)
 citysim_set_warnings(citysim_gdext)

@@ -76,3 +76,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1000, 0, 1000)
 [node name="TimeControls" parent="." instance=ExtResource("4_time")]
 
 [node name="DevConsole" parent="." instance=ExtResource("5_console")]
+
+[node name="TestMapView" type="TestMapView" parent="."]
+
+[node name="AgentRenderer" type="AgentRenderer" parent="."]
