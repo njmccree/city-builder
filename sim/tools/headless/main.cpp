@@ -51,7 +51,7 @@ int run(const headless::Options& options) {
         }
     }
 
-    core::Simulation sim(seed);
+    core::Simulation sim(seed, static_cast<std::size_t>(options.threads));
     headless::setup_demo(sim);
     core::CommandQueue queue;
     std::vector<core::SequencedCommand> batch;

@@ -6,7 +6,8 @@
 
 namespace citysim::core {
 
-Simulation::Simulation(std::uint64_t world_seed) : world_seed_(world_seed), scheduler_(world_) {}
+Simulation::Simulation(std::uint64_t world_seed, std::size_t worker_count)
+    : world_seed_(world_seed), scheduler_(world_), jobs_(worker_count) {}
 
 void Simulation::step() {
     // Built once per tick: tick_ keeps its value until the end, so every phase sees the same tick.
@@ -22,6 +23,13 @@ void Simulation::step() {
 
     events_.clear();
     ++tick_;
+}
+
+void Simulation::apply_commands_only() {
+    TickContext context{world_, tick_, rng::RngContext{world_seed_, tick_}, jobs_, events_};
+    events_.begin_phase();
+    apply_commands(context);
+    events_.clear();
 }
 
 void Simulation::enqueue(std::vector<SequencedCommand> commands) {

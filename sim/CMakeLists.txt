@@ -6,15 +6,20 @@ add_library(citysim_core STATIC
     src/core/event_bus.cpp
     src/core/input_log.cpp
     src/core/isystem.cpp
+    src/core/job_system.cpp
     src/core/rng.cpp
     src/core/scheduler.cpp
     src/core/simulation.cpp
     src/core/state_hasher.cpp
     src/core/version.cpp
-    src/core/world.cpp)
+    src/core/world.cpp
+    src/runner/clock.cpp
+    src/runner/simulation_runner.cpp)
 target_include_directories(citysim_core PUBLIC include)
 target_compile_features(citysim_core PUBLIC cxx_std_20)
+find_package(Threads REQUIRED)
 target_link_libraries(citysim_core
+    PUBLIC Threads::Threads
     PUBLIC EnTT::EnTT nlohmann_json::nlohmann_json
     PRIVATE spdlog::spdlog zstd::libzstd xxHash::xxhash)
 citysim_set_warnings(citysim_core)

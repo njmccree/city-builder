@@ -183,10 +183,11 @@ All of these values are **tunable through content data** (`game/content/base/def
 - Paces ticks to the target tick rate for the current speed. When it falls behind, it runs up to `max_catchup_ticks` and then slows the game down rather than spiralling.
 - Pause: the thread sleeps on a condition variable. Commands are still accepted and applied when the game unpauses, or immediately for "while paused" commands such as save and load.
 - The main thread (Godot) talks to the runner **only** through `CommandQueue` (in) and `SnapshotBuffer` (out).
-- A fake clock can be injected for tests.
+- A fake clock can be injected for tests. `IClock` has three operations: `now_seconds()`, `sleep_until(deadline)` and `interrupt()`. `interrupt()` makes the current or next sleep return early, once, so `stop()` and new commands never wait out a sleep. `SimulationRunner::wait_until_idle()` lets tests advance a `FakeClock` and then wait deterministically, with no real sleeping.
+- Ticks are scheduled as `origin + (n + 1) × interval`. The origin resets on a speed change and after unpausing. The first tick is one interval after the origin.
 
 ### 7.2 JobSystem
-- A fixed pool of worker threads (`hardware_concurrency − 2`, minimum 1). The simulation thread also helps with work.
+- A fixed pool of worker threads (`hardware_concurrency − 2`, minimum 1). The simulation thread also helps with work. The configured count includes the calling thread, so a count of 1 means no extra threads.
 - `parallel_for(count, chunk_size, fn(begin, end, chunk_index))`. **The chunk size is chosen by the caller and never depends on thread count.**
 - **Determinism pattern:** each chunk writes to its own output buffer indexed by `chunk_index`. The caller then merges the buffers serially in chunk order. Results must be bit-identical with 1, 2 or N worker threads, and tests enforce this.
 - No work stealing that changes results. Ordering is enforced at the merge, so the scheduling strategy is free.

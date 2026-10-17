@@ -46,6 +46,13 @@ if command -v g++ >/dev/null 2>&1 && version_ge "$(g++ -dumpversion)" 12; then h
 if command -v clang++ >/dev/null 2>&1 && version_ge "$(clang++ -dumpversion)" 15; then have_cxx=1; fi
 [ "$have_cxx" -eq 0 ] && apt_install g++
 command -v clang-format >/dev/null 2>&1 || apt_install clang-format
+# The linux-tsan preset needs clang's ThreadSanitizer runtime, which ships separately from the compiler.
+if command -v clang++ >/dev/null 2>&1; then
+    clang_major=$(clang++ -dumpversion | cut -d. -f1)
+    if ! ls "/usr/lib/llvm-${clang_major}/lib/clang/${clang_major}/lib/linux/"libclang_rt.tsan-*.a >/dev/null 2>&1; then
+        apt_install "libclang-rt-${clang_major}-dev"
+    fi
+fi
 
 for t in cmake ninja git python3; do
     command -v "$t" >/dev/null 2>&1 && log "found $t" || warn "$t is still missing"

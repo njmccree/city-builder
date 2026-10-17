@@ -25,6 +25,13 @@ if(MODE STREQUAL "determinism")
         message(FATAL_ERROR "no 'final' line in the output:\n${first}")
     endif()
 
+    # The thread count must never change the result.
+    run_headless(one_thread --seed 42 --ticks 500 --threads 1)
+    run_headless(eight_threads --seed 42 --ticks 500 --threads 8)
+    if(NOT one_thread STREQUAL eight_threads OR NOT one_thread STREQUAL first)
+        message(FATAL_ERROR "output depends on the thread count:\n${one_thread}\n---\n${eight_threads}\n---\n${first}")
+    endif()
+
     run_headless(other --seed 43 --ticks 500)
     if(first STREQUAL other)
         message(FATAL_ERROR "different seeds printed identical output")
