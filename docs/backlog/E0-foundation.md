@@ -856,7 +856,7 @@ Run all tests (including the tsan preset). Follow the Task workflow in CLAUDE.md
 - The Godot headless smoke test passes in CI.
 - The editor runs the main scene on the PC.
 
-#### [ ] T0.6.1.1 — godot-cpp submodule and GDExtension library
+#### [x] T0.6.1.1 — godot-cpp submodule and GDExtension library
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.5.1.4
 ```
 Task T0.6.1.1 (Story S0.6.1). Read CLAUDE.md and docs/architecture.md §2, §3, §11.
@@ -881,7 +881,7 @@ Verify the Linux build of the extension succeeds in this session. Follow the Tas
 (branch story/S0.6.1-gdext).
 ```
 
-#### [ ] T0.6.1.2 — Godot project skeleton and headless smoke test
+#### [x] T0.6.1.2 — Godot project skeleton and headless smoke test
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.6.1.1
 ```
 Task T0.6.1.2 (Story S0.6.1). Read docs/architecture.md §2 and §11. Godot files must be hand-written as

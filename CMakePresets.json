@@ -95,6 +95,32 @@
       }
     },
     {
+      "name": "linux-debug-gdext",
+      "inherits": "linux-debug",
+      "description": "Debug build that also builds the GDExtension library into game/bin/ (needs the godot-cpp submodule).",
+      "cacheVariables": {
+        "CITYSIM_BUILD_GDEXT": "ON"
+      }
+    },
+    {
+      "name": "ci-linux-gdext",
+      "inherits": "ci-linux",
+      "description": "CI: the GDExtension library only (the Godot smoke test); the unit tests are covered by ci-linux.",
+      "cacheVariables": {
+        "CITYSIM_BUILD_GDEXT": "ON",
+        "CITYSIM_BUILD_TESTS": "OFF",
+        "CITYSIM_BUILD_TOOLS": "OFF"
+      }
+    },
+    {
+      "name": "windows-debug-gdext",
+      "inherits": "windows-debug",
+      "description": "Debug build that also builds the GDExtension library into game/bin/ (needs the godot-cpp submodule).",
+      "cacheVariables": {
+        "CITYSIM_BUILD_GDEXT": "ON"
+      }
+    },
+    {
       "name": "linux-tracy",
       "inherits": "linux-debug",
       "description": "Debug build with Tracy profiler zones enabled.",
@@ -139,6 +165,18 @@
     {
       "name": "linux-tracy",
       "configurePreset": "linux-tracy"
+    },
+    {
+      "name": "linux-debug-gdext",
+      "configurePreset": "linux-debug-gdext"
+    },
+    {
+      "name": "windows-debug-gdext",
+      "configurePreset": "windows-debug-gdext"
+    },
+    {
+      "name": "ci-linux-gdext",
+      "configurePreset": "ci-linux-gdext"
     }
   ],
   "testPresets": [

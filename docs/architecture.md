@@ -68,7 +68,7 @@ docs/                     gdd.md, architecture.md, backlog/, versions.md, perf.m
 | spdlog | logging |
 | zstd | save compression |
 | xxHash | state hashing, content hashing |
-| godot-cpp | GDExtension bindings (git submodule, not FetchContent) |
+| godot-cpp | GDExtension bindings (git submodule, not FetchContent). Built through its CMake support when `CITYSIM_BUILD_GDEXT=ON` (presets `linux-debug-gdext`, `windows-debug-gdext`), which is off in the other presets so the simulation builds and tests stay fast. Exceptions stay enabled in it because the core throws. |
 | Tracy (optional, `CITYSIM_TRACY=ON`) | profiling |
 
 - Targets:

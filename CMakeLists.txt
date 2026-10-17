@@ -12,6 +12,12 @@ option(CITYSIM_BUILD_GDEXT "Build the GDExtension bridge" OFF)
 option(CITYSIM_WARNINGS_AS_ERRORS "Treat warnings in our code as errors (CI)" OFF)
 option(CITYSIM_TRACY "Enable Tracy profiling" OFF)
 
+if(CITYSIM_BUILD_GDEXT)
+    # The extension is a shared library, so everything linked into it (our core and its static
+    # dependencies) must be position independent. Set before the dependencies are defined.
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(Warnings)
 include(Dependencies)
@@ -21,3 +27,7 @@ if(CITYSIM_BUILD_TESTS)
 endif()
 
 add_subdirectory(sim)
+
+if(CITYSIM_BUILD_GDEXT)
+    add_subdirectory(gdext)
+endif()
