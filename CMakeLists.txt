@@ -16,6 +16,12 @@ if(CITYSIM_BUILD_GDEXT)
     # The extension is a shared library, so everything linked into it (our core and its static
     # dependencies) must be position independent. Set before the dependencies are defined.
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    if(MSVC)
+        # godot-cpp defaults to the static release CRT (/MT), which cannot link with our core's default
+        # /MDd in Debug (LNK2038). Use the DLL CRT everywhere and tell godot-cpp not to override it.
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" CACHE STRING "" FORCE)
+        set(GODOTCPP_USE_STATIC_CPP OFF CACHE BOOL "" FORCE)
+    endif()
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")

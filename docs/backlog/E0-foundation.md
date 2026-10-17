@@ -903,7 +903,7 @@ text (project.godot, .tscn, .gd) — keep them minimal and valid for the pinned 
 Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.6.1.3 — Windows build and editor verification
+#### [x] T0.6.1.3 — Windows build and editor verification
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.6.1.2
 ```
 Task T0.6.1.3 (Story S0.6.1, last task). Read CLAUDE.md and docs/dev-setup-windows.md.
