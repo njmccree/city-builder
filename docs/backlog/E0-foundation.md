@@ -990,7 +990,7 @@ Run all tests and the smoke test. Follow the Task workflow in CLAUDE.md; last ta
 - Smoothing, map bounds, and settings in a Resource.
 - Verified on the PC.
 
-#### [ ] T0.7.1.1 — Camera rig
+#### [x] T0.7.1.1 — Camera rig
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.6.2.2
 ```
 Task T0.7.1.1 (Story S0.7.1). Read CLAUDE.md (GDScript style: static typing) and docs/architecture.md §11.
