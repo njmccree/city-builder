@@ -957,7 +957,7 @@ Extend the CitySim GDExtension class (gdext/src/city_sim.*):
 Run the smoke test headless. Follow the Task workflow in CLAUDE.md (branch story/S0.6.2-sim-api).
 ```
 
-#### [ ] T0.6.2.2 — Snapshot access and interpolation for renderers
+#### [x] T0.6.2.2 — Snapshot access and interpolation for renderers
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.6.2.1
 ```
 Task T0.6.2.2 (Story S0.6.2, last task). Read docs/architecture.md §7.3 and §11.

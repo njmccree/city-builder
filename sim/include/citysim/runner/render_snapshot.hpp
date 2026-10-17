@@ -29,6 +29,18 @@ struct UiEvent {
     std::vector<std::string> warnings; // LoadCompleted: e.g. the content changed since the save
 };
 
+// A named block of flat numbers for a renderer (architecture §7.3): `data` holds records of `stride` floats,
+// for example 4 per agent (x, z, yaw, kind). Filled by publish hooks; a renderer looks its channel up by
+// name. The layout of each channel is a contract between its hook and its renderer, documented where the hook
+// is.
+struct SnapshotChannel {
+    std::string name;
+    std::vector<float> data;
+    std::uint32_t stride = 1;
+
+    std::size_t record_count() const { return stride == 0 ? 0 : data.size() / stride; }
+};
+
 struct SimStats {
     double last_tick_ms = 0.0;
     double avg_tick_ms = 0.0; // over the last 60 ticks
@@ -51,6 +63,18 @@ struct RenderSnapshot {
     std::uint8_t hour = 0;   // 0..23
     std::uint8_t minute = 0; // 0..59
     std::vector<UiEvent> ui_events;
+    // Data for renderers, added by publish hooks. Cleared before every publish: a hook fills it each time.
+    std::vector<SnapshotChannel> channels;
+
+    // The channel with this name, or nullptr.
+    const SnapshotChannel* find_channel(const std::string& name) const {
+        for (const SnapshotChannel& channel : channels) {
+            if (channel.name == name) {
+                return &channel;
+            }
+        }
+        return nullptr;
+    }
 };
 
 } // namespace citysim::runner

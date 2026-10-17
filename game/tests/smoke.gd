@@ -92,6 +92,14 @@ func _process(delta: float) -> bool:
 				return _fail("set_speed 2 had no effect: speed is " + str(stats["speed"]))
 			if (stats["date_text"] as String).is_empty() or _dates.is_empty():
 				return _fail("no date reached the UI")
+			var channel: PackedFloat32Array = _sim.get_channel("debug.clock")
+			if channel.size() != 3 or channel[0] <= 0.0 or int(channel[1]) != 2 or channel[2] != 0.0:
+				return _fail("the debug.clock channel is wrong: " + str(channel))
+			if not _sim.get_channel("no.such.channel").is_empty():
+				return _fail("a channel that does not exist was not empty")
+			var alpha: float = _sim.get_interpolation_alpha()
+			if alpha < 0.0 or alpha > 1.0:
+				return _fail("the interpolation alpha is out of range: " + str(alpha))
 			print("date: ", stats["date_text"], "  time: ", stats["time_text"], "  tick: ", stats["tick"])
 			_sim.submit_command({"type": "toggle_pause"})
 			_step = Step.PAUSING
@@ -109,6 +117,8 @@ func _process(delta: float) -> bool:
 				return false
 			if (stats["tick"] as int) != _tick_when_paused:
 				return _fail("the tick advanced while paused")
+			if _sim.get_interpolation_alpha() != 1.0:
+				return _fail("the interpolation alpha is not 1 while paused")
 			# Saving works while paused.
 			if not _sim.submit_command({"type": "save_game", "path": SAVE_PATH}):
 				return _fail("save_game was rejected")

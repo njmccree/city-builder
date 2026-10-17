@@ -1,10 +1,12 @@
 #pragma once
 
 #include "citysim/runner/game_session.hpp"
+#include "citysim/runner/snapshot_view.hpp"
 
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/translation.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/variant/packed_float32_array.hpp>
 #include <godot_cpp/variant/packed_string_array.hpp>
 #include <godot_cpp/variant/string.hpp>
 #include <memory>
@@ -44,6 +46,17 @@ class CitySim : public godot::Node {
     // newest snapshot read by _process(); all zero/empty before a game starts.
     godot::Dictionary get_stats() const;
 
+    // How far between the previous and the current snapshot it is time to draw this frame, 0..1 (1 while
+    // paused or when no game runs). Computed once per frame in _process(), so every reader in a frame agrees.
+    float get_interpolation_alpha() const { return alpha_; }
+
+    // A snapshot channel by name as a flat array (see SnapshotChannel), for debugging; empty if there is
+    // none. Fast renderers use snapshot_view() instead and never copy.
+    godot::PackedFloat32Array get_channel(const godot::String& name) const;
+
+    // For C++ renderer nodes: the previous and current snapshot, and the alpha to blend them with.
+    const runner::SnapshotView& snapshot_view() const { return view_; }
+
     void _process(double delta) override;
 
   private:
@@ -53,6 +66,8 @@ class CitySim : public godot::Node {
     std::unique_ptr<runner::GameSession> session_;
     runner::RenderSnapshot last_;
     bool have_snapshot_ = false;
+    runner::SnapshotView view_;
+    float alpha_ = 1.0F;
     godot::String date_text_;
     godot::String time_text_;
     std::vector<godot::Ref<godot::Translation>> translations_;

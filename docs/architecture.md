@@ -204,6 +204,8 @@ All of these values are **tunable through content data** (`game/content/base/def
   - a UI event list
 - The main thread takes the newest snapshot every frame. It interpolates positions between the previous and current snapshot, using real time since that tick was published.
 - Snapshots are **read-only copies**. Godot code never reads `World` directly.
+- **Interpolation.** The front end keeps the previous and current snapshot (`SnapshotView`) and each frame computes `alpha = clamp((now − current.published_at) / tick_interval, 0, 1)`, where `now` is the runner clock and the interval follows the current speed; `alpha` is 1 while paused. `CitySim` computes it once per frame (`get_interpolation_alpha()`), and C++ renderer nodes read it with the two snapshots through `CitySim::snapshot_view()`. A load resets the history, so nothing is blended across it.
+- **Channels.** The flat arrays for renderers are `SnapshotChannel`s (`name`, `data`, `stride`) in `RenderSnapshot::channels`, added by publish hooks and cleared before every publish. A channel's layout is a contract between its hook and its renderer, documented with the hook. GDScript can read one as a `PackedFloat32Array` (`get_channel(name)`) for debugging only. The built-in `debug.clock` channel (tick, speed, paused) exists to test the path.
 
 ## 8. Content & Mods
 

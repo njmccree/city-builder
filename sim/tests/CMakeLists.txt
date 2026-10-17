@@ -24,6 +24,7 @@ add_executable(citysim_tests
     core/world_tests.cpp
     runner/game_session_tests.cpp
     runner/runner_save_tests.cpp
+    runner/snapshot_view_tests.cpp
     runner/runner_tests.cpp
     runner/triple_buffer_tests.cpp
     time/calendar_events_tests.cpp

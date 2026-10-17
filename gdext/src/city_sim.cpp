@@ -37,6 +37,17 @@ String describe(const content::ContentIssue& issue) {
     return to_godot(issue.file.empty() ? issue.message : issue.format_full());
 }
 
+// A tiny channel that proves the path from a publish hook to GDScript works (used by the smoke test): one
+// record of (tick, speed, paused as 0/1). Renderers add their own channels the same way.
+void publish_debug_clock(core::Simulation& simulation, runner::RenderSnapshot& snapshot) {
+    runner::SnapshotChannel channel;
+    channel.name = "debug.clock";
+    channel.stride = 3;
+    channel.data = {static_cast<float>(simulation.tick()), static_cast<float>(snapshot.speed),
+                    snapshot.paused ? 1.0F : 0.0F};
+    snapshot.channels.push_back(std::move(channel));
+}
+
 String two_digits(unsigned value) {
     return String::num_int64(value).pad_zeros(2);
 }
@@ -57,6 +68,9 @@ void CitySim::_bind_methods() {
     godot::ClassDB::bind_method(godot::D_METHOD("is_running"), &CitySim::is_running);
     godot::ClassDB::bind_method(godot::D_METHOD("submit_command", "command"), &CitySim::submit_command);
     godot::ClassDB::bind_method(godot::D_METHOD("get_stats"), &CitySim::get_stats);
+    godot::ClassDB::bind_method(godot::D_METHOD("get_interpolation_alpha"),
+                                &CitySim::get_interpolation_alpha);
+    godot::ClassDB::bind_method(godot::D_METHOD("get_channel", "name"), &CitySim::get_channel);
 
     ADD_SIGNAL(godot::MethodInfo("tick_advanced", godot::PropertyInfo(godot::Variant::INT, "tick")));
     ADD_SIGNAL(godot::MethodInfo("date_changed", godot::PropertyInfo(godot::Variant::STRING, "text")));
@@ -89,6 +103,7 @@ Dictionary CitySim::new_game(int64_t seed, const godot::PackedStringArray& conte
     }
     request.era_id = to_std(era_id);
     request.autosave_directory = real_path("user://saves/autosave");
+    request.publish_hooks.push_back(&publish_debug_clock);
 
     runner::NewGameOutcome outcome = runner::start_new_game(request);
 
@@ -108,6 +123,8 @@ Dictionary CitySim::new_game(int64_t seed, const godot::PackedStringArray& conte
     if (outcome.ok()) {
         session_ = std::move(outcome.session);
         have_snapshot_ = false;
+        view_.reset();
+        alpha_ = 1.0F;
         install_translations();
         set_process(true);
     }
@@ -122,6 +139,8 @@ void CitySim::shutdown() {
     remove_translations();
     session_.reset(); // stops the simulation thread
     have_snapshot_ = false;
+    view_.reset();
+    alpha_ = 1.0F;
     last_ = runner::RenderSnapshot();
     date_text_ = String();
     time_text_ = String();
@@ -162,6 +181,19 @@ Dictionary CitySim::get_stats() const {
     return stats;
 }
 
+godot::PackedFloat32Array CitySim::get_channel(const String& name) const {
+    godot::PackedFloat32Array result;
+    const runner::SnapshotChannel* channel =
+        view_.has_snapshot() ? view_.current().find_channel(to_std(name)) : nullptr;
+    if (channel != nullptr) {
+        result.resize(static_cast<int64_t>(channel->data.size()));
+        for (std::size_t i = 0; i < channel->data.size(); ++i) {
+            result[static_cast<int64_t>(i)] = channel->data[i];
+        }
+    }
+    return result;
+}
+
 void CitySim::_process(double) {
     if (!session_) {
         return;
@@ -183,6 +215,9 @@ void CitySim::_process(double) {
         }
         const char* signal =
             event.kind == runner::UiEventKind::SaveCompleted ? "save_completed" : "load_completed";
+        if (event.kind == runner::UiEventKind::LoadCompleted && event.ok) {
+            view_.reset(); // the game was replaced: nothing to interpolate from
+        }
         emit_signal(signal, to_godot(event.path), event.ok, message);
     }
 
@@ -200,6 +235,8 @@ void CitySim::_process(double) {
             to_godot(localizer.format("calendar.time", {{"hour", to_std(two_digits(snapshot.hour))},
                                                         {"minute", to_std(two_digits(snapshot.minute))}}));
     }
+    view_.update(snapshot);
+    alpha_ = view_.alpha(session_->now_seconds(), session_->content().time_defines());
     last_ = std::move(snapshot);
     have_snapshot_ = true;
 

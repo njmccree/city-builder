@@ -24,6 +24,8 @@ struct NewGameRequest {
     // Not owned. Null uses the real clock.
     IClock* clock = nullptr;
     std::size_t worker_count = 0; // see Simulation; 0 = hardware default
+    // Called on the runner thread after every tick, in this order, to add data to the snapshot (channels).
+    std::vector<SimulationRunner::PublishHook> publish_hooks;
 };
 
 // Everything a running game needs, assembled and owned in one place: the loaded content, the clock, and the
@@ -41,6 +43,8 @@ class GameSession {
 
     SimulationRunner& runner() { return *runner_; }
     const content::ContentDatabase& content() const { return *content_; }
+    // The runner's clock now, in the seconds that RenderSnapshot::published_at uses.
+    double now_seconds() { return clock_->now_seconds(); }
     // Hands out a snapshot; one consumer thread only (see SimulationRunner::latest_snapshot).
     RenderSnapshot latest_snapshot() { return runner_->latest_snapshot(); }
 
@@ -50,6 +54,7 @@ class GameSession {
 
     std::unique_ptr<content::ContentDatabase> content_;
     std::unique_ptr<IClock> owned_clock_;
+    IClock* clock_ = nullptr;
     // Declared last so it is destroyed first: the runner thread uses everything above.
     std::unique_ptr<SimulationRunner> runner_;
 };

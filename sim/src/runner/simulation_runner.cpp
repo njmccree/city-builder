@@ -184,6 +184,7 @@ void SimulationRunner::publish_snapshot() {
         snapshot.minute = static_cast<std::uint8_t>(time::minute(game_clock, defines));
     }
     snapshot.ui_events.clear(); // the slot holds an older snapshot's data
+    snapshot.channels.clear();
     const std::uint64_t consumed = consumed_event_serial_.load();
     std::erase_if(pending_ui_events_, [consumed](const UiEvent& event) { return event.serial <= consumed; });
     snapshot.ui_events = pending_ui_events_; // a copy: they stay until the consumer has read them

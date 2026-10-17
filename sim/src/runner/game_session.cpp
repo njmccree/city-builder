@@ -47,6 +47,7 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
             session->owned_clock_ = std::make_unique<SteadyClock>();
         }
         IClock& clock = request.clock != nullptr ? *request.clock : *session->owned_clock_;
+        session->clock_ = &clock;
 
         RunnerConfig config;
         config.time = session->content_->time_defines();
@@ -61,6 +62,14 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
         session->runner_->configure([content, era_id](core::Simulation& simulation) {
             time::install_calendar(simulation, *content, era_id);
         });
+        if (!request.publish_hooks.empty()) {
+            session->runner_->set_publish_hook(
+                [hooks = request.publish_hooks](core::Simulation& simulation, RenderSnapshot& snapshot) {
+                    for (const SimulationRunner::PublishHook& hook : hooks) {
+                        hook(simulation, snapshot);
+                    }
+                });
+        }
         session->runner_->start();
     } catch (const std::exception& error) {
         fail(error.what());

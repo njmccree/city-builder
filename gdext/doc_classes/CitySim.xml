@@ -15,6 +15,19 @@
 				Returns the version of the simulation core library, for example [code]0.0.1[/code].
 			</description>
 		</method>
+		<method name="get_channel" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<param index="0" name="name" type="String" />
+			<description>
+				Returns the snapshot channel called [param name] as a flat array of records, or an empty array if there is none. For debugging: the fast renderers read channels in C++ without copying. The built-in channel [code]debug.clock[/code] has one record of three numbers: tick, speed and paused (0 or 1).
+			</description>
+		</method>
+		<method name="get_interpolation_alpha" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns how far between the previous and the current simulation snapshot it is time to draw this frame, from 0.0 to 1.0. It is 1.0 while the game is paused and when no game runs. It is computed once per frame, so everything drawn in a frame agrees.
+			</description>
+		</method>
 		<method name="get_stats" qualifiers="const">
 			<return type="Dictionary" />
 			<description>
