@@ -1,0 +1,49 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "test:era.bad1",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": "fast",
+      "default_start_year": 1600,
+      "order": 1
+    },
+    {
+      "type": "era",
+      "id": "test:era.bad2",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 1.5
+    },
+    {
+      "type": "era",
+      "id": "test:era.bad3",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": -5,
+      "default_start_year": 1600,
+      "order": 1
+    },
+    {
+      "type": "era",
+      "id": "test:era.bad4",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 99999999999,
+      "order": 1
+    },
+    {
+      "type": "era",
+      "id": "test:era.bad5",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 5000000000,
+      "default_start_year": 1600,
+      "order": 1
+    }
+  ]
+}

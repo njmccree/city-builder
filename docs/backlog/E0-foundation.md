@@ -615,7 +615,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md; last task of S0.3.2, so op
 - The `citysim_validate` CLI runs in CI.
 - Base era definitions exist.
 
-#### [ ] T0.4.1.1 — Content loader and DefRegistry
+#### [x] T0.4.1.1 — Content loader and DefRegistry
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.1.1
 ```
 Task T0.4.1.1 (Story S0.4.1). Read docs/architecture.md §8 carefully.

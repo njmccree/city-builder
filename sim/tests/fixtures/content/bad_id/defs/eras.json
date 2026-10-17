@@ -1,0 +1,58 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "Base:Era.Ancient",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 1
+    },
+    {
+      "type": "era",
+      "id": "noprefix",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 1
+    },
+    {
+      "type": "era",
+      "id": "a:b:c",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 1
+    },
+    {
+      "type": "era",
+      "id": ":name",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 1
+    },
+    {
+      "type": "era",
+      "id": "mod:",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 1
+    },
+    {
+      "type": "era",
+      "id": "test:era.fine",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 1
+    }
+  ]
+}

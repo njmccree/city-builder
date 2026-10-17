@@ -1,4 +1,8 @@
 add_library(citysim_core STATIC
+    src/content/content_database.cpp
+    src/content/content_id.cpp
+    src/content/era_def.cpp
+    src/content/parse_context.cpp
     src/core/command_dispatcher.cpp
     src/core/command_queue.cpp
     src/core/commands.cpp
