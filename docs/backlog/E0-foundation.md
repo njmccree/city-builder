@@ -332,7 +332,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md; last task of S0.2.2, so op
 - Commands carry sequence numbers and are recorded in a replayable input log.
 - `citysim_headless` runs N ticks and prints hashes, and can replay an input log with an identical result.
 
-#### [ ] T0.2.3.1 ★ — Scheduler, phases, TickContext, Simulation
+#### [x] T0.2.3.1 ★ — Scheduler, phases, TickContext, Simulation
 - **Model:** **Opus** · **Session:** [Cloud] · **Depends on:** T0.2.2.2
 ```
 Task T0.2.3.1 (Story S0.2.3). This is architecture-critical. Read docs/architecture.md §4–§7 fully.

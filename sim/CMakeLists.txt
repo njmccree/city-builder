@@ -1,6 +1,10 @@
 add_library(citysim_core STATIC
     src/core/component_registry.cpp
+    src/core/event_bus.cpp
+    src/core/isystem.cpp
     src/core/rng.cpp
+    src/core/scheduler.cpp
+    src/core/simulation.cpp
     src/core/state_hasher.cpp
     src/core/version.cpp
     src/core/world.cpp)
