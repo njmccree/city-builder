@@ -29,23 +29,29 @@ class ContentDatabase {
     // Registers the built-in definition types (era).
     ContentDatabase();
 
-    // Registers a definition type: files may then contain {"type": <name>, ...}. Throws std::logic_error if
-    // the name or the C++ type is already registered, or after content has been loaded.
-    template <class T> void register_def_type(std::string name, ParseFn<T> parse) {
+    // Registers a definition type: files may then contain {"type": <name>, ...}. `resolve` fills in
+    // references once every file is loaded; `validate` checks each definition after that. Both are optional.
+    // Throws std::logic_error if the name or the C++ type is already registered, or after content has been
+    // loaded.
+    template <class T>
+    void register_def_type(std::string name, ParseFn<T> parse, ResolveFn<T> resolve = nullptr,
+                           ValidateFn<T> validate = nullptr) {
         if (loaded_) {
             throw std::logic_error("register_def_type after content was loaded");
         }
         if (by_name_.contains(name) || by_type_.contains(std::type_index(typeid(T)))) {
             throw std::logic_error("definition type already registered: " + name);
         }
-        auto kind = std::make_unique<DefKind<T>>(name, std::move(parse));
+        auto kind =
+            std::make_unique<DefKind<T>>(name, std::move(parse), std::move(resolve), std::move(validate));
         by_type_.emplace(std::type_index(typeid(T)), kind.get());
         by_name_.emplace(std::move(name), kind.get());
         kinds_.push_back(std::move(kind));
     }
 
-    // Loads each mod root in order (defs/**/*.json in sorted path order, then defines/time.json), reports
-    // everything wrong, and finalizes the registries. Can be called once.
+    // Loads each mod root in order (defs/**/*.json in sorted path order, then defines/time.json), finalizes
+    // the registries, resolves references, validates every definition, and reports everything wrong. Problems
+    // are listed in a fixed order: files in path order, then per type and id. Can be called once.
     LoadResult load(const std::vector<std::filesystem::path>& mod_roots);
 
     template <class T> const DefRegistry<T>& registry() const {
@@ -61,10 +67,12 @@ class ContentDatabase {
 
   private:
     void load_mod_root(const std::filesystem::path& root, std::vector<ContentIssue>& issues);
-    void load_defs_file(const std::filesystem::path& path, const std::string& display_name,
-                        std::vector<ContentIssue>& issues);
-    void load_time_defines(const std::filesystem::path& path, const std::string& display_name,
-                           std::vector<ContentIssue>& issues);
+    void load_defs_file(const std::filesystem::path& path, const std::string& mod_root,
+                        const std::string& display_name, std::vector<ContentIssue>& issues);
+    void load_time_defines(const std::filesystem::path& path, const std::string& mod_root,
+                           const std::string& display_name, std::vector<ContentIssue>& issues);
+
+    std::string type_name_of(std::type_index type) const;
 
     std::vector<std::unique_ptr<IDefKind>> kinds_; // registration order: the order registries finalize in
     std::map<std::string, IDefKind*> by_name_;

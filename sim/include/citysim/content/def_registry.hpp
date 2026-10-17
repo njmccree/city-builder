@@ -99,6 +99,12 @@ template <class T> class DefRegistry {
         require_finalized();
         return defs_;
     }
+    // For the resolve pass only: the definitions, sorted by id, writable so references can be filled in.
+    // Never use it to add, remove or reorder anything.
+    std::span<T> definitions_for_resolve() {
+        require_finalized();
+        return defs_;
+    }
     std::span<const ContentId> ids() const {
         require_finalized();
         return ids_;

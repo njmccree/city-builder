@@ -640,7 +640,7 @@ Implement namespace citysim::content (single mod root for now; mod layering is T
 Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.4.1-content).
 ```
 
-#### [ ] T0.4.1.2 — References, validation, citysim_validate CLI
+#### [x] T0.4.1.2 — References, validation, citysim_validate CLI
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.4.1.1
 ```
 Task T0.4.1.2 (Story S0.4.1). Read docs/architecture.md §8 and §13.

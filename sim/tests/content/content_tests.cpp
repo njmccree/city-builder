@@ -319,3 +319,124 @@ TEST_CASE("custom definition types can be registered", "[content][loader]") {
     REQUIRE(db.registry<Widget>().get(*db.registry<Widget>().find("t:w.one")).label == "hello");
     REQUIRE_THROWS_AS(db.registry<std::string>(), std::logic_error);
 }
+
+// ---- references and validation
+// -------------------------------------------------------------------------------
+
+TEST_CASE("references resolve to handles in the target registry", "[content][refs]") {
+    const Loaded loaded = load_fixture("refs_ok");
+    REQUIRE(loaded.result.ok());
+
+    const auto& eras = loaded.db->registry<EraDef>();
+    const EraDef& first = eras.get(*eras.find("test:era.first"));
+    REQUIRE(first.next_era.has_value());
+    REQUIRE(first.next_era.resolved());
+    REQUIRE(eras.get(first.next_era.handle).id.str() == "test:era.second");
+    REQUIRE(eras.id(first.next_era.handle).str() == "test:era.second");
+
+    const EraDef& last = eras.get(*eras.find("test:era.third"));
+    REQUIRE_FALSE(last.next_era.has_value()); // optional, left out
+    REQUIRE_FALSE(last.next_era.resolved());
+}
+
+TEST_CASE("an unresolved or malformed reference is reported where it was written", "[content][refs]") {
+    const Loaded loaded = load_fixture("refs_bad");
+    REQUIRE(loaded.result.errors.size() == 2);
+
+    const ContentIssue* ghost = find_issue(loaded.result.errors, "test:era.ghost");
+    REQUIRE(ghost != nullptr);
+    REQUIRE(ghost->file == "defs/eras.json");
+    REQUIRE(ghost->pointer == "/defs/0/next_era");
+    REQUIRE(ghost->message == "unresolved reference: no era has the id 'test:era.ghost'");
+
+    const ContentIssue* malformed = find_issue(loaded.result.errors, "Not An Id");
+    REQUIRE(malformed != nullptr);
+    REQUIRE(malformed->pointer == "/defs/1/next_era");
+
+    // The good reference next to the bad ones still resolved.
+    const auto& eras = loaded.db->registry<EraDef>();
+    REQUIRE(eras.get(*eras.find("test:era.c")).next_era.resolved());
+}
+
+TEST_CASE("validation reports value problems per definition, in id order", "[content][validation]") {
+    const Loaded loaded = load_fixture("validation_fail");
+    REQUIRE(loaded.result.errors.size() == 4);
+
+    // Reported in id order, not file order, so output is stable.
+    REQUIRE(loaded.result.errors[0].message.find("does not come after") !=
+            std::string::npos); // test:era.backwards
+    REQUIRE(loaded.result.errors[0].pointer == "/defs/3/next_era");
+    REQUIRE(loaded.result.errors[1].message == "order 5 is already used by 'test:era.same_a'"); // same_b
+    REQUIRE(loaded.result.errors[1].pointer == "/defs/2/order");
+    REQUIRE(loaded.result.errors[2].pointer == "/defs/5/next_era");       // test:era.self
+    REQUIRE(loaded.result.errors[3].message == "must be greater than 0"); // test:era.zero
+    REQUIRE(loaded.result.errors[3].pointer == "/defs/0/real_seconds_per_year");
+
+    // The clash is reported once, on the later id only.
+    REQUIRE(find_issue(loaded.result.errors, "/defs/1/order") == nullptr);
+}
+
+TEST_CASE("time defines that cannot work are errors", "[content][validation]") {
+    const Loaded loaded = load_fixture("time_values_bad");
+    REQUIRE(loaded.result.errors.size() == 4);
+    REQUIRE(find_issue(loaded.result.errors, "defines/time.json:/base_tick_rate: must be greater than 0") !=
+            nullptr);
+    REQUIRE(find_issue(loaded.result.errors, "defines/time.json:/day_length_ticks: must be greater than 0") !=
+            nullptr);
+    REQUIRE(find_issue(loaded.result.errors, "defines/time.json:/movement_scale: must be greater than 0") !=
+            nullptr);
+    REQUIRE(find_issue(loaded.result.errors,
+                       "defines/time.json:/speed_multipliers/2: speeds 1 to 3 need a multiplier above 0") !=
+            nullptr);
+}
+
+TEST_CASE("issues carry the mod root so a tool can print a full path", "[content][validation]") {
+    const Loaded loaded = load_fixture("missing_field");
+    REQUIRE(loaded.result.errors.size() == 1);
+    const ContentIssue& issue = loaded.result.errors[0];
+    REQUIRE(issue.mod_root.find("fixtures/content/missing_field") != std::string::npos);
+    REQUIRE(issue.format_full() ==
+            issue.mod_root + "/defs/eras.json:/defs/1: missing required field 'real_seconds_per_year'");
+}
+
+TEST_CASE("a definition type can supply its own resolve and validate steps", "[content][validation]") {
+    struct Node {
+        ContentId id;
+        DefRef<Node> parent;
+        int weight = 0;
+    };
+    ContentDatabase db;
+    db.register_def_type<Node>(
+        "node",
+        [](const nlohmann::json& json, ParseContext& context) {
+            Node node;
+            node.id = context.def_id();
+            node.parent = read_def_ref<Node>(context, json, "parent", false);
+            node.weight = context.read_i32(json, "weight").value_or(0);
+            return node;
+        },
+        [](Node& node, ParseContext& context) { resolve_def_ref(context, node.parent, "parent"); },
+        [](const Node& node, const DefRegistry<Node>&, ParseContext& context) {
+            if (node.weight < 0) {
+                context.error(context.child_pointer("weight"), "must not be negative");
+            }
+        });
+
+    const auto root = std::filesystem::temp_directory_path() / "citysim_content_node_test";
+    std::filesystem::create_directories(root / "defs");
+    {
+        std::ofstream(root / "defs" / "n.json") << R"({"defs":[
+            {"type":"node","id":"t:n.root","weight":1},
+            {"type":"node","id":"t:n.child","parent":"t:n.root","weight":-3}]})";
+    }
+    const LoadResult result = db.load({root});
+    std::error_code ignored;
+    std::filesystem::remove_all(root, ignored);
+
+    REQUIRE(result.errors.size() == 1);
+    REQUIRE(result.errors[0].pointer == "/defs/1/weight");
+    const auto& nodes = db.registry<Node>();
+    REQUIRE(
+        nodes.get(nodes.find("t:n.child")->index == 0 ? *nodes.find("t:n.child") : *nodes.find("t:n.child"))
+            .parent.resolved());
+}

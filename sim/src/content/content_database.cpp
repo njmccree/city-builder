@@ -51,7 +51,12 @@ std::optional<nlohmann::json> read_json_file(const fs::path& path, ParseContext&
 } // namespace
 
 ContentDatabase::ContentDatabase() {
-    register_def_type<EraDef>("era", parse_era_def);
+    register_def_type<EraDef>("era", parse_era_def, resolve_era_def, validate_era_def);
+}
+
+std::string ContentDatabase::type_name_of(std::type_index type) const {
+    const auto it = by_type_.find(type);
+    return it == by_type_.end() ? std::string("definition") : std::string(it->second->type_name());
 }
 
 LoadResult ContentDatabase::load(const std::vector<fs::path>& mod_roots) {
@@ -68,6 +73,24 @@ LoadResult ContentDatabase::load(const std::vector<fs::path>& mod_roots) {
         kind->finalize();
     }
 
+    // References can only be resolved once every registry is sorted; validation needs them resolved.
+    const RefLookup lookup{
+        [this](std::type_index type, const ContentId& id) -> std::optional<std::uint32_t> {
+            const auto it = by_type_.find(type);
+            return it == by_type_.end() ? std::nullopt : it->second->find_index(id);
+        },
+        [this](std::type_index type) { return type_name_of(type); },
+    };
+    ParseContext pass_context(issues);
+    pass_context.set_ref_lookup(&lookup);
+    for (const auto& kind : kinds_) {
+        kind->resolve_all(pass_context);
+    }
+    pass_context.set_ref_lookup(nullptr);
+    for (const auto& kind : kinds_) {
+        kind->validate_all(pass_context);
+    }
+
     LoadResult result;
     for (ContentIssue& issue : issues) {
         (issue.severity == Severity::Error ? result.errors : result.warnings).push_back(std::move(issue));
@@ -78,7 +101,8 @@ LoadResult ContentDatabase::load(const std::vector<fs::path>& mod_roots) {
 void ContentDatabase::load_mod_root(const fs::path& root, std::vector<ContentIssue>& issues) {
     std::error_code ec;
     if (!fs::is_directory(root, ec)) {
-        issues.push_back({Severity::Error, root.generic_string(), "", "mod root is not a directory"});
+        issues.push_back(
+            ContentIssue{Severity::Error, root.generic_string(), "", "mod root is not a directory", ""});
         return;
     }
 
@@ -96,18 +120,19 @@ void ContentDatabase::load_mod_root(const fs::path& root, std::vector<ContentIss
         return display_path(a, root) < display_path(b, root);
     });
     for (const fs::path& file : files) {
-        load_defs_file(file, display_path(file, root), issues);
+        load_defs_file(file, root.generic_string(), display_path(file, root), issues);
     }
 
     const fs::path time_file = root / "defines" / "time.json";
     if (fs::is_regular_file(time_file, ec)) {
-        load_time_defines(time_file, display_path(time_file, root), issues);
+        load_time_defines(time_file, root.generic_string(), display_path(time_file, root), issues);
     }
 }
 
-void ContentDatabase::load_defs_file(const fs::path& path, const std::string& display_name,
-                                     std::vector<ContentIssue>& issues) {
+void ContentDatabase::load_defs_file(const fs::path& path, const std::string& mod_root,
+                                     const std::string& display_name, std::vector<ContentIssue>& issues) {
     ParseContext context(issues);
+    context.set_mod_root(mod_root);
     context.set_file(display_name);
 
     const std::optional<nlohmann::json> parsed = read_json_file(path, context);
@@ -157,9 +182,10 @@ void ContentDatabase::load_defs_file(const fs::path& path, const std::string& di
     }
 }
 
-void ContentDatabase::load_time_defines(const fs::path& path, const std::string& display_name,
-                                        std::vector<ContentIssue>& issues) {
+void ContentDatabase::load_time_defines(const fs::path& path, const std::string& mod_root,
+                                        const std::string& display_name, std::vector<ContentIssue>& issues) {
     ParseContext context(issues);
+    context.set_mod_root(mod_root);
     context.set_file(display_name);
 
     const std::optional<nlohmann::json> parsed = read_json_file(path, context);
@@ -201,6 +227,22 @@ void ContentDatabase::load_time_defines(const fs::path& path, const std::string&
                     defines.speed_multipliers[i] = element.get<std::uint32_t>();
                 }
             }
+        }
+    }
+    // Values that parse but cannot work.
+    if (json.contains("base_tick_rate") && defines.base_tick_rate == 0) {
+        context.error("/base_tick_rate", "must be greater than 0");
+    }
+    if (json.contains("day_length_ticks") && defines.day_length_ticks == 0) {
+        context.error("/day_length_ticks", "must be greater than 0");
+    }
+    if (json.contains("movement_scale") && !(defines.movement_scale > 0.0F)) {
+        context.error("/movement_scale", "must be greater than 0");
+    }
+    for (std::size_t speed = 1; speed < defines.speed_multipliers.size(); ++speed) {
+        if (defines.speed_multipliers[speed] == 0) {
+            context.error("/speed_multipliers/" + std::to_string(speed),
+                          "speeds 1 to 3 need a multiplier above 0");
         }
     }
     time_defines_ = defines;

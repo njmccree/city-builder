@@ -1,0 +1,33 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "test:era.first",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 120,
+      "default_start_year": -3000,
+      "order": 1,
+      "next_era": "test:era.second"
+    },
+    {
+      "type": "era",
+      "id": "test:era.second",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 2,
+      "next_era": "test:era.third"
+    },
+    {
+      "type": "era",
+      "id": "test:era.third",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 720,
+      "default_start_year": 1900,
+      "order": 3
+    }
+  ]
+}

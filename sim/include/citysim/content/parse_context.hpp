@@ -4,33 +4,49 @@
 #include "citysim/content/content_issue.hpp"
 
 #include <cstdint>
+#include <functional>
 #include <initializer_list>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <typeindex>
 #include <vector>
 
 namespace citysim::content {
+
+// How references find their target while the resolve pass runs: by C++ type and id, without depending on the
+// database itself.
+struct RefLookup {
+    std::function<std::optional<std::uint32_t>(std::type_index, const ContentId&)> find_index;
+    std::function<std::string(std::type_index)> type_name;
+};
 
 // Collects errors and warnings while one definition is parsed, each tagged with the file and JSON pointer
 // where the problem is (architecture §8). A parse function reads its fields through the read_* helpers, which
 // report missing fields and wrong types, then returns whatever it built; the loader discards the result if
 // error_count() grew.
 //
-// The loader positions the context (file and pointer) before it calls a parse function.
+// The loader positions the context (file and pointer) before it calls a parse function. The same context is
+// used for the later passes (resolving references, validation), positioned at each definition in turn.
 class ParseContext {
   public:
     explicit ParseContext(std::vector<ContentIssue>& sink) : sink_(sink) {}
 
     // --- position, set by the loader ---------------------------------------------------------------------
     void set_file(std::string file) { file_ = std::move(file); }
+    void set_mod_root(std::string mod_root) { mod_root_ = std::move(mod_root); }
     void set_pointer(std::string pointer) { pointer_ = std::move(pointer); }
     void set_def_id(ContentId id) { def_id_ = std::move(id); }
     const std::string& file() const { return file_; }
+    const std::string& mod_root() const { return mod_root_; }
     const std::string& pointer() const { return pointer_; }
     // The id of the definition being parsed (already validated), for parse functions to store.
     const ContentId& def_id() const { return def_id_; }
+
+    // Present only during the resolve pass.
+    void set_ref_lookup(const RefLookup* lookup) { ref_lookup_ = lookup; }
+    const RefLookup* ref_lookup() const { return ref_lookup_; }
 
     // --- reporting ---------------------------------------------------------------------------------------
     void error(std::string pointer, std::string message);
@@ -63,7 +79,9 @@ class ParseContext {
 
     std::vector<ContentIssue>& sink_;
     std::string file_;
+    std::string mod_root_;
     std::string pointer_;
+    const RefLookup* ref_lookup_ = nullptr;
     ContentId def_id_;
     std::size_t error_count_ = 0;
 };

@@ -25,11 +25,12 @@ std::string ParseContext::child_pointer(std::string_view key) const {
 
 void ParseContext::error(std::string pointer, std::string message) {
     ++error_count_;
-    sink_.push_back(ContentIssue{Severity::Error, file_, std::move(pointer), std::move(message)});
+    sink_.push_back(ContentIssue{Severity::Error, file_, std::move(pointer), std::move(message), mod_root_});
 }
 
 void ParseContext::warning(std::string pointer, std::string message) {
-    sink_.push_back(ContentIssue{Severity::Warning, file_, std::move(pointer), std::move(message)});
+    sink_.push_back(
+        ContentIssue{Severity::Warning, file_, std::move(pointer), std::move(message), mod_root_});
 }
 
 const nlohmann::json* ParseContext::find_field(const nlohmann::json& object, std::string_view key,
