@@ -1,0 +1,11 @@
+[configuration]
+
+entry_symbol = "citysim_library_init"
+compatibility_minimum = "4.7"
+
+[libraries]
+
+linux.debug.x86_64 = "res://bin/libcitysim_gdext.linux.debug.x86_64.so"
+linux.release.x86_64 = "res://bin/libcitysim_gdext.linux.release.x86_64.so"
+windows.debug.x86_64 = "res://bin/citysim_gdext.windows.debug.x86_64.dll"
+windows.release.x86_64 = "res://bin/citysim_gdext.windows.release.x86_64.dll"
