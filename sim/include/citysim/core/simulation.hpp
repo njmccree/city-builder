@@ -86,6 +86,16 @@ class Simulation {
     void enqueue(std::vector<SequencedCommand> commands);
     std::size_t pending_command_count() const { return pending_commands_.size(); }
 
+    // Commands waiting for the next step(), in arrival order; saved with the game.
+    const std::vector<SequencedCommand>& pending_commands() const { return pending_commands_; }
+
+    // Sets the loop state a save recorded, after the World has been loaded: the seed, the tick counter, the
+    // commands that were waiting and the input log so far. For save loading only; the Simulation must be
+    // fresh (tick() == 0, nothing pending).
+    void restore_loop_state(std::uint64_t world_seed, std::uint64_t tick,
+                            std::vector<SequencedCommand> pending_commands,
+                            std::vector<InputLogEntry> input_log);
+
     CommandDispatcher& dispatcher() { return dispatcher_; }
     const InputLog& input_log() const { return input_log_; }
 

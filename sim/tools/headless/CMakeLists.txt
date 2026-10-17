@@ -18,4 +18,7 @@ if(CITYSIM_BUILD_TESTS)
     add_test(NAME headless_replay_matches_recording
         COMMAND ${CMAKE_COMMAND} -DHEADLESS=$<TARGET_FILE:citysim_headless> -DMODE=replay
                 -DWORKDIR=${CMAKE_CURRENT_BINARY_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/test_headless.cmake)
+    add_test(NAME headless_resumes_from_a_save
+        COMMAND ${CMAKE_COMMAND} -DHEADLESS=$<TARGET_FILE:citysim_headless> -DMODE=save_load
+                -DWORKDIR=${CMAKE_CURRENT_BINARY_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/test_headless.cmake)
 endif()

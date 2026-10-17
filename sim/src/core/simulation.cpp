@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <stdexcept>
 namespace citysim::core {
 
 Simulation::Simulation(std::uint64_t world_seed, std::size_t worker_count)
@@ -39,6 +40,18 @@ void Simulation::apply_commands_only() {
 void Simulation::enqueue(std::vector<SequencedCommand> commands) {
     pending_commands_.insert(pending_commands_.end(), std::make_move_iterator(commands.begin()),
                              std::make_move_iterator(commands.end()));
+}
+
+void Simulation::restore_loop_state(std::uint64_t world_seed, std::uint64_t tick,
+                                    std::vector<SequencedCommand> pending_commands,
+                                    std::vector<InputLogEntry> input_log) {
+    if (tick_ != 0 || !pending_commands_.empty() || !input_log_.entries().empty()) {
+        throw std::logic_error("restore_loop_state needs a Simulation that has not run");
+    }
+    world_seed_ = world_seed;
+    tick_ = tick;
+    pending_commands_ = std::move(pending_commands);
+    input_log_.restore(std::move(input_log));
 }
 
 void Simulation::apply_commands(TickContext& context) {

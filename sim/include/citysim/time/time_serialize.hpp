@@ -9,6 +9,7 @@
 #include "citysim/time/calendar_state.hpp"
 #include "citysim/time/game_clock.hpp"
 #include "citysim/time/scheduled_action.hpp"
+#include "citysim/time/time_commands.hpp"
 #include "citysim/time/time_defines.hpp"
 
 #include <stdexcept>
@@ -34,6 +35,16 @@ template <class Ar> void serialize(Ar& ar, CalendarState& state, std::uint32_t v
     save::io(ar, state.now, version);
     save::io(ar, state.remainder, version);
     save::io(ar, state.era, version);
+}
+
+template <class Ar> void serialize(Ar& ar, SetSpeed& command, std::uint32_t version) {
+    save::io(ar, command.speed, version);
+}
+
+template <class Ar> void serialize(Ar&, TogglePause&, std::uint32_t) {}
+
+template <class Ar> void serialize(Ar& ar, SetEra& command, std::uint32_t version) {
+    save::io(ar, command.era_id, version);
 }
 
 template <class Ar> void serialize(Ar& ar, DebugAction& action, std::uint32_t version) {

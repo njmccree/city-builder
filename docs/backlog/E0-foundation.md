@@ -783,7 +783,7 @@ Document the pattern with a worked example at the top of archive.hpp (later Sonn
 Follow the Task workflow in CLAUDE.md (branch story/S0.5.1-save).
 ```
 
-#### [ ] T0.5.1.2 — `.csav` container, compression, continuation tests
+#### [x] T0.5.1.2 — `.csav` container, compression, continuation tests
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.5.1.1
 ```
 Task T0.5.1.2 (Story S0.5.1). Read docs/architecture.md §10 and the archive.hpp example.

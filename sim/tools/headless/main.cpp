@@ -5,6 +5,7 @@
 
 #include "citysim/core/command_queue.hpp"
 #include "citysim/core/simulation.hpp"
+#include "citysim/save/simulation_io.hpp"
 #include "headless/cli_options.hpp"
 #include "headless/demo_scenario.hpp"
 #include "headless/input_log_text.hpp"
@@ -56,7 +57,36 @@ int run(const headless::Options& options) {
     core::CommandQueue queue;
     std::vector<core::SequencedCommand> batch;
 
-    for (std::uint64_t t = 0; t < ticks; ++t) {
+    if (options.load_file) {
+        // The save holds the seed, so the demo input from here on matches the original run.
+        const save::LoadOutcome outcome = save::load_simulation(sim, *options.load_file, save::LoadOptions{});
+        for (const std::string& warning : outcome.warnings) {
+            std::cerr << "warning: " << warning << '\n';
+        }
+        seed = sim.world_seed();
+        if (options.seed_given && options.seed != seed) {
+            std::cerr << "--seed conflicts with the seed stored in " << *options.load_file << '\n';
+            return 2;
+        }
+        if (sim.tick() > ticks) {
+            std::cerr << "the save is at tick " << sim.tick() << ", past --ticks " << ticks << '\n';
+            return 2;
+        }
+    }
+    if (options.save_at_tick && (*options.save_at_tick > ticks || *options.save_at_tick < sim.tick())) {
+        std::cerr << "--save-at " << *options.save_at_tick << " is outside the ticks this run covers ("
+                  << sim.tick() << ".." << ticks << ")\n";
+        return 2;
+    }
+    const auto save_if_due = [&]() {
+        if (options.save_at_tick && sim.tick() == *options.save_at_tick) {
+            save::SaveOptions save_options;
+            save::save_simulation(sim, options.save_at_file, save_options);
+        }
+    };
+    save_if_due(); // --save-at 0, or a load that is already at the save tick
+
+    for (std::uint64_t t = sim.tick(); t < ticks; ++t) {
         batch.clear();
         if (options.replay) {
             if (const auto it = recorded.find(t); it != recorded.end()) {
@@ -74,6 +104,7 @@ int run(const headless::Options& options) {
         if (options.hash_every != 0 && sim.tick() % options.hash_every == 0) {
             print_hash(sim.tick(), sim.world().state_hash());
         }
+        save_if_due();
     }
 
     std::cout << "final " << sim.tick() << ' ' << std::hex << std::setw(16) << std::setfill('0')

@@ -250,12 +250,10 @@ All of these values are **tunable through content data** (`game/content/base/def
     - content hash
     - mod list (id + version)
     - real-world save timestamp (metadata only)
-  - Body: **sections** (4-char tag + section version + length), zstd-compressed. Unknown sections are skipped with a warning.
+  - Body: **sections** (4-char tag, u16 section version, u32 compressed length, u32 raw length, then zstd bytes). Unknown sections are skipped with a warning. The header itself is uncompressed so a load menu can read it, and the file ends with an XXH3 checksum of everything before it.
   - Core sections:
-    - `META`
-    - `CLCK` (clock and calendar)
-    - `ENTS` (entity list)
-    - one section per registered component type (sorted by stable name)
+    - `META` (world seed and tick; also in the header)
+    - `WRLD`: the whole World. Entities, every registered component type and every singleton (the game clock and calendar among them), each as a block sorted by stable name (see `save_world`). One section rather than separate `CLCK`/`ENTS`/per-type sections, because the clock and calendar are registered singletons and per-type versions live inside the blocks.
     - `CMDQ` (pending commands)
     - `ILOG` (optional input log)
 - **Entity ids** are remapped on load. Components that reference entities serialize them through the archive's remap table (`ar.entity`, or `io()` on an `entt::entity`). A save holds dense indices (0..n-1 in ascending entity order), so a load gives every entity a fresh, dense id. Consequences for simulation code:
@@ -267,6 +265,7 @@ All of these values are **tunable through content data** (`game/content/base/def
   - save → load → `state_hash` is equal
   - (run N ticks) vs (run k ticks, save, load, run N−k ticks) gives equal hashes
 - **Versioning:** each section has a version. `MigrationRegistry` holds `(section, from_version) → fn` upgrades, and fixture saves for old versions live in `sim/tests/fixtures/saves/`.
+- `save_simulation` / `load_simulation` (`citysim/save/simulation_io.hpp`) write and read a whole `Simulation`: loading goes into a fresh `Simulation` with the same modules installed, and returns warnings (content hash, mod list or game version differ; unknown sections or types skipped) rather than refusing. The wall-clock save time is supplied by the caller, since simulation code never reads the clock.
 - Saving and loading are commands that the runner executes **between ticks**.
 
 ## 11. Godot Bridge & Rendering
