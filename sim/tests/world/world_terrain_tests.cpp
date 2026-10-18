@@ -106,26 +106,6 @@ TEST_CASE("parallel activation gives identical tiles with 1 and 8 workers",
     }
 }
 
-TEST_CASE("the placeholder synthesis samples the 32 m DEM at every 4 m point",
-          "[world][terrain][synthetic_map]") {
-    const auto map = full_map();
-    WorldTerrain terrain(map, 1);
-    core::JobSystem jobs(1);
-    const TileCoord inside{17, 19};  // has detail
-    const TileCoord outside{15, 17}; // ring corner without detail
-    terrain.activate_tiles(jobs, std::vector<TileCoord>{inside, outside});
-    for (const TileCoord coord : {inside, outside}) {
-        const auto tile = terrain.tile(coord);
-        const WorldPos origin = tile_origin(coord);
-        for (std::uint32_t sy = 0; sy < k_city_tile_samples; sy += 37) {
-            for (std::uint32_t sx = 0; sx < k_city_tile_samples; sx += 41) {
-                const WorldPos pos{origin.x + sx * 4.0, origin.z + sy * 4.0};
-                REQUIRE(tile->sample(sx, sy) == map->dem_height(pos));
-            }
-        }
-    }
-}
-
 TEST_CASE("heights fall back to the DEM outside the active tiles", "[world][terrain][synthetic_map]") {
     const auto map = full_map();
     WorldTerrain terrain(map, 1);

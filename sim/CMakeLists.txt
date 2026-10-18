@@ -65,6 +65,12 @@ target_link_libraries(citysim_core
     PRIVATE zstd::libzstd xxHash::xxhash)
 citysim_set_warnings(citysim_core)
 
+# Terrain heights must be the same bits on every compiler and CPU (golden hashes, architecture §15.4), so the
+# synthesis never fuses a multiply and an add into one rounding.
+if(NOT MSVC)
+    set_source_files_properties(src/world/terrain_synth.cpp PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+endif()
+
 # Profiler zones compile to nothing unless this is on (see citysim/profiling/profile.hpp).
 if(CITYSIM_TRACY)
     target_link_libraries(citysim_core PUBLIC Tracy::TracyClient)

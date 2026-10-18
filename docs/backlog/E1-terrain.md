@@ -167,7 +167,7 @@ Update architecture §15 if any detail had to change (explain in the PR). Run al
 Follow the Task workflow in CLAUDE.md (branch story/S1.1.2-world-terrain).
 ```
 
-#### [ ] T1.1.2.2 — Deterministic terrain synthesis (upsampling + micro-detail)
+#### [x] T1.1.2.2 — Deterministic terrain synthesis (upsampling + micro-detail)
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.1.2.1
 ```
 Task T1.1.2.2 (Story S1.1.2). Read docs/architecture.md §4 and §15.4, and the TerrainSynth interface from
