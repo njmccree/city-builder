@@ -26,8 +26,8 @@ struct SetEra {
 // (a scale that is not above 0 or is more than 100, or a day shorter than 24 ticks) is ignored with a
 // warning. Added for the time-scale spike (S0.8.2).
 struct SetTimeScale {
-    float movement_scale = 3.0F;
-    std::uint32_t day_length_ticks = 14400;
+    float movement_scale = 6.0F;
+    std::uint32_t day_length_ticks = 28800;
 };
 
 } // namespace citysim::time
