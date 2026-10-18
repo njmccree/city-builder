@@ -6,4 +6,5 @@ shapely==2.2.0
 zstandard==0.25.0
 xxhash==4.0.1
 requests==2.34.2
+pyshp==3.1.6
 pytest==9.1.1

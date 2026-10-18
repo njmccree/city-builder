@@ -355,8 +355,8 @@ The world is **one continuous terrain per map**: a continent-scale region built 
   - The projection is not in the `MapDef`: it is Lambert azimuthal equal-area centered on the middle of the bounds (§15.3), and the pipeline writes its parameters into `package.json`.
 - A **map package** is generated data in `game/content/<mod>/maps/<map>/`. **It is not committed** (it is gitignored and rebuilt by the pipeline). It contains:
   - `package.json`: the map id, pipeline version, source dataset versions, projection, raster sizes, the tile list, an XXH3 checksum per file, and the overall **package hash**
-  - `region/<layer>.csr`: elevation, land mask, fertility, vegetation, wetness, one layer per resource deposit
-  - `detail/<tx>_<ty>.csr`: 65 × 65 samples, 32 m spacing, 2,048 m tiles
+  - `region/<layer>.csr`: elevation (mean), elevation_min, elevation_max, land mask, fertility, vegetation, wetness, one layer per resource deposit
+  - `detail/<tx>_<ty>.csr`: 65 × 65 samples, 32 m spacing, 2,048 m tiles; i16 `.csr` with scale 0.1 and a whole-meter offset per tile (`height = raw × 0.1 + offset`), sample (i, j) at world `(tx × 2048 + 32 i, ty × 2048 + 32 j)`, edge samples shared with the neighbor (the pipeline makes them equal; they decode equal to well under a millimeter)
   - `rivers.json`: polylines with per-vertex width, depth and base water level, plus order and discharge
   - `lakes.json`
 - **`.csr` raster format** (one format for every raster; little-endian; the C++ reader/writer in `citysim::world`, the Python pipeline and the tests all follow this layout):

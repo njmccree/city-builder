@@ -25,13 +25,19 @@ def test_steps_are_in_pipeline_order():
         select_steps(["fetch", "nope"])
 
 
-def test_all_stub_steps_run_and_say_which_task_fills_them(tmp_path, capsys):
-    assert run(tmp_path, str(write_map(tmp_path))) == 0
+def test_the_stub_steps_say_which_task_fills_them(tmp_path, capsys):
+    assert run(tmp_path, str(write_map(tmp_path)), "--steps", "rivers,package") == 0
     out = capsys.readouterr().out
     assert "building test:map.x" in out
-    assert "not implemented yet (T1.2.2.1" in out
+    assert "not implemented yet (T1.2.3.1" in out and "not implemented yet (T1.2.6.1" in out
     assert out.strip().endswith("done")
     assert (tmp_path / "out").is_dir()
+
+
+def test_the_data_steps_need_the_maps_bounds(tmp_path, capsys):
+    for step in ("mosaic", "reproject", "detail"):
+        assert run(tmp_path, str(write_map(tmp_path)), "--steps", step) == 1
+        assert "needs 'bounds'" in capsys.readouterr().err
 
 
 def test_steps_option_selects_steps(tmp_path, capsys):

@@ -103,3 +103,38 @@ def test_source_entries_are_checked():
         Source.from_json({"dataset": "d", "name": "n"})
     with pytest.raises(Exception, match="64 lower-case hex"):
         Source.from_json({"dataset": "d", "name": "n", "url": "u", "sha256": "abc"})
+
+
+@pytest.mark.parametrize("status", [404, 403])
+def test_an_optional_file_that_is_absent_is_none_and_remembered(tmp_path, server, status):
+    server.missing_status = status  # a missing S3 key answers 403, other servers 404
+    source = Source("copdem", "ocean.tif", server.base_url + "/ocean.tif", optional=True)
+    cache = DownloadCache(tmp_path)
+    assert not cache.is_valid(source)
+    assert cache.fetch_optional(source) is None
+    assert cache.is_valid(source)               # remembered: "it is not there"
+    asked = len(server.requests)
+    assert cache.fetch_optional(source) is None
+    assert len(server.requests) == asked        # the second answer needs no request
+    # So --offline knows too.
+    DownloadCache(tmp_path, offline=True).require_offline([source])
+    assert DownloadCache(tmp_path, offline=True).fetch_optional(source) is None
+
+
+def test_an_optional_file_that_exists_downloads_normally(tmp_path, server):
+    server.files["/tile.tif"] = b"abc" * 50
+    source = Source("copdem", "tile.tif", server.base_url + "/tile.tif", optional=True)
+    path = DownloadCache(tmp_path).fetch_optional(source)
+    assert path is not None and path.read_bytes() == b"abc" * 50
+
+
+def test_a_required_file_that_is_absent_is_still_an_error(tmp_path, server):
+    source = Source("copdem", "gone.tif", server.base_url + "/gone.tif")
+    with pytest.raises(Exception, match="HTTP 404"):
+        DownloadCache(tmp_path).fetch(source)
+
+
+def test_optional_must_be_true_or_false():
+    assert Source.from_json({"dataset": "d", "name": "n", "url": "u", "optional": True}).optional
+    with pytest.raises(Exception, match="'optional'"):
+        Source.from_json({"dataset": "d", "name": "n", "url": "u", "optional": "yes"})

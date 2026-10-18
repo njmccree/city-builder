@@ -37,6 +37,10 @@ class ChecksumError(CacheError):
     """The downloaded file is not the file that was expected."""
 
 
+class MissingError(CacheError):
+    """An optional file is not at the source (HTTP 403 or 404): a tile of a dataset that has no data there."""
+
+
 @dataclass(frozen=True)
 class Source:
     """One file of a dataset, as a map's ``map.json`` lists it."""
@@ -46,6 +50,10 @@ class Source:
     url: str
     size: int | None = None
     sha256: str | None = None
+    # An optional file may legitimately not exist at the source (for example a DEM tile that would only be
+    # open sea). Asking for it with ``fetch_optional`` returns None instead of failing, and the answer is
+    # remembered in the cache, so a later --offline run knows too.
+    optional: bool = False
 
     @staticmethod
     def from_json(entry: dict) -> "Source":
@@ -58,7 +66,10 @@ class Source:
         sha256 = entry.get("sha256")
         if sha256 is not None and not re.fullmatch(r"[0-9a-f]{64}", str(sha256)):
             raise CacheError(f"source {entry['dataset']}/{entry['name']}: 'sha256' must be 64 lower-case hex digits")
-        return Source(entry["dataset"], entry["name"], entry["url"], size, sha256)
+        optional = entry.get("optional", False)
+        if not isinstance(optional, bool):
+            raise CacheError(f"source {entry['dataset']}/{entry['name']}: 'optional' must be true or false")
+        return Source(entry["dataset"], entry["name"], entry["url"], size, sha256, optional)
 
 
 def default_cache_dir() -> Path:
@@ -89,8 +100,16 @@ class DownloadCache:
     def path_of(self, source: Source) -> Path:
         return self.root / _safe_part(source.dataset, "dataset") / _safe_part(source.name, "file name")
 
+    def marker_of(self, source: Source) -> Path:
+        """The empty file that records "this optional file is not at the source"."""
+        path = self.path_of(source)
+        return path.with_name(path.name + ".missing")
+
     def is_valid(self, source: Source) -> bool:
-        """True if the file is cached and matches the size and checksum that are known."""
+        """True if the file is cached and matches the size and checksum that are known (or an optional file is
+        known to be absent at the source)."""
+        if source.optional and self.marker_of(source).is_file():
+            return True
         path = self.path_of(source)
         if not path.is_file():
             return False
@@ -105,6 +124,18 @@ class DownloadCache:
             names = ", ".join(f"{s.dataset}/{s.name}" for s in missing)
             raise OfflineError(f"--offline: {len(missing)} needed file(s) are not in the cache {self.root}: {names}. "
                                "Run once without --offline (or copy the files there) first.")
+
+    def fetch_optional(self, source: Source) -> Path | None:
+        """Like ``fetch`` for an optional file, but None if the source has no such file."""
+        if source.optional and self.marker_of(source).is_file():
+            return None
+        try:
+            return self.fetch(source)
+        except MissingError:
+            marker = self.marker_of(source)
+            marker.parent.mkdir(parents=True, exist_ok=True)
+            marker.write_text("not found at the source\n", encoding="utf-8")
+            return None
 
     def fetch(self, source: Source) -> Path:
         """The cached file, downloading it first if it is missing or invalid."""
@@ -140,6 +171,8 @@ class DownloadCache:
                 if response.status_code == 416 and have:  # the part is complete or wrong: start again
                     part.unlink()
                     return self._download(source, part)
+                if source.optional and response.status_code in (403, 404):
+                    raise MissingError(f"{source.url}: not at the source (HTTP {response.status_code})")
                 if response.status_code not in (200, 206):
                     raise NetworkError(f"{source.url}: the server answered HTTP {response.status_code}")
                 resumed = response.status_code == 206 and have > 0

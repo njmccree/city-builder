@@ -9,6 +9,7 @@ for region-level positions. Every step that turns lon/lat into map positions use
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 
 from pyproj import Transformer
 
@@ -41,40 +42,66 @@ def projection_center(map_def: dict) -> tuple[float, float]:
     return (min_lat + max_lat) / 2.0, (min_lon + max_lon) / 2.0
 
 
-def make_to_world(map_def: dict) -> ToWorld:
-    """A function (lon, lat) -> (x, z) in the world frame of this map."""
+@dataclass(frozen=True)
+class WorldFrame:
+    """The map's projected frame: the projection and where the world frame's origin sits in it.
+
+    ``crs`` is the PROJ string of the Lambert azimuthal equal-area projection. A projected point (X, Y) is the
+    world position ``(X - origin_x, Y - origin_y)``. ``width_m`` and ``height_m`` are the size of the box that
+    encloses the projected bounds."""
+
+    crs: str
+    lat_0: float
+    lon_0: float
+    origin_x: float
+    origin_y: float
+    width_m: float
+    height_m: float
+    bounds: tuple[float, float, float, float]  # min_lon, min_lat, max_lon, max_lat
+
+    def lonlat_to_projected(self) -> Transformer:
+        return Transformer.from_crs("EPSG:4326", self.crs, always_xy=True)
+
+    def to_world(self) -> ToWorld:
+        transformer = self.lonlat_to_projected()
+
+        def to_world(lon: float, lat: float) -> tuple[float, float]:
+            x, y = transformer.transform(lon, lat)
+            return x - self.origin_x, y - self.origin_y
+
+        return to_world
+
+
+def world_frame(map_def: dict) -> WorldFrame:
+    """The frame of the map described by ``map_def`` (needs ``bounds``; ``projection`` is optional)."""
     min_lon, min_lat, max_lon, max_lat = _bounds(map_def)
     lat_0, lon_0 = projection_center(map_def)
-    transformer = Transformer.from_crs(
-        "EPSG:4326", f"+proj=laea +lat_0={lat_0} +lon_0={lon_0} +datum=WGS84 +units=m +no_defs", always_xy=True)
+    crs = f"+proj=laea +lat_0={lat_0} +lon_0={lon_0} +datum=WGS84 +units=m +no_defs"
+    transformer = Transformer.from_crs("EPSG:4326", crs, always_xy=True)
     # The box around the projected lon/lat rectangle: sample its four edges, since they bend.
     xs: list[float] = []
-    zs: list[float] = []
+    ys: list[float] = []
     for i in range(_EDGE_SAMPLES):
         f = i / (_EDGE_SAMPLES - 1)
         lon = min_lon + (max_lon - min_lon) * f
         lat = min_lat + (max_lat - min_lat) * f
         for corner_lon, corner_lat in ((lon, min_lat), (lon, max_lat), (min_lon, lat), (max_lon, lat)):
-            x, z = transformer.transform(corner_lon, corner_lat)
+            x, y = transformer.transform(corner_lon, corner_lat)
             xs.append(x)
-            zs.append(z)
-    origin_x, origin_z = min(xs), min(zs)
-    if not (math.isfinite(origin_x) and math.isfinite(origin_z)):
+            ys.append(y)
+    origin_x, origin_y = min(xs), min(ys)
+    if not (math.isfinite(origin_x) and math.isfinite(origin_y)):
         raise ProjectionError("the map bounds cannot be projected")
+    return WorldFrame(crs, lat_0, lon_0, origin_x, origin_y, max(xs) - origin_x, max(ys) - origin_y,
+                      (min_lon, min_lat, max_lon, max_lat))
 
-    def to_world(lon: float, lat: float) -> tuple[float, float]:
-        x, z = transformer.transform(lon, lat)
-        return x - origin_x, z - origin_z
 
-    return to_world
+def make_to_world(map_def: dict) -> ToWorld:
+    """A function (lon, lat) -> (x, z) in the world frame of this map."""
+    return world_frame(map_def).to_world()
 
 
 def world_size(map_def: dict) -> tuple[float, float]:
     """(width, height) in meters of the box around the projected bounds."""
-    min_lon, min_lat, max_lon, max_lat = _bounds(map_def)
-    to_world = make_to_world(map_def)
-    points = [to_world(lon, lat) for lon in (min_lon, max_lon) for lat in (min_lat, max_lat)]
-    mid = [to_world((min_lon + max_lon) / 2, lat) for lat in (min_lat, max_lat)] + [
-        to_world(lon, (min_lat + max_lat) / 2) for lon in (min_lon, max_lon)]
-    all_points = points + mid
-    return max(p[0] for p in all_points), max(p[1] for p in all_points)
+    frame = world_frame(map_def)
+    return frame.width_m, frame.height_m

@@ -1,0 +1,78 @@
+{
+  "map_id": "base:map.test_nile_small",
+  "package": "test_nile_small",
+  "mod": "base",
+  "bounds": {
+    "min_lon": 30.8,
+    "min_lat": 29.8,
+    "max_lon": 31.4,
+    "max_lat": 30.3
+  },
+  "region_cell_size_m": 1000,
+  "map_seed": 1,
+  "detail_regions": [
+    [
+      [
+        30.95,
+        29.95
+      ],
+      [
+        31.3,
+        29.95
+      ],
+      [
+        31.3,
+        30.2
+      ],
+      [
+        30.95,
+        30.2
+      ],
+      [
+        30.95,
+        29.95
+      ]
+    ]
+  ],
+  "sources": [
+    {
+      "dataset": "copernicus-dem-glo30",
+      "name": "Copernicus_DSM_COG_10_N29_00_E030_00_DEM.tif",
+      "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N29_00_E030_00_DEM/Copernicus_DSM_COG_10_N29_00_E030_00_DEM.tif",
+      "size": 44075469,
+      "sha256": "85bf78c95a1642c62e205f62c83518883121013a8e33cd6c796963b8891a8119",
+      "optional": true
+    },
+    {
+      "dataset": "copernicus-dem-glo30",
+      "name": "Copernicus_DSM_COG_10_N29_00_E031_00_DEM.tif",
+      "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N29_00_E031_00_DEM/Copernicus_DSM_COG_10_N29_00_E031_00_DEM.tif",
+      "size": 45238261,
+      "sha256": "88daaeb7722323e58aa9386fcd520fe6c46fcd6aacfffdb4025ab98bd0a77bc5",
+      "optional": true
+    },
+    {
+      "dataset": "copernicus-dem-glo30",
+      "name": "Copernicus_DSM_COG_10_N30_00_E030_00_DEM.tif",
+      "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N30_00_E030_00_DEM/Copernicus_DSM_COG_10_N30_00_E030_00_DEM.tif",
+      "size": 48637952,
+      "sha256": "b0d1e50d1e470bf7f883fd73d3674671e08c527993b8e2d8e200bb86a432ec9c",
+      "optional": true
+    },
+    {
+      "dataset": "copernicus-dem-glo30",
+      "name": "Copernicus_DSM_COG_10_N30_00_E031_00_DEM.tif",
+      "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N30_00_E031_00_DEM/Copernicus_DSM_COG_10_N30_00_E031_00_DEM.tif",
+      "size": 49536822,
+      "sha256": "6c3d160e09942c9bf865e640ae2d21d436260c1929a3edb36c2bdea3bfb730b6",
+      "optional": true
+    },
+    {
+      "dataset": "natural-earth",
+      "name": "ne_10m_land.zip",
+      "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_land.zip",
+      "size": 3269070,
+      "sha256": "e547d749445eaa0964aba76738090ec88f5e63c4585122170f98c67a7ea922dc"
+    }
+  ]
+}
