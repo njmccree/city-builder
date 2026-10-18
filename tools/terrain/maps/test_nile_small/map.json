@@ -73,6 +73,29 @@
       "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_land.zip",
       "size": 3269070,
       "sha256": "e547d749445eaa0964aba76738090ec88f5e63c4585122170f98c67a7ea922dc"
+    },
+    {
+      "dataset": "natural-earth",
+      "name": "ne_10m_rivers_lake_centerlines_scale_rank.zip",
+      "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_rivers_lake_centerlines_scale_rank.zip",
+      "size": 2410997,
+      "sha256": "a6fc02f8d663a0cb451b2564fbc361174410cd65d14c59d11ffb870ebb8c8566"
+    },
+    {
+      "dataset": "natural-earth",
+      "name": "ne_10m_lakes.zip",
+      "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_lakes.zip",
+      "size": 2349685,
+      "sha256": "0803a06f9c3cb4671d89b68c48b142aad9366ba40f665245e12a913fbc61722a"
     }
-  ]
+  ],
+  "rivers": {
+    "overrides": {
+      "Nile": {
+        "discharge_m3s": 2660,
+        "source": "Long-term mean flow of the Nile at Aswan before the High Dam, about 84 km3 per year (2,660 m3/s); a widely cited estimate, not measured here",
+        "confidence": "medium"
+      }
+    }
+  }
 }

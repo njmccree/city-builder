@@ -25,25 +25,25 @@ def test_steps_are_in_pipeline_order():
         select_steps(["fetch", "nope"])
 
 
-def test_the_stub_steps_say_which_task_fills_them(tmp_path, capsys):
-    assert run(tmp_path, str(write_map(tmp_path)), "--steps", "rivers,package") == 0
+def test_the_package_step_says_which_task_fills_it(tmp_path, capsys):
+    assert run(tmp_path, str(write_map(tmp_path)), "--steps", "package") == 0
     out = capsys.readouterr().out
     assert "building test:map.x" in out
-    assert "not implemented yet (T1.2.3.1" in out and "not implemented yet (T1.2.6.1" in out
+    assert "not implemented yet (T1.2.6.1" in out
     assert out.strip().endswith("done")
     assert (tmp_path / "out").is_dir()
 
 
 def test_the_data_steps_need_the_maps_bounds(tmp_path, capsys):
-    for step in ("mosaic", "reproject", "detail"):
+    for step in ("mosaic", "reproject", "detail", "rivers"):
         assert run(tmp_path, str(write_map(tmp_path)), "--steps", step) == 1
         assert "needs 'bounds'" in capsys.readouterr().err
 
 
 def test_steps_option_selects_steps(tmp_path, capsys):
-    assert run(tmp_path, str(write_map(tmp_path)), "--steps", "rivers,layers") == 0
+    assert run(tmp_path, str(write_map(tmp_path)), "--steps", "layers,package") == 0
     out = capsys.readouterr().out
-    assert "== rivers" in out and "== layers" in out and "== mosaic" not in out
+    assert "== layers" in out and "== package" in out and "== mosaic" not in out
 
 
 def test_usage_errors_exit_2(tmp_path, capsys):
@@ -73,7 +73,7 @@ def test_fetch_downloads_into_the_cache(tmp_path, server, capsys):
 
 def test_offline_fails_fast_when_a_file_is_not_cached(tmp_path, server, capsys):
     server.files["/tile.tif"] = b"x"
-    map_file = write_map(tmp_path, sources=[{"dataset": "copdem", "name": "tile.tif",
+    map_file = write_map(tmp_path, bounds=BOUNDS, sources=[{"dataset": "copdem", "name": "tile.tif",
                                              "url": server.base_url + "/tile.tif"}])
     assert run(tmp_path, str(map_file), "--offline") == 1
     err = capsys.readouterr().err
@@ -81,7 +81,7 @@ def test_offline_fails_fast_when_a_file_is_not_cached(tmp_path, server, capsys):
     assert server.requests == []  # nothing was asked of the network
     assert not (tmp_path / "out").exists()  # and no work was started
     # Offline is fine for steps that need no downloads.
-    assert run(tmp_path, str(map_file), "--offline", "--steps", "rivers") == 0
+    assert run(tmp_path, str(map_file), "--offline", "--steps", "package") == 0
 
 
 def test_a_network_failure_is_a_clean_error(tmp_path, capsys):
@@ -153,7 +153,7 @@ def test_the_corrections_step_applies_them_when_the_ground_exists(tmp_path):
     assert state.dem.data[0, 0] == 50.0
     report = tmp_path / "out" / "pkg.reports" / "corrections.md"
     assert "## 1. set_water: Gulf" in report.read_text(encoding="utf-8")
-    assert any("applied 1 correction(s)" in line for line in logs)
+    assert any("applied 1 ground correction(s)" in line for line in logs)
 
 
 def test_the_layers_step_validates_then_writes_rasters(tmp_path, capsys):

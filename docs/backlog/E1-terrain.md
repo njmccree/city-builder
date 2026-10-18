@@ -291,7 +291,7 @@ Follow the Task workflow in CLAUDE.md (branch story/S1.2.2-elevation); open the 
 - `rivers.json` has simplified polylines with order, discharge, and per-vertex width, depth and base water level, consistent with the DEM.
 - `lakes.json` and floodplain polygons are included.
 
-#### [ ] T1.2.3.1 — River and lake extraction
+#### [x] T1.2.3.1 — River and lake extraction
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T1.2.2.1
 ```
 Task T1.2.3.1 (Story S1.2.3). Read docs/architecture.md §15.2, §15.5–§15.7 and docs/licenses.md (use the

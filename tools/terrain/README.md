@@ -52,8 +52,7 @@ python -m terrain.build_map tools/terrain/maps/<map>/map.json [--out DIR] [--ste
 - `bounds` (`min_lon`, `min_lat`, `max_lon`, `max_lat`), `region_cell_size_m` (default 1000) and `detail_regions` (rings of
   `[lon, lat]`, closed; the same as in the `MapDef`) are what the elevation steps below need.
 - `--steps` picks steps from `fetch, mosaic, reproject, corrections, region, detail, rivers, layers, package`; they
-  always run in that order. `rivers` and `package` still print which Task fills them in (T1.2.3.1 rivers, T1.2.6.1
-  the package file); the rest do real work.
+  always run in that order. `package` still prints which Task fills it in (T1.2.6.1, the package file); the rest do real work.
 - `--offline` never downloads and fails at once, before any work, if a needed file is not in the cache.
 - Exit status: 0 success, 1 a step failed (network, checksum, ...), 2 a usage error.
 
@@ -83,6 +82,40 @@ for trying the pipeline: `python -m terrain.build_map tools/terrain/maps/test_ni
 list pins the size and SHA-256 of every file the build downloads, so a changed file is caught. To pin a new map:
 build it once, then copy the sizes and checksums of the cached files into `sources` (the `fetch` step shows where they are).
 
+## The rivers step (T1.2.3.1)
+
+`rivers` reads two more Natural Earth files (public domain): `ne_10m_rivers_lake_centerlines_scale_rank.zip` and
+`ne_10m_lakes.zip` (about 2.4 and 2.3 MB). It writes `<out>/rivers.json`, `<out>/lakes.json` (schemas in
+`game/content/README.md`) and `<out>/previews/rivers.png`.
+
+What it does, in order:
+1. Keeps the river lines inside the bounds whose **estimated discharge** is at least `rivers.min_discharge_m3s`
+   (default 100). Natural Earth gives a `scalerank` but no discharge, so the discharge comes from a rank table
+   (`rivers.rank_discharge`, default rank 1 = 1000 m3/s ... rank 12 = 0.3 m3/s). A river you know better gets
+   `rivers.overrides.<name> = {"discharge_m3s": Q, "source": "...", "confidence": "low|medium|high"}`; the source is required.
+2. Applies the `remove_river` and `river_path` corrections (the `corrections` and `detail` steps leave those two to this one).
+3. Cuts the lines into **reaches** where another line ends on them, joins ends within `rivers.junction_m` (600) into one
+   junction, and links each reach to the ones it flows into. Discharge is the largest of the reach's own estimate and its
+   inflow, shared equally at a bifurcation; an override is never raised. Strahler order is computed.
+4. **Snaps** each line onto the channel the DEM shows (`rivers.snap`: `enabled`, `radius_m` 800, `step_m` 30,
+   `half_width_m` 90, `penalty_m_per_km` 0.5, `smooth_vertices` 15). The 1:10m lines are hundreds of meters off the real
+   channel, so without this the carved bed and the water would sit on dry land. The shift fades to zero at junctions.
+5. Simplifies with Douglas-Peucker: `rivers.tolerance_detail_m` (30) inside detail regions, `tolerance_elsewhere_m` (300) elsewhere.
+6. Gives each reach a width `a * Q^b` and depth `c * Q^d` (`rivers.width` {a 7.2, b 0.5}, `rivers.depth` {a 0.27, b 0.39};
+   Andreadis et al. 2013), with floors `min_width_m` 10 and `min_depth_m` 1.
+7. **Water level** per vertex = the lowest DEM ground across the channel + `level_depth_fraction` x depth, fitted so it never
+   rises downstream, and never above the reach upstream of it. **The default fraction is 0, not the 0.8 in the task text:**
+   the Copernicus DEM is a surface model that already shows the flat water surface, so adding 0.8 depth would float the water
+   above its own banks. Use 0.8 with a DEM of the river bed.
+8. **Floodplain** per reach (`rivers.floodplain`: `distance_m` 3000, `height_m` 5, `cell_m` 64, `simplify_m` 64,
+   `min_area_km2` 0.5): the cells within `distance_m` of the channel that are below the nearest water level + `height_m` and
+   connected to the channel, as outer rings.
+9. **Lakes** (`rivers.lakes`: `min_area_km2` 1, `simplify_m` 100): Natural Earth polygons with the median DEM height inside as
+   their level. A lake mostly covered by a `fill_reservoir` correction is skipped (and logged).
+
+**Know the data.** Natural Earth's lines are 1:10m, so small channels are missing and delta branches follow the DEM less
+closely than the main river (the log prints how far the snap moved the lines). A hand correction (`river_path`) is the fix.
+
 ## The download cache
 
 Downloads go to `~/.cache/citysim/terrain/<dataset>/<file>` (override with `--cache` or
@@ -105,6 +138,9 @@ Behind a proxy, set `HTTPS_PROXY` / `HTTP_PROXY`; network errors say so.
 | `terrain/landmask.py` | the Natural Earth land polygons and the land mask raster |
 | `terrain/detail.py` | which tiles a polygon needs, the tile window, edge reconciling and the i16 quantization |
 | `terrain/previews.py` | the hillshade images and the PNG writer |
+| `terrain/rivermodel.py` | the river settings, Natural Earth lines, reaches, flow graph, discharge, width/depth and the rivers.json document |
+| `terrain/riverdem.py` | the DEM-dependent river parts: snapping to the channel, water levels, floodplains |
+| `terrain/lakes.py`, `terrain/riverpreview.py` | the lake polygons; the rivers-over-hillshade image |
 | `terrain/steps.py`, `terrain/build_map.py` | the step registry and the command line |
 
 ## Tests

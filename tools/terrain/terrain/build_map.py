@@ -53,7 +53,12 @@ def main(argv: list[str] | None = None) -> int:
                       cache=DownloadCache(args.cache, offline=args.offline), offline=args.offline)
     try:
         if args.offline and any(step.needs_downloads for step in steps):
-            context.cache.require_offline(context.sources())  # fail before any work starts
+            needed: dict[tuple[str, str], object] = {}
+            for step in steps:
+                if step.needs_downloads:
+                    for source in step.required_sources(context):
+                        needed.setdefault((source.dataset, source.name), source)
+            context.cache.require_offline(list(needed.values()))  # fail before any work starts
         context.out_dir.mkdir(parents=True, exist_ok=True)
         context.log(f"building {map_def['map_id']} into {context.out_dir}")
         for step in steps:
