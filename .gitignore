@@ -28,4 +28,14 @@ desktop.ini
 
 # Generated map packages (architecture §15.2); the pipeline rebuilds them. Each maps/ folder keeps its README.md.
 game/content/**/maps/*/
+
+# Python (tools/terrain)
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# Local dependency downloads (cmake -DFETCHCONTENT_BASE_DIR=.fetchcontent, as CI does)
 .fetchcontent/

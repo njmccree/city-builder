@@ -1,0 +1,9 @@
+# Pinned for reproducible map builds (docs/architecture.md §15.5). Python >= 3.11.
+numpy==2.5.4
+rasterio==1.5.2
+pyproj==3.8.0
+shapely==2.2.0
+zstandard==0.25.0
+xxhash==4.0.1
+requests==2.34.2
+pytest==9.1.1

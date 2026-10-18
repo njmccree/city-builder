@@ -221,7 +221,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md; last task of S1.1.2, so op
 - `tools/terrain` is a Python package with a CLI, pinned requirements, download caching with checksums, pytest tests in CI, and a `.csr` writer that matches the C++ reader.
 - `docs/licenses.md` records each dataset's license and attribution, and states whether commercial use is allowed.
 
-#### [ ] T1.2.1.1 — Pipeline skeleton, `.csr` writer, license review
+#### [x] T1.2.1.1 — Pipeline skeleton, `.csr` writer, license review
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.1.1.1
 ```
 Task T1.2.1.1 (Story S1.2.1). Read docs/architecture.md §15.2 and §15.5.
