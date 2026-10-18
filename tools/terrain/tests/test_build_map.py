@@ -148,3 +148,40 @@ def test_the_corrections_step_applies_them_when_the_ground_exists(tmp_path):
     report = tmp_path / "out" / "pkg.reports" / "corrections.md"
     assert "## 1. set_water: Gulf" in report.read_text(encoding="utf-8")
     assert any("applied 1 correction(s)" in line for line in logs)
+
+
+def test_the_layers_step_validates_then_writes_rasters(tmp_path, capsys):
+    import numpy as np
+
+    from terrain.cache import DownloadCache
+    from terrain.corrections import Grid, MapState
+    from terrain.csr import read_csr
+    from terrain.projection import world_size
+    from terrain.steps import Context, load_map_def, select_steps
+
+    deposits = {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {
+        "type": "Polygon", "coordinates": [[[30.0, 29.0], [31.0, 29.0], [31.0, 30.0], [30.0, 30.0], [30.0, 29.0]]]},
+        "properties": {"resource": "base:resource.ore_copper", "richness": 0.7, "source": "a test",
+                       "confidence": "low"}}]}
+    (tmp_path / "d.geojson").write_text(json.dumps(deposits))
+    map_file = write_map(tmp_path, bounds=BOUNDS, deposits="d.geojson")
+    assert run(tmp_path, str(map_file), "--steps", "layers") == 0
+    assert "1 deposit feature(s)" in capsys.readouterr().out
+
+    (tmp_path / "d.geojson").write_text("{}")
+    assert run(tmp_path, str(map_file), "--steps", "layers") == 1
+    assert "FeatureCollection" in capsys.readouterr().err
+
+    (tmp_path / "d.geojson").write_text(json.dumps(deposits))
+    map_def = load_map_def(map_file)
+    width_m, height_m = world_size(map_def)
+    cells = (int(height_m // 5000) + 1, int(width_m // 5000) + 1)
+    state = MapState(Grid(np.full(cells, 50.0), 0.0, 0.0, 5000.0), Grid(np.ones(cells, dtype=bool), 0.0, 0.0, 5000.0))
+    context = Context(map_file=map_file, map_def=map_def, out_dir=tmp_path / "out" / "pkg",
+                      cache=DownloadCache(tmp_path / "cache"), log=lambda _: None, state=state)
+    select_steps(["layers"])[0].run(context)
+    region = tmp_path / "out" / "pkg" / "region"
+    names = sorted(p.stem for p in region.glob("*.csr"))
+    assert names == ["fertility", "ore_copper", "vegetation", "wetness"]
+    raster = read_csr(region / "fertility.csr")
+    assert raster.data.dtype == np.uint8 and raster.data.shape == cells

@@ -43,9 +43,16 @@ python -m terrain.build_map tools/terrain/maps/<map>/map.json [--out DIR] [--ste
   `elevation_offset`, `flatten_to`, `remove_river`, `river_path`, `fill_reservoir`); every feature needs `source` and
   `confidence`. `bounds` (`min_lon`, `min_lat`, `max_lon`, `max_lat`) and optionally `projection` (`lat_0`, `lon_0`)
   give the projection.
+- `layers`, `deposits`, `fertility_overrides` (optional, in `map.json`): parameter overrides for the layer rules, and
+  GeoJSON files (relative to `map.json`) of authored deposits (`resource` + `richness`, or `geology`) and fertility
+  overrides (`mode` set/add/mul + `value`, optional `feather_m`). Every feature needs `source` and `confidence`. The
+  rules (ancient-correct: modern cropland does not count as fertile) are in the docstring of `terrain/layers.py`.
+  The `layers` step writes u8 rasters (scale 1/255) `fertility`, `vegetation`, `wetness` and one per deposit resource
+  to `<out>/region/`.
 - `--steps` picks steps from `fetch, mosaic, reproject, corrections, region, detail, rivers, layers, package`; they
-  always run in that order. `fetch` and `corrections` do real work so far (`corrections` only checks the files until the ground is built). The others print which Task fills them in
-  (T1.2.2.1 rasters, T1.2.3.1 rivers, T1.2.4.1 layers, T1.2.6.1 the full build).
+  always run in that order. `fetch`, `corrections` and `layers` do real work so far (the last two only check their
+  files until the ground is built). The others print which Task fills them in
+  (T1.2.2.1 rasters, T1.2.3.1 rivers, T1.2.6.1 the full build).
 - `--offline` never downloads and fails at once, before any work, if a needed file is not in the cache.
 - Exit status: 0 success, 1 a step failed (network, checksum, ...), 2 a usage error.
 
