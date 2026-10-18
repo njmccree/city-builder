@@ -69,3 +69,30 @@ maps/ancient_near_east/
 - Every checksum is the XXH3-64 of the file's bytes as 16 lower-case hex digits. `files` lists every file except `package.json`.
 - `package_hash` is the XXH3-64 of the text made of one line `<path>=<checksum>\n` per file, in sorted path order. It identifies the data; saves store it.
 - The `.csr` byte layout and the exact hash definition are in `docs/architecture.md` §15.2. The loader and verifier are `citysim::world::verify_package`.
+
+### `rivers.json` and `lakes.json`
+
+World-frame coordinates: meters from the south-west corner of the map, `x` east and `z` north. Written by the pipeline and by `citysim_mapgen --synthetic`; read by the water systems (T1.3.1.1).
+
+```json
+{
+  "format": 1,
+  "rivers": [
+    {
+      "id": "synthetic_nile", "name": "Synthetic Nile",
+      "reaches": [
+        { "id": "main", "order": 3, "discharge_m3s": 3000.0,
+          "downstream": ["west", "center", "east"],
+          "vertices": [
+            { "x": 46145.6, "z": 0.0, "width_m": 200.0, "depth_m": 6.0, "water_level_m": 38.5 }
+          ] }
+      ]
+    }
+  ]
+}
+```
+
+- A **reach** is a polyline from upstream to downstream. `vertices` are in that order; `width_m` and `depth_m` are the channel at that vertex, and `water_level_m` is the base water surface above sea level (it does not rise going downstream).
+- `order` is a stream order (a bigger number is a bigger river) and `discharge_m3s` the mean discharge.
+- `downstream` lists the reaches that start where this one ends (their first vertex equals this reach's last vertex). A delta is one reach with several downstream reaches.
+- `lakes.json` is `{ "format": 1, "lakes": [] }` in the synthetic package. Floodplain polygons are added by the pipeline (T1.2.3.1).

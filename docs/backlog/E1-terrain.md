@@ -92,7 +92,7 @@ Create a new module citysim::world (sim/include/citysim/world/, sim/src/world/, 
 Run all tests and the determinism lint. Follow the Task workflow in CLAUDE.md (branch story/S1.1.1-map-format).
 ```
 
-#### [ ] T1.1.1.2 — Synthetic map generator (`citysim_mapgen --synthetic`)
+#### [x] T1.1.1.2 — Synthetic map generator (`citysim_mapgen --synthetic`)
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.1.1.1
 ```
 Task T1.1.1.2 (Story S1.1.1, last task). Read docs/architecture.md §15.1–§15.2 and §15.6.

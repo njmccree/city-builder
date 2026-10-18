@@ -39,7 +39,8 @@ add_executable(citysim_tests
     world/raster_tests.cpp)
 target_include_directories(citysim_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(citysim_tests PRIVATE CITYSIM_TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
-    CITYSIM_GAME_CONTENT_DIR="${CMAKE_SOURCE_DIR}/game/content")
+    CITYSIM_GAME_CONTENT_DIR="${CMAKE_SOURCE_DIR}/game/content"
+    CITYSIM_SYNTHETIC_MAP_DIR="${CMAKE_BINARY_DIR}/test_data/synthetic_map")
 target_link_libraries(citysim_tests PRIVATE citysim_core Catch2::Catch2WithMain Threads::Threads)
 citysim_set_warnings(citysim_tests)
 
@@ -49,5 +50,15 @@ if(TARGET citysim_headless_support)
     target_link_libraries(citysim_tests PRIVATE citysim_headless_support)
 endif()
 
+# The synthetic map generator (citysim_mapgen --synthetic) has unit tests too.
+if(TARGET citysim_mapgen_support)
+    target_sources(citysim_tests PRIVATE tools/mapgen_tests.cpp)
+    target_link_libraries(citysim_tests PRIVATE citysim_mapgen_support)
+endif()
+
+# Tests tagged [synthetic_map] read the full-size synthetic package, which a CTest fixture generates first
+# (sim/tools/mapgen/CMakeLists.txt). Everything else runs without it.
 include(Catch)
-catch_discover_tests(citysim_tests)
+catch_discover_tests(citysim_tests TEST_SPEC "~[synthetic_map]")
+catch_discover_tests(citysim_tests TEST_SPEC "[synthetic_map]" TEST_PREFIX "synthetic_map: "
+    PROPERTIES FIXTURES_REQUIRED synthetic_map)
