@@ -97,13 +97,13 @@ World-frame coordinates: meters from the south-west corner of the map, `x` east 
 - A **reach** is a polyline from upstream to downstream. `vertices` are in that order; `width_m` and `depth_m` are the channel at that vertex, and `water_level_m` is the base water surface above sea level (it does not rise going downstream).
 - `order` is a stream order (a bigger number is a bigger river) and `discharge_m3s` the mean discharge.
 - `downstream` lists the reaches that start where this one ends (their first vertex equals this reach's last vertex). A delta is one reach with several downstream reaches.
-- `name` (optional, reaches) is the reach's display name; `floodplain` (optional) lists closed outer rings `[x, z]` of the land beside the channel that floods (written by the pipeline; the game reads and ignores both for now).
+- `name` (optional, reaches) is the reach's display name; `floodplain` (optional) lists closed outer rings `[x, z]` of the land beside the channel that can flood (written by the pipeline). The game reads it for the flood extents (architecture §15.6): a ring needs at least 3 different points, and a repeated last point (as in GeoJSON) is dropped. A reach without a floodplain never floods beyond its channel.
 - `lakes.json` is `{ "format": 1, "lakes": [ { "id": "lake_moeris", "name": "Lake Moeris", "water_level_m": -3.2, "area_km2": 214.5, "rings": [ [[x, z], ...], [[x, z], ...] ] } ] }`: `rings[0]` is the outer boundary and any others are islands (holes), each ring closed. The synthetic package has `"lakes": []`.
 
 ## Defines
 
 `defines/*.json` files hold numbers the simulation reads. Later mods override earlier ones field by field.
 - `defines/time.json`: tick rate, speeds, day length (see `time::TimeDefines`).
-- `defines/terrain.json`: the channel profile of the synthesized terrain: `channel_edge_depth_fraction` (0.3: the share of a river's depth left at the channel's edge, 0 to 1) and `bank_width_m` (24: how far beyond the edge the bank climbs back to the ground, 1 to 200). They shape the terrain, so a save made with other values warns that the terrain may differ.
+- `defines/terrain.json`: the channel profile of the synthesized terrain and the flood fill's speed: `channel_edge_depth_fraction` (0.3: the share of a river's depth left at the channel's edge, 0 to 1) and `bank_width_m` (24: how far beyond the edge the bank climbs back to the ground, 1 to 200). They shape the terrain, so a save made with other values warns that the terrain may differ. `flood_samples_per_tick` (250000, 1000 to 100000000) is how many 4 m samples the flood fill may look at per tick; it changes when a flood appears, never where it ends up.
 - `defines/world.json`: `max_player_cities` (default 10), `min_land_fraction` (0.5: how much of a city area must be
   land) and `active_ring_tiles` (1: tiles around the active city that are synthesized too).

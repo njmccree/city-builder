@@ -6,6 +6,7 @@
 #include "citysim/save/archive.hpp"
 #include "citysim/world/terrain_deltas.hpp"
 #include "citysim/world/tile_coord.hpp"
+#include "citysim/world/water_commands.hpp"
 #include "citysim/world/water_state.hpp"
 #include "citysim/world/world_terrain.hpp"
 
@@ -84,6 +85,11 @@ template <class Ar> void serialize(Ar& ar, WorldTerrain& terrain, std::uint32_t 
         }
         terrain.stage_restore(std::move(saved));
     }
+}
+
+template <class Ar> void serialize(Ar& ar, SetRiverLevel& command, std::uint32_t version) {
+    save::io(ar, command.reach_index, version);
+    save::io(ar, command.offset_m, version);
 }
 
 } // namespace citysim::world

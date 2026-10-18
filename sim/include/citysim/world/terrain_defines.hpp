@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace citysim::world {
 
 // Numbers that shape the synthesized terrain (architecture §15.4). The built-in defaults are these; content
@@ -14,6 +16,10 @@ struct TerrainDefines {
     // Beyond the channel's edge the bank climbs from the bed back to the surrounding ground over this many
     // meters (a smooth S-curve). 1..200.
     float bank_width_m = 24.0F;
+    // How many 4 m samples the flood fill (architecture §15.6) may look at per tick, so that a rising river
+    // spreads over several ticks instead of stalling one. Not part of the terrain's identity (it changes when
+    // the flood appears, never where it ends up), 1000..100000000.
+    std::uint32_t flood_samples_per_tick = 250000;
 };
 
 } // namespace citysim::world

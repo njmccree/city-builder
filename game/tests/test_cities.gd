@@ -1,5 +1,6 @@
 extends SceneTree
-## Headless test of founding cities through the Godot bridge: the found_city and set_active_city commands, the
+## Headless test of founding cities through the Godot bridge (and of the set_river_level debug command): the
+## found_city and set_active_city commands, the
 ## sim_notice signal with its reasons, and the cities in the snapshot. It builds a small synthetic map with
 ## citysim_mapgen, so it needs that tool: set CITYSIM_MAPGEN to its path (without it the test prints SKIP and
 ## succeeds, so it cannot fail on a machine that has not built the tool).
@@ -83,6 +84,21 @@ func _run() -> void:
 		keys.append(str(notice["key"]))
 	_check("city.found.error.overlap" in keys, "an overlapping site is refused")
 	_check("city.active.error.unknown" in keys, "an unknown city cannot be made active")
+
+	# The river level debug command: an unknown reach is refused with its reason, a known one is accepted.
+	_notices.clear()
+	_check(_sim.set_river_level(999, 1.0), "set_river_level is accepted for queueing")
+	await _wait_for(func() -> bool: return not _notices.is_empty())
+	_check(
+		not _notices.is_empty() and _notices[0]["tag"] == "river_level_failed"
+		and _notices[0]["key"] == "water.river_level.error.unknown_reach",
+		"an unknown reach is refused: " + str(_notices),
+	)
+	_check(not (_notices[0]["text"] as String).is_empty(), "...with its text: " + str(_notices[0]["text"]))
+	_check(_sim.set_river_level(0, 0.0), "a known reach is accepted")
+	_check(not _sim.submit_command({"type": "set_river_level", "reach": 0}), "set_river_level needs its level")
+	_check(not _sim.submit_command({"type": "set_river_level", "reach": -1, "offset_m": 1.0}), "reach indices start at 0")
+	_check(not _sim.submit_command({"type": "set_river_level", "reach": 0, "offset_m": 5000.0}), "an absurd level is refused")
 
 	# Bad dictionaries are refused in C++ before they reach the simulation.
 	_check(not _sim.submit_command({"type": "found_city"}), "found_city needs its origin")

@@ -129,3 +129,17 @@ Caveats, so these numbers are not over-read:
 - Natively (`game_session_tests`, "a game with agents ends in the same state with or without a save and load in the
   middle"): 2,000 agents walked 60 ticks, saved, walked 60 more (state A). The same game walked 120 ticks without a
   save has the same hash as A. A fresh game that loads the save has A's hash at tick 60 and again at tick 120.
+
+## Terrain and water (E1), cloud numbers
+
+Indicative only (a shared cloud machine, Release build, gcc); the PC run is authoritative. Run the hidden benchmarks
+with `citysim_tests "[.bench]"`.
+
+- Synthesizing one 4 m city tile (generator version 2, with channel carving): best 13.6 ms, mean 15.3 ms (limit
+  30 ms).
+- One tick of flood fill (`FloodMap::advance` with the default 250,000-sample budget) while a river 20 m above its base
+  level fills the whole floodplain of 3 x 3 active tiles: 15 calls, mean 4.3 ms, worst 15.9 ms (limit 20 ms). The calls
+  that spread the fill are the expensive ones (about 12-16 ms); scanning the channel and the final steps cost about 1 ms.
+  At 4x speed (80 ticks per second) the architecture allows 12.5 ms per tick on average (§14), so a flood that is
+  spreading uses most of that for the few seconds it takes; lower `flood_samples_per_tick` in `defines/terrain.json`
+  if that matters.

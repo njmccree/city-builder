@@ -2,6 +2,7 @@
 
 #include "citysim/profiling/profile.hpp"
 #include "citysim/world/city_registry.hpp"
+#include "citysim/world/flood_map.hpp"
 #include "citysim/world/world_terrain.hpp"
 
 namespace citysim::world {
@@ -29,6 +30,18 @@ void publish_cities(core::Simulation& simulation, runner::RenderSnapshot& snapsh
     for (const CityInfo& city : registry->cities()) {
         snapshot.cities.push_back(runner::SnapshotCity{city.id, city.name, city.first_tile, city.founded_on,
                                                        city.id == active->city_id});
+    }
+}
+
+void publish_flood_extents(core::Simulation& simulation, runner::RenderSnapshot& snapshot) {
+    const auto* flood = simulation.world().ctx().find<FloodMap>();
+    if (flood == nullptr) {
+        return;
+    }
+    for (const auto& [coord, grid] : flood->grids()) { // sorted by TileCoord
+        snapshot.grids.push_back(
+            runner::SnapshotGrid{"water.flood." + std::to_string(coord.tx) + "_" + std::to_string(coord.ty),
+                                 k_city_tile_samples, k_city_tile_samples, 4.0F, grid});
     }
 }
 

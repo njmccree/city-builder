@@ -17,4 +17,12 @@ void publish_terrain_tiles(core::Simulation& simulation, runner::RenderSnapshot&
 // installed.
 void publish_cities(core::Simulation& simulation, runner::RenderSnapshot& snapshot);
 
+// Another publish hook: adds one SnapshotGrid per active tile that has flooded land, named
+// "water.flood.<tx>_<ty>" (513 x 513 cells of 4 m, one byte each: 1 = flooded land, 0 = dry or channel; the
+// channel itself is drawn from the river data). The `cells` pointer is the FloodMap's own and changes only
+// when the tile's marks do, so a renderer rebuilds a flood surface only when the pointer differs from the
+// last one it saw. A tile without a grid has no flood. Runs on the runner thread after a tick and only reads
+// the World. Does nothing if the flood extents are not installed.
+void publish_flood_extents(core::Simulation& simulation, runner::RenderSnapshot& snapshot);
+
 } // namespace citysim::world

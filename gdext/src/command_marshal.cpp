@@ -3,6 +3,7 @@
 #include "citysim/content/era_def.hpp"
 #include "citysim/time/time_commands.hpp"
 #include "citysim/world/city_commands.hpp"
+#include "citysim/world/water_commands.hpp"
 
 #include <array>
 #include <cmath>
@@ -263,12 +264,29 @@ MarshalResult parse_set_active_city(const Dictionary& dictionary, const MarshalC
     return success(world::SetActiveCity{static_cast<std::uint32_t>(city_id)});
 }
 
+MarshalResult parse_set_river_level(const Dictionary& dictionary, const MarshalContext&) {
+    std::string error;
+    int64_t reach = 0;
+    double offset = 0.0;
+    if (!only_keys(dictionary, {"type", "reach", "offset_m"}, error) ||
+        !read_int(dictionary, "reach", reach, error) || !read_number(dictionary, "offset_m", offset, error)) {
+        return failure(error);
+    }
+    if (reach < 0 || reach > 0xFFFFFFFFLL) {
+        return failure("'reach' must be a reach index (0 or more)");
+    }
+    if (!(offset >= -1000.0 && offset <= 1000.0)) {
+        return failure("'offset_m' must be between -1000 and 1000 meters");
+    }
+    return success(world::SetRiverLevel{static_cast<std::uint32_t>(reach), static_cast<float>(offset)});
+}
+
 // The conversion table: one line per command type.
 struct Entry {
     std::string_view type;
     MarshalResult (*parse)(const Dictionary&, const MarshalContext&);
 };
-constexpr std::array<Entry, 11> k_entries{{
+constexpr std::array<Entry, 12> k_entries{{
     {"set_speed", &parse_set_speed},
     {"toggle_pause", &parse_toggle_pause},
     {"set_era", &parse_set_era},
@@ -280,6 +298,7 @@ constexpr std::array<Entry, 11> k_entries{{
     {"set_time_scale", &parse_set_time_scale},
     {"found_city", &parse_found_city},
     {"set_active_city", &parse_set_active_city},
+    {"set_river_level", &parse_set_river_level},
 }};
 
 } // namespace

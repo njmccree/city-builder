@@ -609,7 +609,8 @@ void ContentDatabase::load_terrain_defines(const fs::path& path, const std::stri
         context.error("", "expected an object");
         return;
     }
-    context.warn_unknown_keys(json, {"channel_edge_depth_fraction", "bank_width_m"});
+    context.warn_unknown_keys(json,
+                              {"channel_edge_depth_fraction", "bank_width_m", "flood_samples_per_tick"});
 
     world::TerrainDefines defines = terrain_defines_;
     if (const auto value = context.read_number(json, "channel_edge_depth_fraction", false)) {
@@ -617,6 +618,13 @@ void ContentDatabase::load_terrain_defines(const fs::path& path, const std::stri
     }
     if (const auto value = context.read_number(json, "bank_width_m", false)) {
         defines.bank_width_m = static_cast<float>(*value);
+    }
+    if (const auto value = context.read_u32(json, "flood_samples_per_tick", false)) {
+        defines.flood_samples_per_tick = *value;
+    }
+    if (json.contains("flood_samples_per_tick") &&
+        (defines.flood_samples_per_tick < 1000 || defines.flood_samples_per_tick > 100000000)) {
+        context.error("/flood_samples_per_tick", "must be between 1000 and 100000000");
     }
     if (json.contains("channel_edge_depth_fraction") &&
         !(defines.channel_edge_depth_fraction >= 0.0F && defines.channel_edge_depth_fraction <= 1.0F)) {
