@@ -9,6 +9,7 @@
 #include "citysim/debug/debug_serialize.hpp"
 #include "citysim/save/archive.hpp"
 #include "citysim/time/time_serialize.hpp"
+#include "citysim/world/city_serialize.hpp"
 
 namespace citysim::core {
 

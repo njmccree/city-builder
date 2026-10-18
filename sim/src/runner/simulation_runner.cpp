@@ -187,6 +187,20 @@ void SimulationRunner::publish_snapshot() {
     snapshot.channels.clear();
     snapshot.grids.clear();
     snapshot.terrain_tiles.clear();
+    snapshot.cities.clear();
+    snapshot.active_city_id = 0;
+    // Outcomes the simulation reported while it handled commands or ticked become result events here, kept
+    // until the consumer has read them (several ticks can pass between two frames).
+    if (auto* outbox = simulation_->world().ctx().find<core::UiOutbox>()) {
+        for (core::UiNotice& notice : outbox->take()) {
+            UiEvent event;
+            event.kind = UiEventKind::Notice;
+            event.tag = std::move(notice.tag);
+            event.text = std::move(notice.key);
+            event.subject = notice.id;
+            push_result_event(std::move(event));
+        }
+    }
     const std::uint64_t consumed = consumed_event_serial_.load();
     std::erase_if(pending_ui_events_, [consumed](const UiEvent& event) { return event.serial <= consumed; });
     snapshot.ui_events = pending_ui_events_; // a copy: they stay until the consumer has read them

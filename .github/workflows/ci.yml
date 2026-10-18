@@ -67,8 +67,8 @@ jobs:
           key: godot-${{ hashFiles('docs/versions.md') }}
       - name: Configure
         run: cmake --preset ci-linux-gdext -DFETCHCONTENT_BASE_DIR="$FETCHCONTENT_BASE_DIR"
-      - name: Build the GDExtension
-        run: cmake --build --preset ci-linux-gdext --target citysim_gdext
+      - name: Build the GDExtension and the map tool
+        run: cmake --build --preset ci-linux-gdext --target citysim_gdext citysim_mapgen
       - name: Install Godot
         run: tools/install_godot.sh
       - name: Prepare and import the project
@@ -77,6 +77,10 @@ jobs:
         run: tools/godot.sh --headless --path game -s res://tests/smoke.gd
       - name: Godot test scene (keys and buttons reach the simulation)
         run: tools/godot.sh --headless --path game -s res://tests/test_scene.gd
+      - name: Godot cities test (found a city through the bridge, on a synthetic map)
+        run: |
+          CITYSIM_MAPGEN="$PWD/build/ci-linux-gdext/sim/tools/mapgen/citysim_mapgen" \
+            tools/godot.sh --headless --path game -s res://tests/test_cities.gd
 
   windows:
     runs-on: windows-latest

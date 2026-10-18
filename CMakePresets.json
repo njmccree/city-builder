@@ -105,11 +105,11 @@
     {
       "name": "ci-linux-gdext",
       "inherits": "ci-linux",
-      "description": "CI: the GDExtension library only (the Godot smoke test); the unit tests are covered by ci-linux.",
+      "description": "CI: the GDExtension library for the Godot tests (plus the map tool they use, built on request); the unit tests are covered by ci-linux.",
       "cacheVariables": {
         "CITYSIM_BUILD_GDEXT": "ON",
         "CITYSIM_BUILD_TESTS": "OFF",
-        "CITYSIM_BUILD_TOOLS": "OFF"
+        "CITYSIM_BUILD_TOOLS": "ON"
       }
     },
     {

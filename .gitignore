@@ -28,3 +28,4 @@ desktop.ini
 
 # Generated map packages (architecture §15.2); the pipeline rebuilds them. Each maps/ folder keeps its README.md.
 game/content/**/maps/*/
+.fetchcontent/

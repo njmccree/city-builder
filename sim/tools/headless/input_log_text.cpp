@@ -19,6 +19,27 @@ using citysim::core::NoOp;
 
 namespace {
 
+// A name may hold spaces, which would split the line into tokens: '%' and spaces and control characters are
+// written as %XX (two upper-case hex digits), and an empty name as a lone '%'.
+std::string escape_token(const std::string& text) {
+    if (text.empty()) {
+        return "%";
+    }
+    static constexpr char k_digits[] = "0123456789ABCDEF";
+    std::string out;
+    for (const char c : text) {
+        const auto byte = static_cast<unsigned char>(c);
+        if (byte <= ' ' || byte == '%' || byte == 0x7F) {
+            out += '%';
+            out += k_digits[byte >> 4U];
+            out += k_digits[byte & 0xFU];
+        } else {
+            out += c;
+        }
+    }
+    return out;
+}
+
 // One overload per command type: adding a command without one fails to compile.
 struct WriteCommand {
     std::ostream& out;
@@ -29,6 +50,12 @@ struct WriteCommand {
     void operator()(const citysim::time::SetTimeScale& cmd) const {
         // Nine significant digits are enough to read a float back exactly.
         out << "SetTimeScale " << std::setprecision(9) << cmd.movement_scale << ' ' << cmd.day_length_ticks;
+    }
+    void operator()(const citysim::world::FoundCity& cmd) const {
+        out << "FoundCity " << cmd.origin_tx << ' ' << cmd.origin_ty << ' ' << escape_token(cmd.name);
+    }
+    void operator()(const citysim::world::SetActiveCity& cmd) const {
+        out << "SetActiveCity " << cmd.city_id;
     }
     void operator()(const citysim::time::SetSpeed& cmd) const {
         out << "SetSpeed " << static_cast<unsigned>(cmd.speed);
@@ -53,6 +80,34 @@ struct WriteCommand {
 
 [[noreturn]] void fail(std::size_t line, const std::string& message) {
     throw std::runtime_error("input log line " + std::to_string(line) + ": " + message);
+}
+
+std::string unescape_token(const std::string& text, std::size_t line) {
+    if (text == "%") {
+        return {};
+    }
+    const auto hex = [&](char c) -> int {
+        if (c >= '0' && c <= '9') {
+            return c - '0';
+        }
+        if (c >= 'A' && c <= 'F') {
+            return c - 'A' + 10;
+        }
+        fail(line, "bad escape in '" + text + "'");
+    };
+    std::string out;
+    for (std::size_t i = 0; i < text.size(); ++i) {
+        if (text[i] != '%') {
+            out += text[i];
+            continue;
+        }
+        if (i + 2 >= text.size()) {
+            fail(line, "bad escape in '" + text + "'");
+        }
+        out += static_cast<char>(hex(text[i + 1]) * 16 + hex(text[i + 2]));
+        i += 2;
+    }
+    return out;
 }
 
 template <class T> T parse_number(const std::string& text, std::size_t line, const char* what) {
@@ -108,6 +163,16 @@ Command parse_command(const std::vector<std::string>& tokens, std::size_t line) 
         expect_arg_count(tokens, 2, line);
         return citysim::time::SetTimeScale{parse_float(tokens[3], line, "movement_scale"),
                                            parse_number<std::uint32_t>(tokens[4], line, "day_length_ticks")};
+    }
+    if (name == "FoundCity") {
+        expect_arg_count(tokens, 3, line);
+        return citysim::world::FoundCity{parse_number<std::int32_t>(tokens[3], line, "origin_tx"),
+                                         parse_number<std::int32_t>(tokens[4], line, "origin_ty"),
+                                         unescape_token(tokens[5], line)};
+    }
+    if (name == "SetActiveCity") {
+        expect_arg_count(tokens, 1, line);
+        return citysim::world::SetActiveCity{parse_number<std::uint32_t>(tokens[3], line, "city_id")};
     }
     if (name == "SetEra") {
         expect_arg_count(tokens, 1, line);

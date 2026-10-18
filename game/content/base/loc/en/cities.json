@@ -1,0 +1,9 @@
+{
+  "city.found.error.limit": "You cannot found another city: you already control as many as you can.",
+  "city.found.error.name": "That city name is too long.",
+  "city.found.error.out_of_bounds": "This site reaches past the edge of the map.",
+  "city.found.error.no_detail": "This site is outside the lands that can be settled.",
+  "city.found.error.overlap": "This site overlaps another city.",
+  "city.found.error.not_land": "Too much of this site is water.",
+  "city.active.error.unknown": "There is no such city."
+}

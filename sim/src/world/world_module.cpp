@@ -4,6 +4,7 @@
 #include "citysim/core/state_hasher.hpp"
 #include "citysim/save/bind_serializer.hpp"
 #include "citysim/save/save_format_error.hpp"
+#include "citysim/world/city_module.hpp"
 #include "citysim/world/terrain_serialize.hpp"
 
 #include <stdexcept>
@@ -86,6 +87,7 @@ void install(core::Simulation& simulation, const content::ContentDatabase& conte
     save::bind_serializer(hooks);
     world.registry().register_singleton<WorldTerrain>("world.Terrain", hooks);
     world.ctx().emplace<WorldTerrain>(std::move(map), def.map_seed);
+    install_cities(simulation, config.cities);
 
     const content::ContentDatabase* database = &content;
     simulation.add_after_load_hook([database](core::Simulation& loaded, std::vector<std::string>& warnings) {

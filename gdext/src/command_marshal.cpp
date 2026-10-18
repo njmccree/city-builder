@@ -2,6 +2,7 @@
 
 #include "citysim/content/era_def.hpp"
 #include "citysim/time/time_commands.hpp"
+#include "citysim/world/city_commands.hpp"
 
 #include <array>
 #include <cmath>
@@ -226,12 +227,48 @@ MarshalResult parse_set_time_scale(const Dictionary& dictionary, const MarshalCo
     return success(time::SetTimeScale{static_cast<float>(scale), static_cast<std::uint32_t>(day_ticks)});
 }
 
+MarshalResult parse_found_city(const Dictionary& dictionary, const MarshalContext&) {
+    std::string error;
+    int64_t tx = 0;
+    int64_t ty = 0;
+    if (!only_keys(dictionary, {"type", "origin_tx", "origin_ty", "name"}, error) ||
+        !read_int(dictionary, "origin_tx", tx, error) || !read_int(dictionary, "origin_ty", ty, error)) {
+        return failure(error);
+    }
+    constexpr int64_t k_most_tile = 1000000;
+    if (tx < -k_most_tile || tx > k_most_tile || ty < -k_most_tile || ty > k_most_tile) {
+        return failure("'origin_tx' and 'origin_ty' must be tile numbers within +-1000000");
+    }
+    std::string name; // optional: empty means "City N"
+    if (dictionary.has("name")) {
+        const Variant value = dictionary["name"];
+        if (value.get_type() != Variant::STRING && value.get_type() != Variant::STRING_NAME) {
+            return failure("field 'name' must be a string");
+        }
+        name = to_std(String(value));
+    }
+    return success(world::FoundCity{static_cast<std::int32_t>(tx), static_cast<std::int32_t>(ty), name});
+}
+
+MarshalResult parse_set_active_city(const Dictionary& dictionary, const MarshalContext&) {
+    std::string error;
+    int64_t city_id = 0;
+    if (!only_keys(dictionary, {"type", "city_id"}, error) ||
+        !read_int(dictionary, "city_id", city_id, error)) {
+        return failure(error);
+    }
+    if (city_id < 1 || city_id > 0xFFFFFFFFLL) {
+        return failure("'city_id' must be a city id (1 or more)");
+    }
+    return success(world::SetActiveCity{static_cast<std::uint32_t>(city_id)});
+}
+
 // The conversion table: one line per command type.
 struct Entry {
     std::string_view type;
     MarshalResult (*parse)(const Dictionary&, const MarshalContext&);
 };
-constexpr std::array<Entry, 9> k_entries{{
+constexpr std::array<Entry, 11> k_entries{{
     {"set_speed", &parse_set_speed},
     {"toggle_pause", &parse_toggle_pause},
     {"set_era", &parse_set_era},
@@ -241,6 +278,8 @@ constexpr std::array<Entry, 9> k_entries{{
     {"spawn_agents", &parse_spawn_agents},
     {"clear_agents", &parse_clear_agents},
     {"set_time_scale", &parse_set_time_scale},
+    {"found_city", &parse_found_city},
+    {"set_active_city", &parse_set_active_city},
 }};
 
 } // namespace

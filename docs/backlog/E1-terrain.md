@@ -600,7 +600,7 @@ Follow the Task workflow in CLAUDE.md (branch story/S1.4.1-resources).
 - A neighbours query.
 - Saved and hashed.
 
-#### [ ] T1.5.1.1 — CityArea registry, FoundCity, active city
+#### [x] T1.5.1.1 — CityArea registry, FoundCity, active city
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.1.2.1
 ```
 Task T1.5.1.1 (Story S1.5.1). Read docs/architecture.md §12, §15.1, §15.3 and docs/gdd.md §7.7 and §13.

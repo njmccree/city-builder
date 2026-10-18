@@ -370,6 +370,10 @@ void ContentDatabase::collect_mod_defs(const ModInfo& mod, RawDefs& raw, std::ve
     if (fs::is_regular_file(time_file, ec)) {
         load_time_defines(time_file, mod.root.generic_string(), display_path(time_file, mod.root), issues);
     }
+    const fs::path world_file = mod.root / "defines" / "world.json";
+    if (fs::is_regular_file(world_file, ec)) {
+        load_world_defines(world_file, mod.root.generic_string(), display_path(world_file, mod.root), issues);
+    }
 }
 
 void ContentDatabase::collect_defs_file(const ModInfo& mod, const fs::path& path,
@@ -539,6 +543,48 @@ void ContentDatabase::load_time_defines(const fs::path& path, const std::string&
         }
     }
     time_defines_ = defines;
+}
+
+void ContentDatabase::load_world_defines(const fs::path& path, const std::string& mod_root,
+                                         const std::string& display_name, std::vector<ContentIssue>& issues) {
+    ParseContext context(issues);
+    context.set_mod_root(mod_root);
+    context.set_file(display_name);
+
+    const std::optional<nlohmann::json> parsed = read_json_file(path, context);
+    if (!parsed) {
+        return;
+    }
+    const nlohmann::json& json = *parsed;
+    context.set_pointer("");
+    if (!json.is_object()) {
+        context.error("", "expected an object");
+        return;
+    }
+    context.warn_unknown_keys(json, {"max_player_cities", "min_land_fraction", "active_ring_tiles"});
+
+    // Fields that are absent keep their previous values: the built-in defaults, or what an earlier mod set.
+    world::CityDefines defines = city_defines_;
+    if (const auto value = context.read_u32(json, "max_player_cities", false)) {
+        defines.max_player_cities = *value;
+    }
+    if (const auto value = context.read_number(json, "min_land_fraction", false)) {
+        defines.min_land_fraction = static_cast<float>(*value);
+    }
+    if (const auto value = context.read_u32(json, "active_ring_tiles", false)) {
+        defines.active_ring_tiles = *value;
+    }
+    if (json.contains("max_player_cities") && defines.max_player_cities == 0) {
+        context.error("/max_player_cities", "must be greater than 0");
+    }
+    if (json.contains("min_land_fraction") &&
+        !(defines.min_land_fraction >= 0.0F && defines.min_land_fraction <= 1.0F)) {
+        context.error("/min_land_fraction", "must be between 0 and 1");
+    }
+    if (json.contains("active_ring_tiles") && defines.active_ring_tiles > 8) {
+        context.error("/active_ring_tiles", "must be at most 8");
+    }
+    city_defines_ = defines;
 }
 
 } // namespace citysim::content

@@ -52,6 +52,7 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
         if (!request.map_id.empty()) {
             world_config.map_id = request.map_id;
             world_config.map = world::open_map(*session->content_, request.map_id);
+            world_config.cities = session->content_->city_defines();
         }
 
         if (request.clock == nullptr) {
@@ -87,6 +88,7 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
         std::vector<SimulationRunner::PublishHook> all_hooks = request.publish_hooks;
         if (!world_config.map_id.empty()) {
             all_hooks.emplace_back(&world::publish_terrain_tiles);
+            all_hooks.emplace_back(&world::publish_cities);
         }
         if (test_map_size > 0) {
             all_hooks.emplace_back(&debug::publish_agent_snapshot);

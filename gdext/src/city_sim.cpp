@@ -65,9 +65,9 @@ CitySim::~CitySim() {
 
 void CitySim::_bind_methods() {
     godot::ClassDB::bind_method(godot::D_METHOD("get_core_version"), &CitySim::get_core_version);
-    godot::ClassDB::bind_method(
-        godot::D_METHOD("new_game", "seed", "content_roots", "enabled_mods", "era_id", "test_map_size"),
-        &CitySim::new_game, DEFVAL(0));
+    godot::ClassDB::bind_method(godot::D_METHOD("new_game", "seed", "content_roots", "enabled_mods", "era_id",
+                                                "test_map_size", "map_id"),
+                                &CitySim::new_game, DEFVAL(0), DEFVAL(godot::String()));
     godot::ClassDB::bind_method(godot::D_METHOD("shutdown"), &CitySim::shutdown);
     godot::ClassDB::bind_method(godot::D_METHOD("is_running"), &CitySim::is_running);
     godot::ClassDB::bind_method(godot::D_METHOD("submit_command", "command"), &CitySim::submit_command);
@@ -75,6 +75,8 @@ void CitySim::_bind_methods() {
     godot::ClassDB::bind_method(godot::D_METHOD("get_interpolation_alpha"),
                                 &CitySim::get_interpolation_alpha);
     godot::ClassDB::bind_method(godot::D_METHOD("get_channel", "name"), &CitySim::get_channel);
+    godot::ClassDB::bind_method(godot::D_METHOD("get_cities"), &CitySim::get_cities);
+    godot::ClassDB::bind_method(godot::D_METHOD("get_active_city_id"), &CitySim::get_active_city_id);
 
     ADD_SIGNAL(godot::MethodInfo("tick_advanced", godot::PropertyInfo(godot::Variant::INT, "tick")));
     ADD_SIGNAL(godot::MethodInfo("date_changed", godot::PropertyInfo(godot::Variant::STRING, "text")));
@@ -83,6 +85,10 @@ void CitySim::_bind_methods() {
     ADD_SIGNAL(godot::MethodInfo("save_completed", godot::PropertyInfo(godot::Variant::STRING, "path"),
                                  godot::PropertyInfo(godot::Variant::BOOL, "ok"),
                                  godot::PropertyInfo(godot::Variant::STRING, "message")));
+    ADD_SIGNAL(godot::MethodInfo("sim_notice", godot::PropertyInfo(godot::Variant::STRING, "tag"),
+                                 godot::PropertyInfo(godot::Variant::STRING, "key"),
+                                 godot::PropertyInfo(godot::Variant::STRING, "text"),
+                                 godot::PropertyInfo(godot::Variant::INT, "subject")));
     ADD_SIGNAL(godot::MethodInfo("state_hash_ready", godot::PropertyInfo(godot::Variant::INT, "tick"),
                                  godot::PropertyInfo(godot::Variant::STRING, "hash")));
     ADD_SIGNAL(godot::MethodInfo("load_completed", godot::PropertyInfo(godot::Variant::STRING, "path"),
@@ -97,7 +103,7 @@ godot::String CitySim::get_core_version() const {
 
 Dictionary CitySim::new_game(int64_t seed, const godot::PackedStringArray& content_roots,
                              const godot::PackedStringArray& enabled_mods, const String& era_id,
-                             int64_t test_map_size) {
+                             int64_t test_map_size, const String& map_id) {
     shutdown();
 
     runner::NewGameRequest request;
@@ -109,6 +115,7 @@ Dictionary CitySim::new_game(int64_t seed, const godot::PackedStringArray& conte
         request.enabled_mods.push_back(to_std(enabled_mods[i]));
     }
     request.era_id = to_std(era_id);
+    request.map_id = to_std(map_id); // empty: no terrain, no cities
     request.test_map_size = static_cast<std::uint32_t>(std::clamp<int64_t>(test_map_size, 0, 4096));
     request.autosave_directory = real_path("user://saves/autosave");
     request.publish_hooks.push_back(&publish_debug_clock);
@@ -202,6 +209,20 @@ godot::PackedFloat32Array CitySim::get_channel(const String& name) const {
     return result;
 }
 
+godot::Array CitySim::get_cities() const {
+    godot::Array result;
+    for (const runner::SnapshotCity& city : last_.cities) {
+        Dictionary entry;
+        entry["id"] = static_cast<int64_t>(city.id);
+        entry["name"] = to_godot(city.name);
+        entry["origin_tx"] = static_cast<int64_t>(city.first_tile.tx);
+        entry["origin_ty"] = static_cast<int64_t>(city.first_tile.ty);
+        entry["active"] = city.active;
+        result.push_back(entry);
+    }
+    return result;
+}
+
 void CitySim::_process(double) {
     if (!session_) {
         return;
@@ -211,6 +232,15 @@ void CitySim::_process(double) {
     // Results of saves and loads (each is handed over once).
     for (const runner::UiEvent& event : snapshot.ui_events) {
         if (event.kind == runner::UiEventKind::Message) {
+            continue;
+        }
+        if (event.kind == runner::UiEventKind::Notice) {
+            // What the simulation reports about a command (a city could not be founded, and why): the key and
+            // the English text of it for a toast, and the id it is about.
+            const content::Localizer& notice_localizer = session_->content().localizer();
+            const String text = event.text.empty() ? String() : to_godot(notice_localizer.get(event.text));
+            emit_signal("sim_notice", to_godot(event.tag), to_godot(event.text), text,
+                        static_cast<int64_t>(event.subject));
             continue;
         }
         if (event.kind == runner::UiEventKind::StateHash) {

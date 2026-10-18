@@ -16,7 +16,7 @@ class CityTile;
 
 namespace citysim::runner {
 
-enum class UiEventKind { Message, SaveCompleted, LoadCompleted, StateHash };
+enum class UiEventKind { Message, SaveCompleted, LoadCompleted, StateHash, Notice };
 
 // Something the UI should react to (a toast, a sound). `text` is the message; for SaveCompleted and
 // LoadCompleted it is a failure's reason (empty when ok). Real event kinds arrive with the UI tasks.
@@ -35,6 +35,11 @@ struct UiEvent {
     std::vector<std::string> warnings; // LoadCompleted: e.g. the content changed since the save
     std::uint64_t hash = 0;            // StateHash: World::state_hash() at the moment it was taken
     std::uint64_t tick = 0;            // StateHash: the tick that state was at
+    // Notice: what the simulation reports about a command (core::UiNotice). `tag` is a short machine name
+    // (e.g. "city_found_failed"), `text` a localization key for the player-facing text (or empty), `subject`
+    // the id it is about (a city id) or 0. Kept in snapshots until read, like save results.
+    std::string tag;
+    std::uint32_t subject = 0;
 };
 
 // A named block of flat numbers for a renderer (architecture §7.3): `data` holds records of `stride` floats,
@@ -76,6 +81,15 @@ struct SnapshotTerrainTile {
     std::shared_ptr<const world::CityTile> tile;
 };
 
+// One founded city for the front end (architecture §15.1), as world::CityInfo holds it.
+struct SnapshotCity {
+    std::uint32_t id = 0;
+    std::string name;
+    world::TileCoord first_tile; // the south-west tile of its 4 x 4 area
+    time::Date founded_on;
+    bool active = false; // the city being viewed (the one whose terrain tiles are active)
+};
+
 struct SimStats {
     double last_tick_ms = 0.0;
     double avg_tick_ms = 0.0; // over the last 60 ticks
@@ -105,6 +119,10 @@ struct RenderSnapshot {
     // "terrain.tiles": the active city terrain tiles sorted by coordinate, added by
     // world::publish_terrain_tiles when the world module is installed. Cleared before every publish.
     std::vector<SnapshotTerrainTile> terrain_tiles;
+    // "world.cities": the founded cities in founding order and which one is active (0 for none), added by
+    // world::publish_cities when the world module is installed. Cleared before every publish.
+    std::vector<SnapshotCity> cities;
+    std::uint32_t active_city_id = 0;
 
     // The channel with this name, or nullptr.
     const SnapshotChannel* find_channel(const std::string& name) const {

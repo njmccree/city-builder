@@ -1,6 +1,7 @@
 #include "citysim/core/simulation.hpp"
 
 #include "citysim/core/log.hpp"
+#include "citysim/core/ui_notice.hpp"
 #include "citysim/profiling/profile.hpp"
 
 #include <algorithm>
@@ -9,7 +10,9 @@
 namespace citysim::core {
 
 Simulation::Simulation(std::uint64_t world_seed, std::size_t worker_count)
-    : world_seed_(world_seed), scheduler_(world_), jobs_(worker_count) {}
+    : world_seed_(world_seed), scheduler_(world_), jobs_(worker_count) {
+    world_.ctx().emplace<UiOutbox>(); // not registered: notices are not game state
+}
 
 void Simulation::step() {
     CS_PROFILE_ZONE("Simulation::step");
