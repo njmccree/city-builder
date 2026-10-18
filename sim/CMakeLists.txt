@@ -58,6 +58,8 @@ add_library(citysim_core STATIC
     src/world/map_package.cpp
     src/world/raster.cpp
     src/world/river_network.cpp
+    src/world/terraform.cpp
+    src/world/terraform_module.cpp
     src/world/terrain_publisher.cpp
     src/world/terrain_deltas.cpp
     src/world/terrain_synth.cpp
@@ -76,7 +78,8 @@ citysim_set_warnings(citysim_core)
 # Terrain heights must be the same bits on every compiler and CPU (golden hashes, architecture §15.4), so the
 # synthesis never fuses a multiply and an add into one rounding.
 if(NOT MSVC)
-    set_source_files_properties(src/world/terrain_synth.cpp PROPERTIES COMPILE_OPTIONS -ffp-contract=off)
+    set_source_files_properties(src/world/terrain_synth.cpp src/world/terraform.cpp PROPERTIES
+        COMPILE_OPTIONS -ffp-contract=off)
 endif()
 
 # Profiler zones compile to nothing unless this is on (see citysim/profiling/profile.hpp).

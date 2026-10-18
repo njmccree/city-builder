@@ -3,6 +3,7 @@
 #include "citysim/debug/debug_commands.hpp"
 #include "citysim/time/time_commands.hpp"
 #include "citysim/world/city_commands.hpp"
+#include "citysim/world/terraform_commands.hpp"
 #include "citysim/world/water_commands.hpp"
 
 #include <cstdint>
@@ -44,10 +45,10 @@ struct LoadGame {
 // UiEvent. Also handled by the runner and not recorded in the input log. For tests and the developer console.
 struct RequestStateHash {};
 
-using Command =
-    std::variant<NoOp, DebugSetComponentValue, time::SetSpeed, time::TogglePause, time::SetEra, SaveGame,
-                 LoadGame, debug::SpawnDebugAgents, debug::ClearDebugAgents, RequestStateHash,
-                 time::SetTimeScale, world::FoundCity, world::SetActiveCity, world::SetRiverLevel>;
+using Command = std::variant<NoOp, DebugSetComponentValue, time::SetSpeed, time::TogglePause, time::SetEra,
+                             SaveGame, LoadGame, debug::SpawnDebugAgents, debug::ClearDebugAgents,
+                             RequestStateHash, time::SetTimeScale, world::FoundCity, world::SetActiveCity,
+                             world::SetRiverLevel, world::Terraform>;
 
 struct SequencedCommand {
     std::uint64_t sequence = 0;   // assigned by CommandQueue::submit, strictly increasing

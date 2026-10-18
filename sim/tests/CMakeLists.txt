@@ -40,6 +40,7 @@ add_executable(citysim_tests
     world/raster_tests.cpp
     world/city_tests.cpp
     world/flood_tests.cpp
+    world/terraform_tests.cpp
     world/terrain_deltas_tests.cpp
     world/terrain_synth_tests.cpp
     world/water_tests.cpp)

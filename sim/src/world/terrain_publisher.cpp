@@ -3,6 +3,7 @@
 #include "citysim/profiling/profile.hpp"
 #include "citysim/world/city_registry.hpp"
 #include "citysim/world/flood_map.hpp"
+#include "citysim/world/terraform_report.hpp"
 #include "citysim/world/world_terrain.hpp"
 
 namespace citysim::world {
@@ -43,6 +44,20 @@ void publish_flood_extents(core::Simulation& simulation, runner::RenderSnapshot&
             runner::SnapshotGrid{"water.flood." + std::to_string(coord.tx) + "_" + std::to_string(coord.ty),
                                  k_city_tile_samples, k_city_tile_samples, 4.0F, grid});
     }
+}
+
+void publish_terraform_report(core::Simulation& simulation, runner::RenderSnapshot& snapshot) {
+    const auto* report = simulation.world().ctx().find<TerraformReport>();
+    if (report == nullptr || report->serial == 0) {
+        return;
+    }
+    runner::SnapshotChannel channel;
+    channel.name = "world.terraform.last";
+    channel.stride = 5;
+    channel.data = {static_cast<float>(report->serial), static_cast<float>(report->city),
+                    static_cast<float>(report->volume_m3), static_cast<float>(report->cost),
+                    static_cast<float>(report->total_cost)};
+    snapshot.channels.push_back(std::move(channel));
 }
 
 } // namespace citysim::world

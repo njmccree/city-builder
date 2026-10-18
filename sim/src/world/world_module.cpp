@@ -6,6 +6,7 @@
 #include "citysim/save/save_format_error.hpp"
 #include "citysim/world/city_module.hpp"
 #include "citysim/world/flood_module.hpp"
+#include "citysim/world/terraform_module.hpp"
 #include "citysim/world/terrain_serialize.hpp"
 
 #include <stdexcept>
@@ -116,6 +117,7 @@ void install(core::Simulation& simulation, const content::ContentDatabase& conte
     world.ctx().emplace<WaterState>(world.ctx().get<WorldTerrain>().map()->rivers().reach_count());
     install_cities(simulation, config.cities);
     install_flood(simulation);
+    install_terraform(simulation);
 
     const content::ContentDatabase* database = &content;
     simulation.add_after_load_hook([database](core::Simulation& loaded, std::vector<std::string>& warnings) {

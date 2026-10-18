@@ -57,6 +57,11 @@ struct WriteCommand {
     void operator()(const citysim::world::SetActiveCity& cmd) const {
         out << "SetActiveCity " << cmd.city_id;
     }
+    void operator()(const citysim::world::Terraform& cmd) const {
+        out << "Terraform " << cmd.city_id << ' ' << static_cast<unsigned>(cmd.op) << ' '
+            << std::setprecision(9) << cmd.center.x << ' ' << cmd.center.z << ' ' << cmd.radius_m << ' '
+            << cmd.strength << ' ' << cmd.target_height_m;
+    }
     void operator()(const citysim::world::SetRiverLevel& cmd) const {
         out << "SetRiverLevel " << cmd.reach_index << ' ' << std::setprecision(9) << cmd.offset_m;
     }
@@ -176,6 +181,20 @@ Command parse_command(const std::vector<std::string>& tokens, std::size_t line) 
     if (name == "SetActiveCity") {
         expect_arg_count(tokens, 1, line);
         return citysim::world::SetActiveCity{parse_number<std::uint32_t>(tokens[3], line, "city_id")};
+    }
+    if (name == "Terraform") {
+        expect_arg_count(tokens, 7, line);
+        const auto op = parse_number<std::uint32_t>(tokens[4], line, "op");
+        if (op >= citysim::world::k_terraform_op_count) {
+            fail(line, "invalid op '" + tokens[4] + "'");
+        }
+        return citysim::world::Terraform{parse_number<std::uint32_t>(tokens[3], line, "city_id"),
+                                         static_cast<citysim::world::TerraformOp>(op),
+                                         citysim::world::LocalPos{parse_float(tokens[5], line, "center_x"),
+                                                                  parse_float(tokens[6], line, "center_z")},
+                                         parse_float(tokens[7], line, "radius_m"),
+                                         parse_float(tokens[8], line, "strength"),
+                                         parse_float(tokens[9], line, "target_height_m")};
     }
     if (name == "SetRiverLevel") {
         expect_arg_count(tokens, 2, line);

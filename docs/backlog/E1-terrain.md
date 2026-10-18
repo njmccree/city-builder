@@ -855,7 +855,7 @@ regions, overlapping), zoom out and back. Report what you verified. Follow the T
 - A tool UI with brush preview.
 - Survives save → load.
 
-#### [ ] T1.8.1.1 — Terraform command and brushes (core)
+#### [x] T1.8.1.1 — Terraform command and brushes (core)
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.1.2.3, T1.5.1.1
 ```
 Task T1.8.1.1 (Story S1.8.1). Read docs/architecture.md §4, §5.3, §15.4 and docs/gdd.md §7.5, §9.2.

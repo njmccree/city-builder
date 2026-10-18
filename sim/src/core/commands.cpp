@@ -31,6 +31,13 @@ struct Describe {
     std::string operator()(const world::SetActiveCity& cmd) const {
         return "SetActiveCity city_id=" + std::to_string(cmd.city_id);
     }
+    std::string operator()(const world::Terraform& cmd) const {
+        return "Terraform city=" + std::to_string(cmd.city_id) +
+               " op=" + std::to_string(static_cast<unsigned>(cmd.op)) + " center=(" +
+               std::to_string(cmd.center.x) + ", " + std::to_string(cmd.center.z) +
+               ") radius_m=" + std::to_string(cmd.radius_m) + " strength=" + std::to_string(cmd.strength) +
+               " target_height_m=" + std::to_string(cmd.target_height_m);
+    }
     std::string operator()(const world::SetRiverLevel& cmd) const {
         return "SetRiverLevel reach=" + std::to_string(cmd.reach_index) +
                " offset_m=" + std::to_string(cmd.offset_m);

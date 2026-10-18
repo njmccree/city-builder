@@ -3,6 +3,7 @@
 #include "citysim/content/era_def.hpp"
 #include "citysim/time/time_commands.hpp"
 #include "citysim/world/city_commands.hpp"
+#include "citysim/world/terraform_commands.hpp"
 #include "citysim/world/water_commands.hpp"
 
 #include <array>
@@ -281,12 +282,60 @@ MarshalResult parse_set_river_level(const Dictionary& dictionary, const MarshalC
     return success(world::SetRiverLevel{static_cast<std::uint32_t>(reach), static_cast<float>(offset)});
 }
 
+MarshalResult parse_terraform(const Dictionary& dictionary, const MarshalContext&) {
+    std::string error;
+    int64_t city_id = 0;
+    std::string op_name;
+    double x = 0.0;
+    double z = 0.0;
+    double radius = 0.0;
+    double strength = 0.0;
+    double target = 0.0; // optional: only flatten and level use it
+    if (!only_keys(dictionary, {"type", "city_id", "op", "x", "z", "radius_m", "strength", "target_height_m"},
+                   error) ||
+        !read_int(dictionary, "city_id", city_id, error) || !read_string(dictionary, "op", op_name, error) ||
+        !read_number(dictionary, "x", x, error) || !read_number(dictionary, "z", z, error) ||
+        !read_number(dictionary, "radius_m", radius, error) ||
+        !read_number(dictionary, "strength", strength, error) ||
+        (dictionary.has("target_height_m") && !read_number(dictionary, "target_height_m", target, error))) {
+        return failure(error);
+    }
+    if (city_id < 1 || city_id > 0xFFFFFFFFLL) {
+        return failure("'city_id' must be a city id (1 or more)");
+    }
+    world::TerraformOp op = world::TerraformOp::Raise;
+    if (op_name == "raise") {
+        op = world::TerraformOp::Raise;
+    } else if (op_name == "lower") {
+        op = world::TerraformOp::Lower;
+    } else if (op_name == "flatten") {
+        op = world::TerraformOp::Flatten;
+    } else if (op_name == "smooth") {
+        op = world::TerraformOp::Smooth;
+    } else if (op_name == "level") {
+        op = world::TerraformOp::Level;
+    } else {
+        return failure("'op' must be raise, lower, flatten, smooth or level");
+    }
+    // Ranges (the radius, strength, target height and the city's area) are the simulation's to judge: it
+    // answers a bad brush with a "terraform_failed" notice. Only values a float cannot hold are refused here.
+    constexpr double k_most = 1.0e9;
+    if (std::fabs(x) > k_most || std::fabs(z) > k_most || std::fabs(radius) > k_most ||
+        std::fabs(strength) > k_most || std::fabs(target) > k_most) {
+        return failure("a number is too large");
+    }
+    return success(world::Terraform{static_cast<std::uint32_t>(city_id), op,
+                                    world::LocalPos{static_cast<float>(x), static_cast<float>(z)},
+                                    static_cast<float>(radius), static_cast<float>(strength),
+                                    static_cast<float>(target)});
+}
+
 // The conversion table: one line per command type.
 struct Entry {
     std::string_view type;
     MarshalResult (*parse)(const Dictionary&, const MarshalContext&);
 };
-constexpr std::array<Entry, 12> k_entries{{
+constexpr std::array<Entry, 13> k_entries{{
     {"set_speed", &parse_set_speed},
     {"toggle_pause", &parse_toggle_pause},
     {"set_era", &parse_set_era},
@@ -299,6 +348,7 @@ constexpr std::array<Entry, 12> k_entries{{
     {"found_city", &parse_found_city},
     {"set_active_city", &parse_set_active_city},
     {"set_river_level", &parse_set_river_level},
+    {"terraform", &parse_terraform},
 }};
 
 } // namespace

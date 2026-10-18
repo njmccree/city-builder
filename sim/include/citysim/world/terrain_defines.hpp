@@ -20,6 +20,11 @@ struct TerrainDefines {
     // spreads over several ticks instead of stalling one. Not part of the terrain's identity (it changes when
     // the flood appears, never where it ends up), 1000..100000000.
     std::uint32_t flood_samples_per_tick = 250000;
+    // Terraforming (GDD §7.5): how far a Raise or Lower stroke at full strength lifts or cuts the ground at
+    // the middle of the brush, in meters (0.01..50), and what each cubic meter of earth moved costs
+    // (0..1000000; reported only until the treasury exists, E4).
+    float terraform_step_m = 1.0F;
+    float terraform_cost_per_m3 = 0.1F;
 };
 
 } // namespace citysim::world

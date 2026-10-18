@@ -146,6 +146,36 @@ TEST_CASE("input log text round-trips SetTimeScale exactly", "[tools][headless]"
     REQUIRE_THROWS(read_text("citysim-input-log 1\nseed 1\nticks 1\n1 1 SetTimeScale abc 100\n"));
 }
 
+TEST_CASE("input log text round-trips Terraform and SetRiverLevel exactly", "[tools][headless]") {
+    LogFile log;
+    log.seed = 1;
+    log.ticks = 10;
+    log.entries.push_back(
+        {3, 1,
+         citysim::world::Terraform{2, citysim::world::TerraformOp::Level,
+                                   citysim::world::LocalPos{1234.5F, 0.1F}, 37.25F, 0.3F, -12.5F}});
+    log.entries.push_back({4, 1, citysim::world::SetRiverLevel{3, 0.1F}});
+
+    std::ostringstream out;
+    write_log_file(out, log);
+    const LogFile back = read_text(out.str());
+    REQUIRE(back.entries.size() == 2);
+    const auto terraform = std::get<citysim::world::Terraform>(back.entries[0].cmd);
+    CHECK(terraform.city_id == 2);
+    CHECK(terraform.op == citysim::world::TerraformOp::Level);
+    CHECK(terraform.center.x == 1234.5F);
+    CHECK(terraform.center.z == 0.1F); // bit for bit, so a replay stays identical
+    CHECK(terraform.radius_m == 37.25F);
+    CHECK(terraform.strength == 0.3F);
+    CHECK(terraform.target_height_m == -12.5F);
+    const auto level = std::get<citysim::world::SetRiverLevel>(back.entries[1].cmd);
+    CHECK(level.reach_index == 3);
+    CHECK(level.offset_m == 0.1F);
+    REQUIRE_THROWS(read_text("citysim-input-log 1\nseed 1\nticks 1\n1 1 Terraform 1 9 0 0 10 1 0\n")); // op 9
+    REQUIRE_THROWS(read_text("citysim-input-log 1\nseed 1\nticks 1\n1 1 Terraform 1 0 0 0\n")); // too few
+    REQUIRE_THROWS(read_text("citysim-input-log 1\nseed 1\nticks 1\n1 1 SetRiverLevel x 1\n"));
+}
+
 TEST_CASE("input log reader skips comments and blank lines", "[tools][headless]") {
     const LogFile log =
         read_text("# a comment\n\ncitysim-input-log 1\n\nseed 3\nticks 9\n# note\n5 1 NoOp\n");

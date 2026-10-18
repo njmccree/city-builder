@@ -100,6 +100,19 @@ func set_active_city(city_id: int) -> bool:
 	return core.submit_command({"type": "set_active_city", "city_id": city_id})
 
 
+## Reshapes the ground of the active city with a round brush, instantly (the cost is reported, nothing is charged
+## yet). `op` is "raise", "lower", "flatten", "smooth" or "level"; `x` and `z` are the brush center in the city's
+## local frame (meters from its south-west corner); `radius_m` is 2-200, `strength` 0-1; `target_height_m`
+## (meters above sea level) is used by "flatten" and "level". Returns false if the command was malformed; a
+## brush the simulation refuses arrives later as a `sim_notice` ("terraform_failed" with the reason), and a stroke
+## that changed the ground as "terraform_applied" (the volume and cost are in the "world.terraform.last" channel).
+func terraform(city_id: int, op: String, x: float, z: float, radius_m: float, strength: float, target_height_m: float = 0.0) -> bool:
+	return core.submit_command({
+		"type": "terraform", "city_id": city_id, "op": op, "x": x, "z": z,
+		"radius_m": radius_m, "strength": strength, "target_height_m": target_height_m,
+	})
+
+
 ## Debug and testing: raises (or lowers) the water of a river reach by `offset_m` meters above its base level.
 ## The flood spreads over the next ticks. A reach index or level that is refused arrives as a `sim_notice`
 ## ("river_level_failed"). Returns false if the command itself was malformed.

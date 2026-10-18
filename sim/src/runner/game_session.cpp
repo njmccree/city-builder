@@ -91,6 +91,7 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
             all_hooks.emplace_back(&world::publish_terrain_tiles);
             all_hooks.emplace_back(&world::publish_cities);
             all_hooks.emplace_back(&world::publish_flood_extents);
+            all_hooks.emplace_back(&world::publish_terraform_report);
         }
         if (test_map_size > 0) {
             all_hooks.emplace_back(&debug::publish_agent_snapshot);
