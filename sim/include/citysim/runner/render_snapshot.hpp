@@ -1,6 +1,7 @@
 #pragma once
 
 #include "citysim/time/calendar.hpp"
+#include "citysim/world/tile_coord.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -8,6 +9,10 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+namespace citysim::world {
+class CityTile;
+}
 
 namespace citysim::runner {
 
@@ -60,6 +65,17 @@ struct SnapshotGrid {
         cells; // width * height values, row by row (y * width + x)
 };
 
+// One active 4 m city terrain tile for the terrain renderer (architecture §7.3, §15.4). The heights are
+// shared, never copied: `tile` is the simulation's own immutable CityTile, and it is replaced by a new one
+// (with a higher `version`) only when the tile changes, so a renderer rebuilds a tile's mesh only when its
+// pointer differs from the one it last saw. A tile missing from the list is no longer active.
+struct SnapshotTerrainTile {
+    world::TileCoord coord;
+    // CityTile::version(), for logs and debugging; compare pointers to detect a change.
+    std::uint64_t version = 0;
+    std::shared_ptr<const world::CityTile> tile;
+};
+
 struct SimStats {
     double last_tick_ms = 0.0;
     double avg_tick_ms = 0.0; // over the last 60 ticks
@@ -86,6 +102,9 @@ struct RenderSnapshot {
     std::vector<SnapshotChannel> channels;
     // Shared grids for renderers, added by publish hooks. Cleared before every publish.
     std::vector<SnapshotGrid> grids;
+    // "terrain.tiles": the active city terrain tiles sorted by coordinate, added by
+    // world::publish_terrain_tiles when the world module is installed. Cleared before every publish.
+    std::vector<SnapshotTerrainTile> terrain_tiles;
 
     // The channel with this name, or nullptr.
     const SnapshotChannel* find_channel(const std::string& name) const {

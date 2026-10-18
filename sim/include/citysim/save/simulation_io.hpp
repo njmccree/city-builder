@@ -55,8 +55,10 @@ struct LoadOutcome {
 std::vector<std::byte> save_simulation_bytes(const core::Simulation& simulation, const SaveOptions& options);
 
 // Loads into a Simulation that is fresh (never stepped) and has the same modules installed as the one that
-// was saved. Throws SaveFormatError for damaged, truncated or incompatible data; the Simulation is then
-// partly loaded and must be discarded. Throws std::logic_error if the Simulation is not fresh.
+// was saved, then runs the Simulation's after-load hooks, whose warnings are added to the outcome. Throws
+// SaveFormatError for damaged, truncated or incompatible data, or whatever an after-load hook throws (a map
+// package that cannot be read, say); the Simulation is then partly loaded and must be discarded. Throws
+// std::logic_error if the Simulation is not fresh.
 LoadOutcome load_simulation_bytes(core::Simulation& simulation, std::span<const std::byte> bytes,
                                   const LoadOptions& options);
 

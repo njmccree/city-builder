@@ -126,7 +126,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md; last task of S1.1.1, so op
 - `WorldTerrain` loads a package, synthesizes city tiles deterministically (golden hash), and answers height, slope and normal queries.
 - Terrain edits are sparse deltas that are hashed and saved. Saves never contain base heights.
 
-#### [ ] T1.1.2.1 ★ — WorldTerrain service, frames, tile cache
+#### [x] T1.1.2.1 ★ — WorldTerrain service, frames, tile cache
 - **Model:** **Opus** · **Session:** [Cloud] · **Depends on:** T1.1.1.2
 ```
 Task T1.1.2.1 (Story S1.1.2). Architecture-critical. Read docs/architecture.md §4, §5, §7.2, §7.3, §10 and

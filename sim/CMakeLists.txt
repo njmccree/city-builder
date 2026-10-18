@@ -49,8 +49,14 @@ add_library(citysim_core STATIC
     src/runner/game_session.cpp
     src/runner/simulation_runner.cpp
     src/runner/snapshot_view.cpp
+    src/world/city_tile.cpp
+    src/world/loaded_map.cpp
     src/world/map_package.cpp
-    src/world/raster.cpp)
+    src/world/raster.cpp
+    src/world/terrain_publisher.cpp
+    src/world/terrain_synth.cpp
+    src/world/world_module.cpp
+    src/world/world_terrain.cpp)
 target_include_directories(citysim_core PUBLIC include)
 target_compile_features(citysim_core PUBLIC cxx_std_20)
 find_package(Threads REQUIRED)

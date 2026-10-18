@@ -19,6 +19,11 @@ struct NewGameRequest {
     std::vector<std::filesystem::path> content_roots;
     std::vector<std::string> enabled_mods;
     std::string era_id; // the era the game starts in, e.g. "base:era.ancient"
+    // The map (a MapDef id, e.g. "base:map.ancient_near_east"). Not empty installs the world module
+    // (world::install: the terrain service, with no city tiles active yet) and the "terrain.tiles" publish
+    // hook; the package is opened once, here, and shared by every Simulation of the session. Empty leaves the
+    // game without a world.
+    std::string map_id;
     // Where the runner's autosaves go; empty turns them off.
     std::filesystem::path autosave_directory;
     // Not owned. Null uses the real clock.
