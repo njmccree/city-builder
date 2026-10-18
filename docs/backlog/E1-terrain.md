@@ -376,7 +376,7 @@ historical accuracy (GDD §11.6: the designer reviews all historical content).
 - The correction engine supports the architecture §15.7 operations.
 - The Ancient Near East correction set is authored with sources and confidence, and the designer has reviewed it.
 
-#### [ ] T1.2.5.1 — Correction overlay engine
+#### [x] T1.2.5.1 — Correction overlay engine
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.2.1.1
 ```
 Task T1.2.5.1 (Story S1.2.5). Read docs/architecture.md §15.7.
