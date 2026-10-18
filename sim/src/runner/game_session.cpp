@@ -53,6 +53,7 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
             world_config.map_id = request.map_id;
             world_config.map = world::open_map(*session->content_, request.map_id);
             world_config.cities = session->content_->city_defines();
+            world_config.terrain = session->content_->terrain_defines();
         }
 
         if (request.clock == nullptr) {

@@ -55,9 +55,12 @@ add_library(citysim_core STATIC
     src/world/loaded_map.cpp
     src/world/map_package.cpp
     src/world/raster.cpp
+    src/world/river_network.cpp
     src/world/terrain_publisher.cpp
     src/world/terrain_deltas.cpp
     src/world/terrain_synth.cpp
+    src/world/water_queries.cpp
+    src/world/water_state.cpp
     src/world/world_module.cpp
     src/world/world_terrain.cpp)
 target_include_directories(citysim_core PUBLIC include)

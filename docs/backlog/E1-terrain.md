@@ -463,7 +463,7 @@ Follow the Task workflow in CLAUDE.md (branch story/S1.2.6-ane-map); open the PR
 - Per-reach level offsets are hashed and saved.
 - Flood extents are recomputed incrementally and emit `WaterChanged`.
 
-#### [ ] T1.3.1.1 — River network, channel carving, water queries
+#### [x] T1.3.1.1 — River network, channel carving, water queries
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.1.2.3
 ```
 Task T1.3.1.1 (Story S1.3.1). Read docs/architecture.md §15.4 and §15.6.

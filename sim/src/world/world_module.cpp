@@ -14,6 +14,13 @@ namespace citysim::world {
 
 namespace {
 
+void hash_water(core::StateHasher& hasher, const WaterState& water) {
+    hasher.add_pod(static_cast<std::uint64_t>(water.reach_count()));
+    for (const float offset : water.level_offsets()) {
+        hasher.add_float(offset);
+    }
+}
+
 void hash_terrain(core::StateHasher& hasher, const WorldTerrain& terrain) {
     // Exactly SavedTerrain: the heights follow from it.
     hasher.add(terrain.map_id());
@@ -45,6 +52,20 @@ void restore_after_load(core::Simulation& simulation, const content::ContentData
     for (std::string& warning : restore_terrain(*terrain, *saved, content, simulation.jobs())) {
         CS_LOG_WARN(Save, "load: {}", warning);
         warnings.push_back(std::move(warning));
+    }
+    // The river levels belong to the river layout of the map: another layout (a rebuilt package) cannot use
+    // them.
+    if (auto* water = simulation.world().ctx().find<WaterState>(); water != nullptr) {
+        const std::size_t reaches = terrain->map()->rivers().reach_count();
+        if (water->reach_count() != reaches) {
+            std::string warning = "the rivers of map '" + terrain->map_id() +
+                                  "' changed since this save was made (" +
+                                  std::to_string(water->reach_count()) + " reaches, now " +
+                                  std::to_string(reaches) + "); the water levels were reset";
+            CS_LOG_WARN(Save, "load: {}", warning);
+            warnings.push_back(std::move(warning));
+            water->reset(reaches);
+        }
     }
 }
 
@@ -86,7 +107,12 @@ void install(core::Simulation& simulation, const content::ContentDatabase& conte
     hooks.hash = &hash_terrain;
     save::bind_serializer(hooks);
     world.registry().register_singleton<WorldTerrain>("world.Terrain", hooks);
-    world.ctx().emplace<WorldTerrain>(std::move(map), def.map_seed);
+    world.ctx().emplace<WorldTerrain>(std::move(map), def.map_seed, config.terrain);
+    core::Hooks<WaterState> water_hooks;
+    water_hooks.hash = &hash_water;
+    save::bind_serializer(water_hooks);
+    world.registry().register_singleton<WaterState>("world.Water", water_hooks);
+    world.ctx().emplace<WaterState>(world.ctx().get<WorldTerrain>().map()->rivers().reach_count());
     install_cities(simulation, config.cities);
 
     const content::ContentDatabase* database = &content;
@@ -106,7 +132,8 @@ std::vector<std::string> restore_terrain(WorldTerrain& terrain, const SavedTerra
             throw save::SaveFormatError(
                 "the save is on map '" + saved.map_id + "', which the content does not have", 0);
         }
-        terrain = WorldTerrain(open_map(content, saved.map_id), find_map_def(content, saved.map_id).map_seed);
+        terrain = WorldTerrain(open_map(content, saved.map_id), find_map_def(content, saved.map_id).map_seed,
+                               terrain.terrain_defines());
     }
     if (saved.package_hash != terrain.package_hash()) {
         warnings.push_back("the terrain package of map '" + saved.map_id +

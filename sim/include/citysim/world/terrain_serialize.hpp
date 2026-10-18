@@ -6,6 +6,7 @@
 #include "citysim/save/archive.hpp"
 #include "citysim/world/terrain_deltas.hpp"
 #include "citysim/world/tile_coord.hpp"
+#include "citysim/world/water_state.hpp"
 #include "citysim/world/world_terrain.hpp"
 
 #include <algorithm>
@@ -19,6 +20,19 @@ namespace citysim::world {
 template <class Ar> void serialize(Ar& ar, TileCoord& tile, std::uint32_t version) {
     save::io(ar, tile.tx, version);
     save::io(ar, tile.ty, version);
+}
+
+// The river level offsets, one per reach. The reader refuses a value that is not a finite number.
+template <class Ar> void serialize(Ar& ar, WaterState& water, std::uint32_t version) {
+    std::vector<float> offsets(water.level_offsets().begin(), water.level_offsets().end());
+    save::io(ar, offsets, version);
+    if constexpr (Ar::is_loading) {
+        try {
+            water.restore(std::move(offsets));
+        } catch (const std::invalid_argument& error) {
+            ar.fail(error.what());
+        }
+    }
 }
 
 // A delta layer travels as its tile and one zstd frame of the offsets, so a layer that is mostly zeros stays

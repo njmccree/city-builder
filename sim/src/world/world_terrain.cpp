@@ -28,8 +28,9 @@ std::shared_ptr<const CityTile> compose(const CityTile& base, const TileDelta& d
 
 } // namespace
 
-WorldTerrain::WorldTerrain(std::shared_ptr<const LoadedMap> map, std::uint64_t map_seed)
-    : map_(std::move(map)), map_seed_(map_seed) {
+WorldTerrain::WorldTerrain(std::shared_ptr<const LoadedMap> map, std::uint64_t map_seed,
+                           TerrainDefines defines)
+    : map_(std::move(map)), map_seed_(map_seed), defines_(defines) {
     if (!map_) {
         throw std::invalid_argument("WorldTerrain needs a map");
     }
@@ -73,9 +74,10 @@ void WorldTerrain::activate_tiles(core::JobSystem& jobs, std::span<const TileCoo
     // (architecture §7.2). If a tile fails, the lowest failing one is rethrown and nothing is added.
     std::vector<std::shared_ptr<const CityTile>> made(missing.size());
     const std::uint64_t seed = map_seed_;
+    const TerrainDefines defines = defines_;
     jobs.parallel_for(missing.size(), 1, [&](std::size_t begin, std::size_t end, std::size_t) {
         for (std::size_t i = begin; i < end; ++i) {
-            made[i] = TerrainSynth::make_tile(map, missing[i], seed);
+            made[i] = TerrainSynth::make_tile(map, missing[i], seed, defines);
         }
     });
     for (std::size_t i = 0; i < missing.size(); ++i) {

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <limits>
 
 namespace citysim::world {
@@ -112,6 +113,21 @@ std::shared_ptr<const LoadedMap> LoadedMap::open(const std::filesystem::path& di
                              "the elevation layer has no-data cells");
     }
     map->elevation_ = &elevation->second;
+
+    {
+        const std::filesystem::path path = dir / manifest.rivers_file;
+        std::ifstream in(path, std::ios::binary);
+        if (!in) {
+            throw MapFormatError(path.generic_string(), "cannot open the file");
+        }
+        nlohmann::json json;
+        try {
+            json = nlohmann::json::parse(in);
+        } catch (const nlohmann::json::parse_error& error) {
+            throw MapFormatError(path.generic_string(), std::string("not valid JSON: ") + error.what());
+        }
+        map->rivers_ = RiverNetwork::parse(json, path.generic_string());
+    }
 
     map->detail_tiles_ = manifest.detail.tiles;
     std::sort(map->detail_tiles_.begin(), map->detail_tiles_.end());

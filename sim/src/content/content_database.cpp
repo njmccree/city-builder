@@ -370,6 +370,11 @@ void ContentDatabase::collect_mod_defs(const ModInfo& mod, RawDefs& raw, std::ve
     if (fs::is_regular_file(time_file, ec)) {
         load_time_defines(time_file, mod.root.generic_string(), display_path(time_file, mod.root), issues);
     }
+    const fs::path terrain_file = mod.root / "defines" / "terrain.json";
+    if (fs::is_regular_file(terrain_file, ec)) {
+        load_terrain_defines(terrain_file, mod.root.generic_string(), display_path(terrain_file, mod.root),
+                             issues);
+    }
     const fs::path world_file = mod.root / "defines" / "world.json";
     if (fs::is_regular_file(world_file, ec)) {
         load_world_defines(world_file, mod.root.generic_string(), display_path(world_file, mod.root), issues);
@@ -585,6 +590,42 @@ void ContentDatabase::load_world_defines(const fs::path& path, const std::string
         context.error("/active_ring_tiles", "must be at most 8");
     }
     city_defines_ = defines;
+}
+
+void ContentDatabase::load_terrain_defines(const fs::path& path, const std::string& mod_root,
+                                           const std::string& display_name,
+                                           std::vector<ContentIssue>& issues) {
+    ParseContext context(issues);
+    context.set_mod_root(mod_root);
+    context.set_file(display_name);
+
+    const std::optional<nlohmann::json> parsed = read_json_file(path, context);
+    if (!parsed) {
+        return;
+    }
+    const nlohmann::json& json = *parsed;
+    context.set_pointer("");
+    if (!json.is_object()) {
+        context.error("", "expected an object");
+        return;
+    }
+    context.warn_unknown_keys(json, {"channel_edge_depth_fraction", "bank_width_m"});
+
+    world::TerrainDefines defines = terrain_defines_;
+    if (const auto value = context.read_number(json, "channel_edge_depth_fraction", false)) {
+        defines.channel_edge_depth_fraction = static_cast<float>(*value);
+    }
+    if (const auto value = context.read_number(json, "bank_width_m", false)) {
+        defines.bank_width_m = static_cast<float>(*value);
+    }
+    if (json.contains("channel_edge_depth_fraction") &&
+        !(defines.channel_edge_depth_fraction >= 0.0F && defines.channel_edge_depth_fraction <= 1.0F)) {
+        context.error("/channel_edge_depth_fraction", "must be between 0 and 1");
+    }
+    if (json.contains("bank_width_m") && !(defines.bank_width_m >= 1.0F && defines.bank_width_m <= 200.0F)) {
+        context.error("/bank_width_m", "must be between 1 and 200");
+    }
+    terrain_defines_ = defines;
 }
 
 } // namespace citysim::content

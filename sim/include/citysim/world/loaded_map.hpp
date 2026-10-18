@@ -3,6 +3,7 @@
 #include "citysim/world/frames.hpp"
 #include "citysim/world/map_package.hpp"
 #include "citysim/world/raster.hpp"
+#include "citysim/world/river_network.hpp"
 #include "citysim/world/tile_coord.hpp"
 
 #include <array>
@@ -72,6 +73,9 @@ class LoadedMap {
     float region_value(const Raster<float>& layer, WorldPos pos) const;
     float region_height(WorldPos pos) const { return region_value(*elevation_, pos); }
 
+    // The river courses from rivers.json (empty if the map has none). Part of the immutable map data.
+    const RiverNetwork& rivers() const { return rivers_; }
+
     // Samples along one side of a detail tile (65 for 32 m spacing) and their spacing in meters.
     std::uint32_t detail_samples() const { return detail_samples_; }
     double detail_spacing_m() const { return manifest_.detail.sample_spacing_m; }
@@ -104,6 +108,7 @@ class LoadedMap {
     std::map<std::string, Raster<float>, std::less<>> region_layers_;
     const Raster<float>* elevation_ = nullptr;
     std::vector<TileCoord> detail_tiles_; // sorted
+    RiverNetwork rivers_;
 
     mutable std::mutex detail_mutex_;
     mutable std::map<TileCoord, std::shared_ptr<const Raster<float>>> detail_cache_;
