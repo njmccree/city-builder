@@ -415,7 +415,7 @@ The world is **one continuous terrain per map**: a continent-scale region built 
 - `python -m terrain.build_map tools/terrain/maps/<map>/map.json` → map package. Downloads are cached in `~/.cache/citysim/terrain/` and checked against checksums.
 - Datasets. Licenses are verified and recorded in `docs/licenses.md` before use; attribution goes in the credits.
   - **Copernicus DEM GLO-30** for elevation
-  - **HydroRIVERS / HydroLAKES** (HydroSHEDS) for rivers and lakes
+  - **Natural Earth** (public domain) for rivers and lakes too: `ne_10m_rivers_lake_centerlines_scale_rank` and `ne_10m_lakes`. Decided in T1.2.3.1 instead of HydroRIVERS / HydroLAKES, to stay clear of that licence. The river lines carry a rank but no discharge, so discharge is estimated from the rank (a table in `map.json` `rivers.rank_discharge`) with per-river overrides that name their source; the DEM is used to place each line on its channel and to set water levels
   - **Natural Earth** for coastlines and the land/sea mask
   - **ESA WorldCover** for vegetation and wetland
   - If a license is unsuitable, fall back to Natural Earth or OpenStreetMap, as the license review in T1.2.1.1 decides.

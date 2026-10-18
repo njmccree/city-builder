@@ -231,8 +231,9 @@ def test_offline_names_every_missing_download_before_any_work(tmp_path, capsys):
                            "--steps", "fetch,mosaic", "--offline"])
     assert code == 1
     err = capsys.readouterr().err
-    assert "2 needed file(s) are not in the cache" in err
+    assert "4 needed file(s) are not in the cache" in err
     assert copdem_tile_name(30, 30) in err and "ne_10m_land.zip" in err
+    assert "ne_10m_rivers_lake_centerlines_scale_rank.zip" in err and "ne_10m_lakes.zip" in err
     assert not (tmp_path / "out").exists()
 
 

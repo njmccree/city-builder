@@ -28,14 +28,21 @@ from shapely.geometry import Polygon
 
 from . import detail as detail_tiles
 from .cache import CacheError, DownloadCache, Source
-from .corrections import (CorrectionError, Grid, MapState, apply_corrections, load_correction_files,
+from .corrections import (CorrectionError, Grid, MapState, RiverLine, apply_corrections, load_correction_files,
                           write_report)
 from .csr import write_csr
 from .dem import DemError, Reprojector, build_vrt, copdem_sources
 from .landmask import LandMaskError, land_source, load_land_polygons, project_geometry, rasterize_land
 from .layers import (LayerError, LayerParams, apply_fertility_overrides, derive_layers, layer_name,
                      load_deposits, load_fertility_overrides, rasterize_deposits, to_u8)
+from .lakes import build_lakes, load_ne_lakes, reservoir_polygons
 from .previews import shaded_image, write_png
+from .riverdem import (densify, floodplain, non_increasing, normals_of, sample_bilinear, section_minimum,
+                       snap_offsets)
+from .rivermodel import (RiverError, RiverParams, assign_discharge, assign_orders, assign_width_depth, authored_info,
+                         build_reaches, group_rivers, load_ne_rivers, ne_to_river_lines, river_documents,
+                         river_sources, simplify_line, topological_order)
+from .riverpreview import rivers_image
 from .projection import ProjectionError, WorldFrame, make_to_world, world_frame
 
 REGION_ELEVATION_SCALE = 0.25  # meters per stored unit of the region elevation rasters (i16)
@@ -94,7 +101,7 @@ class Context:
         listed = self.listed_sources()
         if not isinstance(self.map_def.get("bounds"), dict):
             return listed
-        derived = [*self.dem_sources(), land_source(self.pins())]
+        derived = [*self.dem_sources(), land_source(self.pins()), *river_sources(self.pins())]
         known = {(s.dataset, s.name) for s in derived}
         return derived + [s for s in listed if (s.dataset, s.name) not in known]
 
@@ -111,6 +118,11 @@ class Step:
     run: Callable[[Context], None]
     description: str
     needs_downloads: bool = False  # true if it may download, so --offline checks the cache first
+    # The files it may download (for --offline's check); None means every file the map needs.
+    sources: Callable[[Context], list[Source]] | None = None
+
+    def required_sources(self, context: Context) -> list[Source]:
+        return context.sources() if self.sources is None else self.sources(context)
 
 
 def load_map_def(map_file: Path) -> dict:
@@ -165,17 +177,19 @@ def _corrections(context: Context) -> None:
         # The region's minimum and maximum elevation get the same changes as the mean, each with its own copy of
         # the land mask (a correction may clear or set land cells).
         land_before = context.state.land.data.copy()
-        effects = apply_corrections(context.state, corrections, to_world)
+        ground_ops = [c for c in corrections if c.op not in RIVER_OPS]  # the rivers step does remove_river, river_path
+        effects = apply_corrections(context.state, ground_ops, to_world)
         for extreme in (context.region_min, context.region_max):
             if extreme is not None:
                 apply_corrections(MapState(dem=extreme, land=Grid(land_before.copy(), extreme.origin_x,
                                                                   extreme.origin_z, extreme.cell_m)),
-                                  corrections, to_world)
+                                  ground_ops, to_world)
     except (CorrectionError, ProjectionError) as error:
         raise StepError(str(error)) from None
     report = context.out_dir.parent / f"{context.out_dir.name}.reports" / "corrections.md"
     write_report(report, effects, f"Historical corrections: {context.map_def['map_id']}")
-    context.log(f"corrections: applied {len(effects)} correction(s); report: {report}")
+    context.log(f"corrections: applied {len(effects)} ground correction(s) (river corrections are applied by the "
+                f"rivers step); report: {report}")
 
 
 def _layers(context: Context) -> None:
@@ -382,6 +396,7 @@ def _detail(context: Context) -> None:
     to_world = frame.to_world()
     try:
         _listed, corrections = _load_corrections(context, to_world)
+        corrections = [c for c in corrections if c.op not in RIVER_OPS]
     except (CorrectionError, ProjectionError) as error:
         raise StepError(str(error)) from None
     started = time.perf_counter()
@@ -439,6 +454,215 @@ def _detail(context: Context) -> None:
                 f"{time.perf_counter() - started:.1f} s; previews: {one}, {everything}")
 
 
+RIVER_OPS = ("remove_river", "river_path")
+# A line whose downstream end is higher than its upstream end by more than this is reversed (Natural Earth lines run
+# downstream; this only guards against a line drawn the other way). Short lines are never judged.
+_REVERSED_BY_M = 8.0
+_REVERSAL_MIN_LENGTH_M = 40_000.0
+_BLEND_M = 1000.0  # how far along a reach a junction's shift is spread
+
+
+def _rasterize_polygons(polygons: list, grid: Grid) -> np.ndarray:
+    """A bool array shaped like ``grid`` that is True where a polygon (world meters) covers the cell center."""
+    from rasterio.features import rasterize
+    from rasterio.transform import Affine
+
+    rows, cols = grid.shape
+    if not polygons:
+        return np.zeros((rows, cols), dtype=bool)
+    transform = Affine(grid.cell_m, 0.0, grid.origin_x, 0.0, -grid.cell_m, grid.origin_z + rows * grid.cell_m)
+    burned = rasterize([(p, 1) for p in polygons], out_shape=(rows, cols), transform=transform, fill=0,
+                       dtype="uint8", all_touched=False)
+    return np.flipud(burned).astype(bool)
+
+
+def _orient_downstream(line, grid: Grid):
+    """The line, reversed if the region DEM says it runs uphill over a long distance."""
+    length = float(np.hypot(*np.diff(line.points, axis=0).T).sum())
+    if length < _REVERSAL_MIN_LENGTH_M:
+        return line, False
+    segment = np.hypot(*np.diff(line.points, axis=0).T)
+    along = np.concatenate([[0.0], np.cumsum(segment)])
+    probes = np.linspace(0.0, length, max(int(length / 1000.0), 8))
+    xs = np.interp(probes, along, line.points[:, 0])
+    zs = np.interp(probes, along, line.points[:, 1])
+    ground = sample_bilinear(grid.data, grid.origin_x, grid.origin_z, grid.cell_m, xs, zs)
+    edge = max(len(ground) // 7, 2)
+    if float(ground[:edge].mean()) < float(ground[-edge:].mean()) - _REVERSED_BY_M:
+        line.points = line.points[::-1].copy()
+        line.width_m = line.width_m[::-1].copy()
+        line.depth_m = line.depth_m[::-1].copy()
+        return line, True
+    return line, False
+
+
+def _snap_reaches(reaches: list, dem, params: RiverParams) -> list[float]:
+    """Moves every reach onto the channel the DEM shows. The move fades to nothing over ``_BLEND_M`` toward an end where
+    other reaches meet, so reaches that join keep exactly the shared point they had. Returns the sideways moves
+    (meters, absolute) for the log."""
+    snap = params.snap
+    joined: dict[int, int] = {}
+    for r in reaches:
+        joined[r.start_node] = joined.get(r.start_node, 0) + 1
+        joined[r.end_node] = joined.get(r.end_node, 0) + 1
+    moves: list[float] = []
+    for r in reaches:
+        dense = densify(r.points, 2.0 * snap.step_m)
+        if not snap.enabled:
+            r.points = dense
+            continue
+        offsets = snap_offsets(dense, dem, snap)
+        along = np.concatenate([[0.0], np.cumsum(np.hypot(*np.diff(dense, axis=0).T))])
+        total = float(along[-1])
+        blend = max(min(_BLEND_M, 0.4 * total), 1.0)
+        if joined[r.start_node] > 1:
+            offsets = offsets * np.clip(along / blend, 0.0, 1.0)
+        if joined[r.end_node] > 1:
+            offsets = offsets * np.clip((total - along) / blend, 0.0, 1.0)
+        moves.extend(np.abs(offsets).tolist())
+        r.points = dense + normals_of(dense) * offsets[:, None]
+    return moves
+
+
+def _rivers(context: Context) -> None:
+    """Extracts the rivers and lakes (docs/architecture.md section 15.6) from Natural Earth: selects the rivers by
+    discharge, applies the river corrections, joins the lines into reaches (splitting where rivers meet or branch),
+    pulls each reach onto the channel the DEM shows, simplifies it, and gives every vertex a width, a depth and a
+    water level that never rises downstream. Also finds each reach's floodplain, adds the lakes, and writes
+    ``rivers.json``, ``lakes.json`` and ``previews/rivers.png``. map.json's ``rivers`` object sets every threshold
+    (see ``rivermodel.RiverParams``)."""
+    frame = _require_bounds(context)
+    state = context.state
+    if state is None:
+        raise StepError("rivers: no ground to work on; run the 'reproject' step first")
+    vrt = _dem_vrt(context)
+    to_world = frame.to_world()
+    started = time.perf_counter()
+    try:
+        params = RiverParams.from_json(context.map_def.get("rivers"))
+        rivers_zip = context.cache.fetch(river_sources(context.pins())[0])
+        lakes_zip = context.cache.fetch(river_sources(context.pins())[1])
+        natural_earth = load_ne_rivers(rivers_zip, frame.bounds)
+        lines, info = ne_to_river_lines(natural_earth, to_world, (frame.width_m, frame.height_m), params)
+        _listed, corrections = _load_corrections(context, to_world)
+    except (RiverError, CorrectionError, ProjectionError) as error:
+        raise StepError(str(error)) from None
+    found = len(lines)
+
+    # The river corrections (remove_river, river_path) work on the list of lines; the others were applied earlier.
+    river_ops = [c for c in corrections if c.op in RIVER_OPS]
+    effects = []
+    if river_ops:
+        state.rivers = lines
+        try:
+            effects = apply_corrections(state, river_ops, to_world)
+        except CorrectionError as error:
+            raise StepError(str(error)) from None
+        lines = list(state.rivers)
+        report = context.out_dir.parent / f"{context.out_dir.name}.reports" / "corrections_rivers.md"
+        write_report(report, effects, f"River corrections: {context.map_def['map_id']}")
+        context.log(f"rivers: applied {len(effects)} river correction(s); report: {report}")
+    for line in lines:
+        if line.id not in info:
+            info[line.id] = authored_info(line, params)
+    kept = [line for line in lines if info[line.id].explicit_discharge
+            or info[line.id].own_discharge >= params.min_discharge_m3s]
+    flipped = 0
+    for line in kept:
+        if info[line.id].rank is not None:
+            _line, was_reversed = _orient_downstream(line, state.dem)
+            flipped += int(was_reversed)
+    context.log(f"rivers: {found} Natural Earth line(s) in the map, {len(lines)} after corrections, {len(kept)} at "
+                f"or above {params.min_discharge_m3s:g} m3/s" + (f"; {flipped} reversed to run downhill" if flipped else ""))
+
+    reaches = build_reaches(kept, params.junction_m)
+    for reach in reaches:
+        line_info = info[reach.line_id.rsplit(".", 1)[0]]
+        reach.own_discharge = line_info.own_discharge
+        reach.explicit_discharge = line_info.explicit_discharge
+        reach.fixed_width_m, reach.fixed_depth_m = line_info.fixed_width_m, line_info.fixed_depth_m
+    assign_discharge(reaches)
+    assign_orders(reaches)
+    assign_width_depth(reaches, params)
+
+    detail_polygons = _detail_polygons(context, frame)
+    detail_area = shapely.unary_union(detail_polygons) if detail_polygons else None
+    land_polygons = _land_polygons(context, frame)
+    try:
+        with Reprojector(vrt, frame) as dem:
+            moves = _snap_reaches(reaches, dem, params)
+            for reach in reaches:
+                reach.points = simplify_line(reach.points, detail_area, params.tolerance_detail_m,
+                                             params.tolerance_elsewhere_m)
+            # Water levels: the lowest ground across the channel, fitted so it never rises downstream.
+            order = topological_order(reaches)
+            end_level: dict[int, float] = {}
+            for key in order:
+                reach = reaches[key]
+                lowest = section_minimum(reach.points, np.full(len(reach.points), reach.width_m / 2.0), dem)
+                levels = non_increasing(lowest + params.level_depth_fraction * reach.depth_m)
+                above = [end_level[u] for u in reach.upstream if u in end_level]
+                if above:
+                    levels = np.minimum(levels, min(above))
+                reach.levels = levels
+                end_level[key] = float(levels[-1])
+            plain = params.floodplain
+            for reach in reaches:
+                reach.floodplain = floodplain(reach.points, reach.levels, dem, distance_m=plain.distance_m,
+                                              height_m=plain.height_m, cell_m=plain.cell_m,
+                                              simplify_m=plain.simplify_m, min_area_m2=plain.min_area_km2 * 1e6)
+            lake_features = load_ne_lakes(lakes_zip, frame.bounds)
+            lakes, lake_notes = build_lakes(lake_features, frame, dem, params, reservoir_polygons(corrections))
+            cell = max(60.0, max(frame.width_m, frame.height_m) / 1500.0)
+            cols, rows = int(math.ceil(frame.width_m / cell)), int(math.ceil(frame.height_m / cell))
+            ground = np.nan_to_num(dem.window(0.0, 0.0, cols, rows, cell), nan=0.0)
+    except (RiverError, DemError) as error:
+        raise StepError(str(error)) from None
+    except StepError:
+        raise
+    except Exception as error:
+        raise StepError(f"rivers: cannot read the DEM ({error.__class__.__name__}: {error})") from None
+
+    documents = river_documents(reaches, group_rivers(reaches))
+    out = context.out_dir
+    (out / "rivers.json").write_text(json.dumps({"format": 1, "rivers": documents}, separators=(",", ":")) + "\n",
+                                     encoding="utf-8")
+    (out / "lakes.json").write_text(json.dumps({"format": 1, "lakes": lakes}, separators=(",", ":")) + "\n",
+                                    encoding="utf-8")
+    preview = out / "previews" / "rivers.png"
+    land = rasterize_land(land_polygons, frame, 0.0, 0.0, cols, rows, cell)
+    write_png(preview, rivers_image(ground, land, cell, documents, lakes))
+
+    # What the layers step uses: the rivers as lines, and the floodplains on the region grid.
+    state.rivers = [RiverLine(r.line_id, r.name, r.points, np.full(len(r.points), r.width_m),
+                              np.full(len(r.points), r.depth_m)) for r in reaches]
+    rings = [Polygon(ring) for r in reaches for ring in r.floodplain if len(ring) >= 4]
+    state.floodplain = Grid(_rasterize_polygons(rings, state.dem), state.dem.origin_x, state.dem.origin_z,
+                            state.dem.cell_m)
+    count = sum(len(r["reaches"]) for r in documents)
+    snapped = f"; snapped {np.median(moves):.0f} m (median), {np.percentile(moves, 90):.0f} m (90th percentile) onto the DEM channel" if moves else ""
+    context.log(f"rivers: {len(documents)} river(s) in {count} reach(es){snapped}; "
+                f"{sum(len(r.floodplain) for r in reaches)} floodplain polygon(s); {len(lakes)} lake(s); "
+                f"{time.perf_counter() - started:.1f} s")
+    for river in documents:
+        reach_text = ", ".join(f"{r['id']} (order {r['order']}, {r['discharge_m3s']:g} m3/s, "
+                               f"{r['vertices'][0]['width_m']:g} m wide)" for r in river["reaches"])
+        context.log(f"rivers:   {river['name']}: {reach_text}")
+    for note in lake_notes:
+        context.log(f"rivers:   lake {note}")
+    context.log(f"rivers: wrote {out / 'rivers.json'}, {out / 'lakes.json'}; preview: {preview}")
+
+
+def _elevation_sources(context: Context) -> list[Source]:
+    """The DEM tiles and the land polygons (``mosaic``, ``reproject``, ``detail``)."""
+    return [*context.dem_sources(), land_source(context.pins())]
+
+
+def _river_download_sources(context: Context) -> list[Source]:
+    """What ``rivers`` reads: the river lines and lake polygons, and the land polygons for its preview."""
+    return [*river_sources(context.pins()), land_source(context.pins())]
+
+
 def _stub(name: str, task: str, what: str) -> Callable[[Context], None]:
     def run(context: Context) -> None:
         context.log(f"{name}: not implemented yet ({task}: {what}); nothing done")
@@ -448,13 +672,15 @@ def _stub(name: str, task: str, what: str) -> Callable[[Context], None]:
 
 STEPS: tuple[Step, ...] = (
     Step("fetch", _fetch, "download the source datasets into the cache", needs_downloads=True),
-    Step("mosaic", _mosaic, "join the DEM tiles into a mosaic and load the land polygons", needs_downloads=True),
+    Step("mosaic", _mosaic, "join the DEM tiles into a mosaic and load the land polygons", needs_downloads=True,
+         sources=_elevation_sources),
     Step("reproject", _reproject,
          "reproject to the map's equal-area projection: region elevation and land mask"),
     Step("corrections", _corrections, "apply the historical correction overlays (architecture §15.7)"),
     Step("region", _region, "write the region rasters (elevation, min, max, land mask)"),
-    Step("detail", _detail, "write the 32 m detail tiles", needs_downloads=True),
-    Step("rivers", _stub("rivers", "T1.2.3.1", "extract rivers and lakes"), "extract rivers and lakes"),
+    Step("detail", _detail, "write the 32 m detail tiles", needs_downloads=True, sources=_elevation_sources),
+    Step("rivers", _rivers, "extract rivers and lakes (Natural Earth), with floodplains; write rivers.json, lakes.json",
+         needs_downloads=True, sources=_river_download_sources),
     Step("layers", _layers,
          "derive fertility, vegetation, wetness and deposit layers"),
     Step("package", _stub("package", "T1.2.6.1", "write package.json with checksums"),

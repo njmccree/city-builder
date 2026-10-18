@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <vector>
@@ -463,4 +465,32 @@ TEST_CASE("defines/terrain.json sets the channel profile and is checked", "[worl
               .second.find("/channel_edge_depth_fraction: must be between 0 and 1") != std::string::npos);
     CHECK(load("terrain_defines_bad_bank", R"({ "bank_width_m": 0 })")
               .second.find("/bank_width_m: must be between 1 and 200") != std::string::npos);
+}
+
+// The file in fixtures/maps/ was written by the Python pipeline's own rivers writer
+// (tools/terrain/scripts/make_cpp_fixture.py): a river of two arms that meet into a trunk.
+TEST_CASE("a rivers.json written by the Python pipeline parses in C++", "[world][rivers]") {
+    const std::filesystem::path file =
+        std::filesystem::path(CITYSIM_TEST_FIXTURES_DIR) / "maps" / "python_rivers.json";
+    std::ifstream stream(file);
+    REQUIRE(stream.good());
+    const RiverNetwork network = RiverNetwork::parse(json::parse(stream), "python_rivers.json");
+
+    REQUIRE(network.reach_count() == 3);
+    const auto a = network.find_reach("trunk", "a_1");
+    const auto b = network.find_reach("trunk", "b_1");
+    const auto trunk = network.find_reach("trunk", "trunk_1");
+    REQUIRE((a && b && trunk));
+    CHECK(network.reaches()[*a].downstream == std::vector<std::uint32_t>{*trunk});
+    CHECK(network.reaches()[*b].downstream == std::vector<std::uint32_t>{*trunk});
+    CHECK(network.reaches()[*trunk].downstream.empty());
+    CHECK(network.reaches()[*trunk].order == 2);
+    CHECK(network.reaches()[*trunk].discharge_m3s == 600.0);
+    CHECK(network.reaches_of_river("Trunk").size() == 3);
+    for (const Reach& reach : network.reaches()) {
+        for (std::size_t i = 1; i < reach.vertices.size(); ++i) {
+            CHECK(reach.vertices[i].level_m <= reach.vertices[i - 1].level_m); // water never rises downstream
+        }
+    }
+    CHECK(network.reaches()[*a].vertices.front().width_m > 100.0F);
 }

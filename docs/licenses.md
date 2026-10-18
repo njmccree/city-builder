@@ -151,3 +151,10 @@ When a package built from a dataset ships, the game's credits or legal screen mu
 - [x] Natural Earth: official terms page read (2026-10-18).
 - [ ] ESA WorldCover: read the license on the official page (blocked by a certificate error from the PC).
 - [ ] Check the list of unreleased Copernicus GLO-30 tiles against the Ancient Near East bounds (T1.2.6.1).
+
+## Decision for T1.2.3.1: rivers and lakes come from Natural Earth
+
+The owner chose Natural Earth (public domain) for rivers and lakes, so HydroRIVERS / HydroLAKES and their
+indemnification clause are not used. Files: `ne_10m_rivers_lake_centerlines_scale_rank.zip` and `ne_10m_lakes.zip` (same
+source and terms as `ne_10m_land.zip` above). They have no discharge, so the pipeline estimates it from the rank and
+records overrides with a source and a confidence in `map.json`.

@@ -81,11 +81,12 @@ World-frame coordinates: meters from the south-west corner of the map, `x` east 
     {
       "id": "synthetic_nile", "name": "Synthetic Nile",
       "reaches": [
-        { "id": "main", "order": 3, "discharge_m3s": 3000.0,
+        { "id": "main", "name": "Nile", "order": 3, "discharge_m3s": 3000.0,
           "downstream": ["west", "center", "east"],
           "vertices": [
             { "x": 46145.6, "z": 0.0, "width_m": 200.0, "depth_m": 6.0, "water_level_m": 38.5 }
-          ] }
+          ],
+          "floodplain": [ [ [46000.0, 100.0], [47000.0, 100.0], [47000.0, 900.0], [46000.0, 100.0] ] ] }
       ]
     }
   ]
@@ -96,7 +97,8 @@ World-frame coordinates: meters from the south-west corner of the map, `x` east 
 - A **reach** is a polyline from upstream to downstream. `vertices` are in that order; `width_m` and `depth_m` are the channel at that vertex, and `water_level_m` is the base water surface above sea level (it does not rise going downstream).
 - `order` is a stream order (a bigger number is a bigger river) and `discharge_m3s` the mean discharge.
 - `downstream` lists the reaches that start where this one ends (their first vertex equals this reach's last vertex). A delta is one reach with several downstream reaches.
-- `lakes.json` is `{ "format": 1, "lakes": [] }` in the synthetic package. Floodplain polygons are added by the pipeline (T1.2.3.1).
+- `name` (optional, reaches) is the reach's display name; `floodplain` (optional) lists closed outer rings `[x, z]` of the land beside the channel that floods (written by the pipeline; the game reads and ignores both for now).
+- `lakes.json` is `{ "format": 1, "lakes": [ { "id": "lake_moeris", "name": "Lake Moeris", "water_level_m": -3.2, "area_km2": 214.5, "rings": [ [[x, z], ...], [[x, z], ...] ] } ] }`: `rings[0]` is the outer boundary and any others are islands (holes), each ring closed. The synthetic package has `"lakes": []`.
 
 ## Defines
 
