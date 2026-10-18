@@ -1,5 +1,7 @@
 {
   "channel_edge_depth_fraction": 0.3,
   "bank_width_m": 24.0,
-  "flood_samples_per_tick": 250000
+  "flood_samples_per_tick": 250000,
+  "terraform_step_m": 1.0,
+  "terraform_cost_per_m3": 0.1
 }

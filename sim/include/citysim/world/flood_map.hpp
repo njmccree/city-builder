@@ -29,7 +29,8 @@ namespace citysim::world {
 // on from where it stopped, so the budget changes when a flood appears and never where it ends up. Reaches
 // are worked one at a time in reach order; a change of offset while a reach is being filled starts it again.
 // The old extent of a reach stays visible until the new one is complete, so a falling river does not flicker.
-// When the active tiles change (a city is activated, the terrain is edited) every reach is filled again.
+// When the set of active tiles changes (a city is activated) every reach is filled again; when only the
+// heights of a tile change (a terrain edit) just the reaches whose floodplain reaches that tile are.
 //
 // Only the 4 m samples of active tiles are examined: the flood ends where the active terrain does.
 //

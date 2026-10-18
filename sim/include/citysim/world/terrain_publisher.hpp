@@ -25,4 +25,10 @@ void publish_cities(core::Simulation& simulation, runner::RenderSnapshot& snapsh
 // the World. Does nothing if the flood extents are not installed.
 void publish_flood_extents(core::Simulation& simulation, runner::RenderSnapshot& snapshot);
 
+// Another publish hook: once a Terraform stroke has been applied, adds the channel "world.terraform.last"
+// with one record of 5 floats: [serial, city id, volume m3, cost, total cost] (TerraformReport). The serial
+// counts the strokes, so a UI sees a new one whenever it changes. Runs on the runner thread after a tick and
+// only reads the World. Does nothing before the first stroke or if terraforming is not installed.
+void publish_terraform_report(core::Simulation& simulation, runner::RenderSnapshot& snapshot);
+
 } // namespace citysim::world

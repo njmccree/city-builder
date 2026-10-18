@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace citysim::world {
 
@@ -81,6 +82,30 @@ std::vector<double> crossings_at(const std::vector<std::vector<WorldPos>>& rings
     return xs;
 }
 
+// True if the bounding box of the reach's floodplain overlaps (or touches) one of the tiles.
+bool floodplain_touches(const Reach& reach, const std::vector<TileCoord>& tiles) {
+    if (reach.floodplain.empty() || tiles.empty()) {
+        return false;
+    }
+    double min_x = std::numeric_limits<double>::max();
+    double min_z = min_x;
+    double max_x = std::numeric_limits<double>::lowest();
+    double max_z = max_x;
+    for (const std::vector<WorldPos>& ring : reach.floodplain) {
+        for (const WorldPos& point : ring) {
+            min_x = std::min(min_x, point.x);
+            max_x = std::max(max_x, point.x);
+            min_z = std::min(min_z, point.z);
+            max_z = std::max(max_z, point.z);
+        }
+    }
+    return std::any_of(tiles.begin(), tiles.end(), [&](TileCoord tile) {
+        const WorldPos origin = tile_origin(tile);
+        return origin.x <= max_x && origin.x + k_tile_size_m >= min_x && origin.z <= max_z &&
+               origin.z + k_tile_size_m >= min_z;
+    });
+}
+
 } // namespace
 
 std::shared_ptr<const FloodMap::Grid> FloodMap::grid(TileCoord tile) const {
@@ -121,6 +146,17 @@ void FloodMap::sync(const WorldTerrain& terrain, std::size_t reach_count) {
     if (signature == signature_) {
         return;
     }
+    // Which tiles changed their heights (an edit) while the set of active tiles stayed the same? Then only
+    // the reaches whose floodplain reaches such a tile need filling again. Any other change starts every
+    // reach over.
+    bool same_tiles = signature.size() == signature_.size();
+    std::vector<TileCoord> edited;
+    for (std::size_t i = 0; same_tiles && i < signature.size(); ++i) {
+        same_tiles = signature[i].first == signature_[i].first;
+        if (same_tiles && signature[i].second != signature_[i].second) {
+            edited.push_back(signature[i].first);
+        }
+    }
     signature_ = std::move(signature);
     layout_ = Layout{};
     if (!terrain.tiles().empty()) {
@@ -156,8 +192,15 @@ void FloodMap::sync(const WorldTerrain& terrain, std::size_t reach_count) {
     for (auto it = grids_.begin(); it != grids_.end();) {
         it = terrain.tiles().count(it->first) != 0 ? std::next(it) : grids_.erase(it);
     }
-    std::fill(stale_.begin(), stale_.end(), true);
-    job_.reset();
+    if (!same_tiles) {
+        std::fill(stale_.begin(), stale_.end(), true);
+    } else {
+        const RiverNetwork& rivers = terrain.map()->rivers();
+        for (std::uint32_t r = 0; r < rivers.reach_count(); ++r) {
+            stale_[r] = stale_[r] || floodplain_touches(rivers.reaches()[r], edited);
+        }
+    }
+    job_.reset(); // it would go on reading heights from tiles that have been replaced
 }
 
 void FloodMap::rebuild_grid(TileCoord tile) {

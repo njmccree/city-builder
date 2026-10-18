@@ -100,6 +100,21 @@ func _run() -> void:
 	_check(not _sim.submit_command({"type": "set_river_level", "reach": -1, "offset_m": 1.0}), "reach indices start at 0")
 	_check(not _sim.submit_command({"type": "set_river_level", "reach": 0, "offset_m": 5000.0}), "an absurd level is refused")
 
+	# Terraforming: a brush on the active city is accepted and reported; a bad one is refused with its reason.
+	_notices.clear()
+	_check(_sim.terraform(1, "raise", 4000.0, 4000.0, 30.0, 1.0), "terraform is accepted for queueing")
+	await _wait_for(func() -> bool: return not _notices.is_empty())
+	_check(not _notices.is_empty() and _notices[0]["tag"] == "terraform_applied", "the stroke is reported: " + str(_notices))
+	var last: PackedFloat32Array = _sim.core.get_channel("world.terraform.last")
+	_check(last.size() == 5 and last[0] == 1.0 and last[2] > 0.0 and last[3] > 0.0, "with its volume and cost: " + str(last))
+	_notices.clear()
+	_sim.terraform(1, "raise", 4000.0, 4000.0, 1.0, 1.0)
+	await _wait_for(func() -> bool: return not _notices.is_empty())
+	_check(not _notices.is_empty() and _notices[0]["key"] == "terraform.error.parameters", "a radius of 1 m is refused: " + str(_notices))
+	_check(not _sim.submit_command({"type": "terraform", "city_id": 1, "op": "melt", "x": 0, "z": 0, "radius_m": 10, "strength": 1}), "an unknown op is refused")
+	_check(not _sim.submit_command({"type": "terraform", "city_id": 0, "op": "raise", "x": 0, "z": 0, "radius_m": 10, "strength": 1}), "city ids start at 1")
+	_check(not _sim.submit_command({"type": "terraform", "city_id": 1, "op": "raise", "x": 0, "z": 0, "radius_m": 10}), "strength is needed")
+
 	# Bad dictionaries are refused in C++ before they reach the simulation.
 	_check(not _sim.submit_command({"type": "found_city"}), "found_city needs its origin")
 	_check(not _sim.submit_command({"type": "found_city", "origin_tx": 1, "origin_ty": 2, "colour": 3}), "an unknown field is refused")

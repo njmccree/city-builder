@@ -143,3 +143,5 @@ with `citysim_tests "[.bench]"`.
   At 4x speed (80 ticks per second) the architecture allows 12.5 ms per tick on average (§14), so a flood that is
   spreading uses most of that for the few seconds it takes; lower `flood_samples_per_tick` in `defines/terrain.json`
   if that matters.
+- One Terraform stroke with the biggest brush (200 m radius, about 10,000 samples, the smoothing brush): best
+  1.1 ms, mean 1.3 ms (limit 20 ms), including applying it to the tiles.

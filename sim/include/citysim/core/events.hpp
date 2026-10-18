@@ -1,6 +1,7 @@
 #pragma once
 
 #include "citysim/time/calendar_events.hpp"
+#include "citysim/world/terraform_events.hpp"
 #include "citysim/world/water_events.hpp"
 
 #include <string>
@@ -15,6 +16,6 @@ struct DebugEvent {
 };
 
 using Event = std::variant<DebugEvent, time::DayStarted, time::MonthStarted, time::YearStarted,
-                           time::ScheduledActionDue, world::WaterChanged>;
+                           time::ScheduledActionDue, world::WaterChanged, world::TerraformApplied>;
 
 } // namespace citysim::core

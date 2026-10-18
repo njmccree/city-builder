@@ -1,0 +1,6 @@
+{
+  "terraform.error.unknown_city": "There is no such city.",
+  "terraform.error.not_active": "You can only reshape the land of the city you are viewing.",
+  "terraform.error.parameters": "That brush is not allowed.",
+  "terraform.error.outside_city": "You can only reshape land inside your city."
+}

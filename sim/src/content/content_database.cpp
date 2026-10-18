@@ -609,8 +609,8 @@ void ContentDatabase::load_terrain_defines(const fs::path& path, const std::stri
         context.error("", "expected an object");
         return;
     }
-    context.warn_unknown_keys(json,
-                              {"channel_edge_depth_fraction", "bank_width_m", "flood_samples_per_tick"});
+    context.warn_unknown_keys(json, {"channel_edge_depth_fraction", "bank_width_m", "flood_samples_per_tick",
+                                     "terraform_step_m", "terraform_cost_per_m3"});
 
     world::TerrainDefines defines = terrain_defines_;
     if (const auto value = context.read_number(json, "channel_edge_depth_fraction", false)) {
@@ -621,6 +621,20 @@ void ContentDatabase::load_terrain_defines(const fs::path& path, const std::stri
     }
     if (const auto value = context.read_u32(json, "flood_samples_per_tick", false)) {
         defines.flood_samples_per_tick = *value;
+    }
+    if (const auto value = context.read_number(json, "terraform_step_m", false)) {
+        defines.terraform_step_m = static_cast<float>(*value);
+    }
+    if (const auto value = context.read_number(json, "terraform_cost_per_m3", false)) {
+        defines.terraform_cost_per_m3 = static_cast<float>(*value);
+    }
+    if (json.contains("terraform_step_m") &&
+        !(defines.terraform_step_m >= 0.01F && defines.terraform_step_m <= 50.0F)) {
+        context.error("/terraform_step_m", "must be between 0.01 and 50");
+    }
+    if (json.contains("terraform_cost_per_m3") &&
+        !(defines.terraform_cost_per_m3 >= 0.0F && defines.terraform_cost_per_m3 <= 1000000.0F)) {
+        context.error("/terraform_cost_per_m3", "must be between 0 and 1000000");
     }
     if (json.contains("flood_samples_per_tick") &&
         (defines.flood_samples_per_tick < 1000 || defines.flood_samples_per_tick > 100000000)) {

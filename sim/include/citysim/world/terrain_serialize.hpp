@@ -4,6 +4,7 @@
 // order is the save format: append with a version bump, never reorder.
 
 #include "citysim/save/archive.hpp"
+#include "citysim/world/terraform_commands.hpp"
 #include "citysim/world/terrain_deltas.hpp"
 #include "citysim/world/tile_coord.hpp"
 #include "citysim/world/water_commands.hpp"
@@ -90,6 +91,23 @@ template <class Ar> void serialize(Ar& ar, WorldTerrain& terrain, std::uint32_t 
 template <class Ar> void serialize(Ar& ar, SetRiverLevel& command, std::uint32_t version) {
     save::io(ar, command.reach_index, version);
     save::io(ar, command.offset_m, version);
+}
+
+template <class Ar> void serialize(Ar& ar, Terraform& command, std::uint32_t version) {
+    save::io(ar, command.city_id, version);
+    auto op = static_cast<std::uint8_t>(command.op);
+    save::io(ar, op, version);
+    if constexpr (Ar::is_loading) {
+        if (op >= k_terraform_op_count) {
+            ar.fail("a saved Terraform command has an unknown operation");
+        }
+        command.op = static_cast<TerraformOp>(op);
+    }
+    save::io(ar, command.center.x, version);
+    save::io(ar, command.center.z, version);
+    save::io(ar, command.radius_m, version);
+    save::io(ar, command.strength, version);
+    save::io(ar, command.target_height_m, version);
 }
 
 } // namespace citysim::world
