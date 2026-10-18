@@ -25,3 +25,6 @@ desktop.ini
 # Test-generated save files (fixtures are allowed)
 *.csav
 !sim/tests/fixtures/**/*.csav
+
+# Generated map packages (architecture §15.2); the pipeline rebuilds them. Each maps/ folder keeps its README.md.
+game/content/**/maps/*/

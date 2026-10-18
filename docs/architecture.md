@@ -346,23 +346,42 @@ The world is **one continuous terrain per map**: a continent-scale region built 
 - A **`MapDef`** (content type `"map"`) holds:
   - `id`, `name_key`
   - geographic bounds (lon/lat)
-  - projection parameters
-  - region cell size
+  - region cell size (default 1,000 m) and a `map_seed` (drives the terrain's micro-detail, §15.4)
   - detail-region polygons
   - the river regime ids it uses (§15.6)
   - the package folder name
+  - The projection is not in the `MapDef`: it is Lambert azimuthal equal-area centered on the middle of the bounds (§15.3), and the pipeline writes its parameters into `package.json`.
 - A **map package** is generated data in `game/content/<mod>/maps/<map>/`. **It is not committed** (it is gitignored and rebuilt by the pipeline). It contains:
   - `package.json`: the map id, pipeline version, source dataset versions, projection, raster sizes, the tile list, an XXH3 checksum per file, and the overall **package hash**
   - `region/<layer>.csr`: elevation, land mask, fertility, vegetation, wetness, one layer per resource deposit
   - `detail/<tx>_<ty>.csr`: 65 × 65 samples, 32 m spacing, 2,048 m tiles
   - `rivers.json`: polylines with per-vertex width, depth and base water level, plus order and discharge
   - `lakes.json`
-- **`.csr` raster format** (one format for every raster):
-  - magic `CSRA`, u16 version
-  - u32 width, u32 height
-  - dtype (u8 / u16 / i16 / f32), f32 scale, f32 offset, nodata value
-  - zstd-compressed row-major payload, with row 0 at the south
-  - XXH3 checksum at the end
+- **`.csr` raster format** (one format for every raster; little-endian; the C++ reader/writer in `citysim::world`, the Python pipeline and the tests all follow this layout):
+
+  | Offset | Size | Field |
+  |---|---|---|
+  | 0 | 4 | magic `"CSRA"` |
+  | 4 | 2 | format version (u16, currently 1) |
+  | 6 | 4 | width in cells (u32) |
+  | 10 | 4 | height in cells (u32) |
+  | 14 | 1 | element type: 1 = u8, 2 = u16, 3 = i16, 4 = f32 |
+  | 15 | 1 | flags: bit 0 = the raster has a no-data value (other bits 0) |
+  | 16 | 4 | scale (f32) |
+  | 20 | 4 | offset (f32) |
+  | 24 | 8 | no-data value (f64, compared with the raw stored value; 0 when the flag is clear) |
+  | 32 | 8 | payload size before compression (u64) = width × height × element size |
+  | 40 | 8 | compressed payload size *n* (u64) |
+  | 48 | *n* | payload: one zstd frame holding the cells, row-major, **row 0 at the south**, in the element type |
+  | 48 + *n* | 8 | XXH3-64 (u64) of every byte before it |
+
+  - A stored value `raw` means `raw × scale + offset` (elevation: i16 with scale 0.25 → 0.25 m steps). A no-data cell decodes to NaN.
+  - The same raster always gives the same bytes from the C++ writer (fixed zstd level). Compressed bytes may differ between zstd versions or other writers, so nothing may assume byte-identical files across tools: identity is the checksums in `package.json` and the package hash below.
+- **`package.json`** lists every file of the package with its checksum:
+  - A file's checksum is the **XXH3-64 of the whole file's bytes**, written as 16 lower-case hex digits.
+  - The **package hash** is the XXH3-64 of one text: for each file in `files`, in **byte-wise sorted path order**, the line `<relative path>=<checksum hex>\n` (paths use `/`; there is no trailing separator beyond the final newline). It covers every file except `package.json` itself, and it identifies the data whatever the folder is called. Saves store it (§15.4).
+  - Verification (`verify_package`) checks that every listed file exists and matches, that every layer, tile, rivers and lakes file is listed, that no detail tile is unlisted, and that the stored package hash matches the file list.
+  - The full field list, with an example, is in `sim/include/citysim/world/map_package.hpp` and `game/content/README.md`.
 - **Sources** that *are* committed live in `tools/terrain/maps/<map>/`: the map definition input, authored GeoJSON (historical corrections, deposits, fertility overrides) and their source notes.
 - Tests and cloud sessions use a **synthetic package** made by `citysim_mapgen --synthetic` (a procedural valley, river, delta and coast). Real packages need the PC pipeline.
 

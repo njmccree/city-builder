@@ -81,6 +81,19 @@ std::optional<std::uint32_t> ParseContext::read_u32(const nlohmann::json& object
     return static_cast<std::uint32_t>(value);
 }
 
+std::optional<std::uint64_t> ParseContext::read_u64(const nlohmann::json& object, std::string_view key,
+                                                    bool required) {
+    const nlohmann::json* field = find_field(object, key, required);
+    if (field == nullptr) {
+        return std::nullopt;
+    }
+    if (!field->is_number_integer() || (!field->is_number_unsigned() && field->get<std::int64_t>() < 0)) {
+        error(child_pointer(key), "expected a non-negative whole number");
+        return std::nullopt;
+    }
+    return field->get<std::uint64_t>();
+}
+
 std::optional<std::int32_t> ParseContext::read_i32(const nlohmann::json& object, std::string_view key,
                                                    bool required) {
     const nlohmann::json* field = find_field(object, key, required);

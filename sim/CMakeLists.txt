@@ -5,6 +5,7 @@ add_library(citysim_core STATIC
     src/content/era_def.cpp
     src/content/json_merge_patch.cpp
     src/content/localizer.cpp
+    src/content/map_def.cpp
     src/content/mod_discovery.cpp
     src/content/mod_load_order.cpp
     src/content/mod_manifest.cpp
@@ -47,7 +48,9 @@ add_library(citysim_core STATIC
     src/runner/clock.cpp
     src/runner/game_session.cpp
     src/runner/simulation_runner.cpp
-    src/runner/snapshot_view.cpp)
+    src/runner/snapshot_view.cpp
+    src/world/map_package.cpp
+    src/world/raster.cpp)
 target_include_directories(citysim_core PUBLIC include)
 target_compile_features(citysim_core PUBLIC cxx_std_20)
 find_package(Threads REQUIRED)
