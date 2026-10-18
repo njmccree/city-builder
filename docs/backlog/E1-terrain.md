@@ -322,7 +322,7 @@ Follow the Task workflow in CLAUDE.md (branch story/S1.2.3-rivers); open the PR 
 - Rule-based fertility, vegetation and wetness layers are documented.
 - Authored deposit and fertility override GeoJSON for the Ancient Near East, with sources, is rasterized into the package.
 
-#### [ ] T1.2.4.1 — Derived layers and override rasterization
+#### [x] T1.2.4.1 — Derived layers and override rasterization
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.2.1.1
 ```
 Task T1.2.4.1 (Story S1.2.4). Read docs/architecture.md §15.5 and §15.8, and docs/gdd.md §12.7.

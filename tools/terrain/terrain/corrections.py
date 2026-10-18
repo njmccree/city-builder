@@ -102,6 +102,8 @@ class MapState:
     dem: Grid
     land: Grid  # bool
     rivers: list[RiverLine] = field(default_factory=list)
+    floodplain: Grid | None = None  # bool mask of floodplain polygons, for the layers step
+    landcover: Grid | None = None   # ESA WorldCover classes, for the layers step
 
     def check(self) -> None:
         if self.dem.shape != self.land.shape:
