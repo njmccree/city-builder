@@ -36,11 +36,11 @@ Every Task lists:
 
 | Epic | Title | Milestone | Status |
 |---|---|---|---|
-| **E0** | **Foundation & Walking Skeleton** → [E0-foundation.md](E0-foundation.md) | M0 | **Drafted** |
+| **E0** | **Foundation & Walking Skeleton** → [E0-foundation.md](E0-foundation.md) | M0 | **Done** (40/40) |
 | **E1** | **Terrain & World** → [E1-terrain.md](E1-terrain.md) | M1 | **Drafted** |
 | E2 | City Building: roads/paths, zoning, ploppables, construction, logistics | M1 | Awaiting design rounds |
 | E3 | Citizens: agents, needs, life cycle, traits, households, simulation LOD | M1 | Awaiting design rounds |
-| E4 | Economy, Industry & Trade | M1–M2 | Round 4 paused |
+| E4 | Economy, Industry & Trade | M1–M2 | Designed (Round 4); planned after E2–E3 |
 | E5 | Government, Offices, Ranks & Politics | M2 | Awaiting Round 5 |
 | E6 | Realms, Diplomacy, NPC AI & Warfare | M3 | Awaiting Round 5 |
 | E7 | Culture, Religion, Society & Emergent Neighborhoods | M2 | Partly designed |
