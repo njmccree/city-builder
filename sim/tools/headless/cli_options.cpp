@@ -110,6 +110,10 @@ std::string parse_bench_spec(std::string_view text, BenchSpec& spec) {
             return "'" + std::string(pair) + "' is not key=value";
         }
         const std::string_view key = pair.substr(0, equals);
+        if (key == "map" && pair.substr(equals + 1) == "world") {
+            spec.world = true;
+            continue;
+        }
         std::uint64_t number = 0;
         if (!parse_u64(pair.substr(equals + 1), number) || number > 0xFFFFFFFFULL) {
             return "'" + std::string(pair) + "' needs a whole number";
@@ -123,10 +127,12 @@ std::string parse_bench_spec(std::string_view text, BenchSpec& spec) {
             spec.threads = value;
         } else if (key == "map") {
             spec.map = value;
+            spec.world = false;
         } else if (key == "searches") {
             spec.searches = value;
         } else {
-            return "unknown key '" + std::string(key) + "' (agents, ticks, threads, map, searches)";
+            return "unknown key '" + std::string(key) +
+                   "' (agents, ticks, threads, map, searches); map is a number of cells or \"world\"";
         }
     }
     if (spec.ticks == 0 || spec.map == 0 || spec.searches == 0) {
@@ -146,7 +152,7 @@ std::string usage() {
            "  --record-log F   write the input log of this run to F\n"
            "  --replay F       re-run the game recorded in F (seed and ticks come from the file)\n"
            "  --bench SPEC     measure speed instead of playing: SPEC is "
-           "agents=N,ticks=N,threads=N,map=N,searches=N\n"
+           "agents=N,ticks=N,threads=N,map=N,searches=N (map=world: real terrain)\n"
            "                   (defaults 10000, 2000, 0, 512, 200); prints ms per tick and path searches\n"
            "  --save-at T F    after T ticks, save the game to F\n"
            "  --load F         resume from the save F; --ticks is the final tick (seed comes from the file)\n"

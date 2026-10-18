@@ -5,7 +5,7 @@ add_library(citysim_headless_support STATIC
     demo_scenario.cpp
     input_log_text.cpp)
 target_include_directories(citysim_headless_support PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
-target_link_libraries(citysim_headless_support PUBLIC citysim_core)
+target_link_libraries(citysim_headless_support PUBLIC citysim_core citysim_mapgen_support)
 citysim_set_warnings(citysim_headless_support)
 
 add_executable(citysim_headless main.cpp)

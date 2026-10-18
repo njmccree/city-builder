@@ -1,6 +1,6 @@
 #pragma once
 
-#include "citysim/debug/test_map.hpp"
+#include "citysim/debug/walk_grid.hpp"
 
 #include <cstdint>
 #include <vector>
@@ -36,8 +36,15 @@ struct PathResult {
 // depends on float rounding), no cutting corners (a diagonal step needs both orthogonal cells walkable).
 // Ties are broken by lowest f, then lowest h, then lowest cell index, so the path is the same on every run
 // and every machine. Gives up after `node_budget` expansions. Start and goal must be walkable cells of the
-// map.
-PathResult find_path(const TestMap& map, std::uint32_t start, std::uint32_t goal, PathScratch& scratch,
+// grid.
+PathResult find_path(const WalkGrid& map, std::uint32_t start, std::uint32_t goal, PathScratch& scratch,
                      std::uint32_t node_budget);
+
+// For an agent that stands on a blocked cell (the ground was flooded under it): the shortest way out, found
+// by a breadth-first search over the 8 neighbours that does not care whether a cell is walkable, and stops at
+// the first walkable cell. `cells` is the way from the cell after `start` to that walkable cell, inclusive.
+// Steps are taken in a fixed order, so the way is the same on every run. Gives up after `node_budget` cells.
+PathResult find_escape_path(const WalkGrid& map, std::uint32_t start, PathScratch& scratch,
+                            std::uint32_t node_budget);
 
 } // namespace citysim::debug

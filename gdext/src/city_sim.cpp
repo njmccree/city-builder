@@ -66,8 +66,8 @@ CitySim::~CitySim() {
 void CitySim::_bind_methods() {
     godot::ClassDB::bind_method(godot::D_METHOD("get_core_version"), &CitySim::get_core_version);
     godot::ClassDB::bind_method(godot::D_METHOD("new_game", "seed", "content_roots", "enabled_mods", "era_id",
-                                                "test_map_size", "map_id"),
-                                &CitySim::new_game, DEFVAL(0), DEFVAL(godot::String()));
+                                                "test_map_size", "map_id", "world_agents"),
+                                &CitySim::new_game, DEFVAL(0), DEFVAL(godot::String()), DEFVAL(false));
     godot::ClassDB::bind_method(godot::D_METHOD("shutdown"), &CitySim::shutdown);
     godot::ClassDB::bind_method(godot::D_METHOD("is_running"), &CitySim::is_running);
     godot::ClassDB::bind_method(godot::D_METHOD("submit_command", "command"), &CitySim::submit_command);
@@ -103,7 +103,7 @@ godot::String CitySim::get_core_version() const {
 
 Dictionary CitySim::new_game(int64_t seed, const godot::PackedStringArray& content_roots,
                              const godot::PackedStringArray& enabled_mods, const String& era_id,
-                             int64_t test_map_size, const String& map_id) {
+                             int64_t test_map_size, const String& map_id, bool world_agents) {
     shutdown();
 
     runner::NewGameRequest request;
@@ -117,6 +117,7 @@ Dictionary CitySim::new_game(int64_t seed, const godot::PackedStringArray& conte
     request.era_id = to_std(era_id);
     request.map_id = to_std(map_id); // empty: no terrain, no cities
     request.test_map_size = static_cast<std::uint32_t>(std::clamp<int64_t>(test_map_size, 0, 4096));
+    request.world_agents = world_agents;
     request.autosave_directory = real_path("user://saves/autosave");
     request.publish_hooks.push_back(&publish_debug_clock);
 

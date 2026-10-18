@@ -42,7 +42,10 @@ add_library(citysim_core STATIC
     src/debug/agent_snapshot.cpp
     src/debug/grid_pathfinder.cpp
     src/debug/movement_system.cpp
+    src/debug/terrain_walk_grid.cpp
+    src/debug/terrain_walk_system.cpp
     src/debug/test_map.cpp
+    src/debug/walk_grid.cpp
     src/debug/walking_skeleton.cpp
     src/debug/wander_planner_system.cpp
     src/runner/clock.cpp
@@ -78,7 +81,8 @@ citysim_set_warnings(citysim_core)
 # Terrain heights must be the same bits on every compiler and CPU (golden hashes, architecture §15.4), so the
 # synthesis never fuses a multiply and an add into one rounding.
 if(NOT MSVC)
-    set_source_files_properties(src/world/terrain_synth.cpp src/world/terraform.cpp PROPERTIES
+    set_source_files_properties(src/world/terrain_synth.cpp src/world/terraform.cpp
+        src/debug/terrain_walk_grid.cpp PROPERTIES
         COMPILE_OPTIONS -ffp-contract=off)
 endif()
 

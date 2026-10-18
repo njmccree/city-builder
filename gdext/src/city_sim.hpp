@@ -34,10 +34,12 @@ class CitySim : public godot::Node {
 
     // Loads the content, starts a game and its simulation thread. Replaces a running game. Returns
     // {ok: bool, errors: Array[String], warnings: Array[String]}. `test_map_size` above 0 installs the debug
-    // agents on a square test map that many cells wide.
+    // agents on a square test map that many cells wide. `world_agents` (with a `map_id`, no test map)
+    // installs the debug agents on the real terrain of the active city.
     godot::Dictionary new_game(int64_t seed, const godot::PackedStringArray& content_roots,
                                const godot::PackedStringArray& enabled_mods, const godot::String& era_id,
-                               int64_t test_map_size = 0, const godot::String& map_id = godot::String());
+                               int64_t test_map_size = 0, const godot::String& map_id = godot::String(),
+                               bool world_agents = false);
     void shutdown();
     bool is_running() const;
 

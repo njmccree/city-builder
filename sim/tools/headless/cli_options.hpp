@@ -8,12 +8,14 @@
 
 namespace citysim::headless {
 
-// What --bench measures: "agents=10000,ticks=2000,threads=0,map=512,searches=200".
+// What --bench measures: "agents=10000,ticks=2000,threads=0,map=512,searches=200". `map=world` runs the
+// agents on the real terrain of a synthetic world instead of the flat test map.
 struct BenchSpec {
     std::uint32_t agents = 10000;
     std::uint32_t ticks = 2000;
-    std::uint32_t threads = 0;    // JobSystem worker count; 0 = hardware default
-    std::uint32_t map = 512;      // the test map is map x map cells
+    std::uint32_t threads = 0; // JobSystem worker count; 0 = hardware default
+    std::uint32_t map = 512;   // the test map is map x map cells
+    bool world = false; // map=world: a world game on a synthetic 16 km map (one city, 2,048 x 2,048 cells)
     std::uint32_t searches = 200; // path searches allowed per tick
 };
 

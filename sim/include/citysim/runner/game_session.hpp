@@ -32,6 +32,11 @@ struct NewGameRequest {
     // Above 0 installs the walking skeleton (debug agents on a square test map this many cells wide, 4 m per
     // cell) and the publish hooks for its snapshot data. 0 leaves the game without it.
     std::uint32_t test_map_size = 0;
+    // With a map_id (and no test map): also installs the walking skeleton with the real terrain of the active
+    // city as the ground its debug agents walk on (debug::WalkGridSource::Terrain), so SpawnDebugAgents works
+    // in a world game, and the "agents.xform" publish hook. Off by default: it adds the agent components to
+    // the game's state. Ignored without a map or with a test map.
+    bool world_agents = false;
     // Called on the runner thread after every tick, in this order, to add data to the snapshot (channels).
     std::vector<SimulationRunner::PublishHook> publish_hooks;
 };

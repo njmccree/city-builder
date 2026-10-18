@@ -610,7 +610,7 @@ void ContentDatabase::load_terrain_defines(const fs::path& path, const std::stri
         return;
     }
     context.warn_unknown_keys(json, {"channel_edge_depth_fraction", "bank_width_m", "flood_samples_per_tick",
-                                     "terraform_step_m", "terraform_cost_per_m3"});
+                                     "terraform_step_m", "terraform_cost_per_m3", "walk_max_slope"});
 
     world::TerrainDefines defines = terrain_defines_;
     if (const auto value = context.read_number(json, "channel_edge_depth_fraction", false)) {
@@ -627,6 +627,13 @@ void ContentDatabase::load_terrain_defines(const fs::path& path, const std::stri
     }
     if (const auto value = context.read_number(json, "terraform_cost_per_m3", false)) {
         defines.terraform_cost_per_m3 = static_cast<float>(*value);
+    }
+    if (const auto value = context.read_number(json, "walk_max_slope", false)) {
+        defines.walk_max_slope = static_cast<float>(*value);
+    }
+    if (json.contains("walk_max_slope") &&
+        !(defines.walk_max_slope >= 0.05F && defines.walk_max_slope <= 5.0F)) {
+        context.error("/walk_max_slope", "must be between 0.05 and 5");
     }
     if (json.contains("terraform_step_m") &&
         !(defines.terraform_step_m >= 0.01F && defines.terraform_step_m <= 50.0F)) {

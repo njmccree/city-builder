@@ -145,3 +145,18 @@ with `citysim_tests "[.bench]"`.
   if that matters.
 - One Terraform stroke with the biggest brush (200 m radius, about 10,000 samples, the smoothing brush): best
   1.1 ms, mean 1.3 ms (limit 20 ms), including applying it to the tiles.
+
+### Debug agents on the real terrain (`citysim_headless --bench "agents=10000,ticks=400,map=world"`)
+
+Release, gcc, a 4-core cloud machine (indicative; the PC run, T1.9.1.2, is authoritative). The world is a generated
+16 km synthetic map with one city: 2,048 x 2,048 cells of 4 m, a river through it.
+
+- City activation tick (36 terrain tiles synthesized plus the walk grid built): 337 ms.
+- 10,000 agents: the start-up ramp is the expensive part, as on the flat map. While the agents get their first
+  path (200 searches per tick, trips across an 8 km area are up to ~2,000 cells long) a tick averages ~650 ms for the
+  first ~50 ticks; over all 400 ticks the average is 91 ms, p95 663 ms, max 924 ms. Once every agent has a path the
+  second half of the run averages 0.53 ms per tick (p95 0.83 ms, max 2.4 ms). If the ramp matters, lower
+  `searches` (the bench option) or the trip length.
+- The walk grid keeps up with floods and edits by recomputing 512 x 512-cell tiles; the regions of the grid
+  (`update_regions`, a flood fill over 4.2 million cells) are made when the planner has agents to plan and the
+  grid has changed.
