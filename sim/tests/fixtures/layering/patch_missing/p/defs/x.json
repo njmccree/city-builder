@@ -1,0 +1,10 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "base:era.nonexistent",
+      "patch": true,
+      "order": 5
+    }
+  ]
+}

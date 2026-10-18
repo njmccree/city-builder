@@ -1,0 +1,10 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "base:era.ancient",
+      "patch": true,
+      "real_seconds_per_year": 175
+    }
+  ]
+}

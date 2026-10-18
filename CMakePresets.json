@@ -1,0 +1,277 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 28,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CITYSIM_BUILD_TESTS": "ON",
+        "CITYSIM_BUILD_TOOLS": "ON"
+      }
+    },
+    {
+      "name": "linux-debug",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "linux-release",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "ci-linux",
+      "inherits": "linux-debug",
+      "cacheVariables": {
+        "CITYSIM_WARNINGS_AS_ERRORS": "ON"
+      }
+    },
+    {
+      "name": "ci-linux-clang",
+      "inherits": "ci-linux",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
+      "name": "windows-base",
+      "hidden": true,
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "windows-debug",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-release",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "ci-windows",
+      "inherits": "windows-debug",
+      "cacheVariables": {
+        "CITYSIM_WARNINGS_AS_ERRORS": "ON"
+      }
+    },
+    {
+      "name": "linux-tsan",
+      "inherits": "linux-debug",
+      "description": "ThreadSanitizer build (clang). Run the tests to look for data races.",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_C_FLAGS": "-fsanitize=thread -fno-omit-frame-pointer",
+        "CMAKE_CXX_FLAGS": "-fsanitize=thread -fno-omit-frame-pointer",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=thread",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fsanitize=thread",
+        "CITYSIM_WARNINGS_AS_ERRORS": "ON"
+      }
+    },
+    {
+      "name": "linux-debug-gdext",
+      "inherits": "linux-debug",
+      "description": "Debug build that also builds the GDExtension library into game/bin/ (needs the godot-cpp submodule).",
+      "cacheVariables": {
+        "CITYSIM_BUILD_GDEXT": "ON"
+      }
+    },
+    {
+      "name": "ci-linux-gdext",
+      "inherits": "ci-linux",
+      "description": "CI: the GDExtension library only (the Godot smoke test); the unit tests are covered by ci-linux.",
+      "cacheVariables": {
+        "CITYSIM_BUILD_GDEXT": "ON",
+        "CITYSIM_BUILD_TESTS": "OFF",
+        "CITYSIM_BUILD_TOOLS": "OFF"
+      }
+    },
+    {
+      "name": "ci-windows-gdext",
+      "inherits": "ci-windows",
+      "description": "CI: build only the GDExtension library on Windows (no Godot run); the unit tests are covered by ci-windows.",
+      "cacheVariables": {
+        "CITYSIM_BUILD_GDEXT": "ON",
+        "CITYSIM_BUILD_TESTS": "OFF",
+        "CITYSIM_BUILD_TOOLS": "OFF"
+      }
+    },
+    {
+      "name": "windows-debug-gdext",
+      "inherits": "windows-debug",
+      "description": "Debug build that also builds the GDExtension library into game/bin/ (needs the godot-cpp submodule).",
+      "cacheVariables": {
+        "CITYSIM_BUILD_GDEXT": "ON"
+      }
+    },
+    {
+      "name": "windows-release-gdext",
+      "inherits": "windows-release",
+      "description": "Optimized build that also builds the GDExtension into game/bin/, bound to the editor target so the editor can load it (used for performance measurements).",
+      "cacheVariables": {
+        "CITYSIM_BUILD_GDEXT": "ON",
+        "CITYSIM_GODOT_TARGET": "editor"
+      }
+    },
+    {
+      "name": "linux-tracy",
+      "inherits": "linux-debug",
+      "description": "Debug build with Tracy profiler zones enabled.",
+      "cacheVariables": {
+        "CITYSIM_TRACY": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "linux-debug",
+      "configurePreset": "linux-debug"
+    },
+    {
+      "name": "linux-release",
+      "configurePreset": "linux-release"
+    },
+    {
+      "name": "ci-linux",
+      "configurePreset": "ci-linux"
+    },
+    {
+      "name": "windows-debug",
+      "configurePreset": "windows-debug"
+    },
+    {
+      "name": "windows-release",
+      "configurePreset": "windows-release"
+    },
+    {
+      "name": "ci-linux-clang",
+      "configurePreset": "ci-linux-clang"
+    },
+    {
+      "name": "ci-windows",
+      "configurePreset": "ci-windows"
+    },
+    {
+      "name": "ci-windows-gdext",
+      "configurePreset": "ci-windows-gdext"
+    },
+    {
+      "name": "linux-tsan",
+      "configurePreset": "linux-tsan"
+    },
+    {
+      "name": "linux-tracy",
+      "configurePreset": "linux-tracy"
+    },
+    {
+      "name": "linux-debug-gdext",
+      "configurePreset": "linux-debug-gdext"
+    },
+    {
+      "name": "windows-debug-gdext",
+      "configurePreset": "windows-debug-gdext"
+    },
+    {
+      "name": "windows-release-gdext",
+      "configurePreset": "windows-release-gdext"
+    },
+    {
+      "name": "ci-linux-gdext",
+      "configurePreset": "ci-linux-gdext"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "linux-debug",
+      "configurePreset": "linux-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-release",
+      "configurePreset": "linux-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ci-linux",
+      "configurePreset": "ci-linux",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-debug",
+      "configurePreset": "windows-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-release",
+      "configurePreset": "windows-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ci-linux-clang",
+      "configurePreset": "ci-linux-clang",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ci-windows",
+      "configurePreset": "ci-windows",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-tsan",
+      "configurePreset": "linux-tsan",
+      "output": {
+        "outputOnFailure": true
+      },
+      "environment": {
+        "TSAN_OPTIONS": "halt_on_error=1 second_deadlock_stack=1"
+      }
+    },
+    {
+      "name": "linux-tracy",
+      "configurePreset": "linux-tracy",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

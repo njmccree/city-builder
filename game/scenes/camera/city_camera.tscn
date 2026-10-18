@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/camera/city_camera.gd" id="1_cam"]
+[ext_resource type="Resource" path="res://resources/camera_settings.tres" id="2_settings"]
+
+[node name="CityCamera" type="Node3D"]
+script = ExtResource("1_cam")
+settings = ExtResource("2_settings")
+
+[node name="Yaw" type="Node3D" parent="."]
+
+[node name="Pitch" type="Node3D" parent="Yaw"]
+
+[node name="Camera3D" type="Camera3D" parent="Yaw/Pitch"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 150)
+far = 6000.0
+current = true

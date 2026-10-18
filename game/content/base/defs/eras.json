@@ -1,0 +1,43 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "base:era.ancient",
+      "name_key": "era.ancient.name",
+      "desc_key": "era.ancient.desc",
+      "real_seconds_per_year": 120,
+      "default_start_year": -3000,
+      "order": 1,
+      "next_era": "base:era.colonial"
+    },
+    {
+      "type": "era",
+      "id": "base:era.colonial",
+      "name_key": "era.colonial.name",
+      "desc_key": "era.colonial.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 2,
+      "next_era": "base:era.modern"
+    },
+    {
+      "type": "era",
+      "id": "base:era.modern",
+      "name_key": "era.modern.name",
+      "desc_key": "era.modern.desc",
+      "real_seconds_per_year": 720,
+      "default_start_year": 1900,
+      "order": 3,
+      "next_era": "base:era.utopian"
+    },
+    {
+      "type": "era",
+      "id": "base:era.utopian",
+      "name_key": "era.utopian.name",
+      "desc_key": "era.utopian.desc",
+      "real_seconds_per_year": 900,
+      "default_start_year": 2025,
+      "order": 4
+    }
+  ]
+}

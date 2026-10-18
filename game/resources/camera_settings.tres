@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CameraSettings" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/camera/camera_settings.gd" id="1_settings"]
+
+[sub_resource type="Curve" id="Curve_pitch"]
+min_value = 0.0
+max_value = 90.0
+_data = [Vector2(0, 25), 0.0, 45.0, 0, 0, Vector2(1, 70), 45.0, 0.0, 0, 0]
+point_count = 2
+
+[resource]
+script = ExtResource("1_settings")
+pitch_curve = SubResource("Curve_pitch")

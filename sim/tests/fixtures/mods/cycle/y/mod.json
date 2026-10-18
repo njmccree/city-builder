@@ -1,0 +1,9 @@
+{
+  "id": "y",
+  "name_key": "mod.y.name",
+  "version": "1.0.0",
+  "depends_on": [
+    "z"
+  ],
+  "load_after": []
+}

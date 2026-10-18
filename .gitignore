@@ -1,0 +1,27 @@
+# Build outputs
+build/
+out/
+CMakeUserPresets.json
+
+# Godot
+game/.godot/
+# Built extension libraries; the .gdextension descriptor next to them is source.
+game/bin/*
+!game/bin/citysim.gdextension
+!game/bin/citysim.gdextension.uid
+*.import
+
+# IDEs (keep the recommended-extensions list)
+.vs/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test-generated save files (fixtures are allowed)
+*.csav
+!sim/tests/fixtures/**/*.csav

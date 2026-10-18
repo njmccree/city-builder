@@ -1,0 +1,40 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "test:era.ancient",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 120,
+      "default_start_year": -3000,
+      "order": 1
+    },
+    {
+      "type": "era",
+      "id": "test:era.modern",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 720,
+      "default_start_year": 1900,
+      "order": 3
+    },
+    {
+      "type": "era",
+      "id": "test:era.odd",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 7,
+      "default_start_year": -500,
+      "order": 10
+    },
+    {
+      "type": "era",
+      "id": "test:era.fast",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 1,
+      "default_start_year": 2000,
+      "order": 11
+    }
+  ]
+}

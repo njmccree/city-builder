@@ -56,7 +56,7 @@ docs/                     gdd.md, architecture.md, backlog/, versions.md, perf.m
 
 ## 3. Build & Dependencies
 
-- **CMake ≥ 3.25 + Ninja**, configured through `CMakePresets.json`. Compilers: GCC or Clang on Linux, MSVC (VS 2022 Build Tools) on Windows.
+- **CMake ≥ 3.28 + Ninja**, configured through `CMakePresets.json`. Compilers: GCC or Clang on Linux, MSVC (VS 2022 Build Tools) on Windows.
 - **C++20.** Warnings at a high level; `-Werror` / `/WX` in CI. **Never use `-ffast-math`** or equivalents.
 - Third-party libraries come through **FetchContent with pinned release tags** in `cmake/Dependencies.cmake`. Each pin is recorded in `docs/versions.md`.
 
@@ -68,7 +68,7 @@ docs/                     gdd.md, architecture.md, backlog/, versions.md, perf.m
 | spdlog | logging |
 | zstd | save compression |
 | xxHash | state hashing, content hashing |
-| godot-cpp | GDExtension bindings (git submodule, not FetchContent) |
+| godot-cpp | GDExtension bindings (git submodule, not FetchContent). Built through its CMake support when `CITYSIM_BUILD_GDEXT=ON` (presets `linux-debug-gdext`, `windows-debug-gdext`), which is off in the other presets so the simulation builds and tests stay fast. Exceptions stay enabled in it because the core throws. |
 | Tracy (optional, `CITYSIM_TRACY=ON`) | profiling |
 
 - Targets:
@@ -183,10 +183,13 @@ All of these values are **tunable through content data** (`game/content/base/def
 - Paces ticks to the target tick rate for the current speed. When it falls behind, it runs up to `max_catchup_ticks` and then slows the game down rather than spiralling.
 - Pause: the thread sleeps on a condition variable. Commands are still accepted and applied when the game unpauses, or immediately for "while paused" commands such as save and load.
 - The main thread (Godot) talks to the runner **only** through `CommandQueue` (in) and `SnapshotBuffer` (out).
-- A fake clock can be injected for tests.
+- A fake clock can be injected for tests. `IClock` has three operations: `now_seconds()`, `sleep_until(deadline)` and `interrupt()`. `interrupt()` makes the current or next sleep return early, once, so `stop()` and new commands never wait out a sleep. `SimulationRunner::wait_until_idle()` lets tests advance a `FakeClock` and then wait deterministically, with no real sleeping.
+- **Save and load** are the commands `SaveGame{path}` and `LoadGame{path}`. The runner executes them itself, strictly between ticks and also while paused; they never reach the `Simulation` and are not in the input log. A save includes the commands still waiting. A load builds a new `Simulation` (the runner repeats the setup given to `configure()`), loads the file into it and replaces the old one only on success, so a bad file changes nothing. `RequestStateHash{}` is handled the same way (between ticks, not in the input log) and answers with a `StateHash` `UiEvent` carrying the hash and the tick. The result reaches the UI as a `SaveCompleted` / `LoadCompleted` `UiEvent` (with `ok`, a failure message, and for loads the warnings such as changed content) in a snapshot published immediately; these events stay in snapshots until the consumer has read them, then are handed over exactly once.
+- **Autosave** runs on the runner's `IClock`, never on ticks: every `autosave_interval_real_seconds` (0 = off) it writes `autosave_1.csav` … `autosave_<autosave_slots>.csav` in rotation into the configured directory. It is skipped while paused and the interval restarts on resume and after a load. Both settings are in `defines/time.json`; they are not hashed or saved.
+- Ticks are scheduled as `origin + (n + 1) × interval`. The origin resets on a speed change and after unpausing. The first tick is one interval after the origin.
 
 ### 7.2 JobSystem
-- A fixed pool of worker threads (`hardware_concurrency − 2`, minimum 1). The simulation thread also helps with work.
+- A fixed pool of worker threads (`hardware_concurrency − 2`, minimum 1). The simulation thread also helps with work. The configured count includes the calling thread, so a count of 1 means no extra threads.
 - `parallel_for(count, chunk_size, fn(begin, end, chunk_index))`. **The chunk size is chosen by the caller and never depends on thread count.**
 - **Determinism pattern:** each chunk writes to its own output buffer indexed by `chunk_index`. The caller then merges the buffers serially in chunk order. Results must be bit-identical with 1, 2 or N worker threads, and tests enforce this.
 - No work stealing that changes results. Ordering is enforced at the merge, so the scheduling strategy is free.
@@ -201,6 +204,9 @@ All of these values are **tunable through content data** (`game/content/base/def
   - a UI event list
 - The main thread takes the newest snapshot every frame. It interpolates positions between the previous and current snapshot, using real time since that tick was published.
 - Snapshots are **read-only copies**. Godot code never reads `World` directly.
+- **Interpolation.** The front end keeps the previous and current snapshot (`SnapshotView`) and each frame computes `alpha = clamp((now − current.published_at) / tick_interval, 0, 1)`, where `now` is the runner clock and the interval follows the current speed; `alpha` is 1 while paused. `CitySim` computes it once per frame (`get_interpolation_alpha()`), and C++ renderer nodes read it with the two snapshots through `CitySim::snapshot_view()`. A load resets the history, so nothing is blended across it.
+- **Channels.** The flat arrays for renderers are `SnapshotChannel`s (`name`, `data`, `stride`) in `RenderSnapshot::channels`, added by publish hooks and cleared before every publish. A channel's layout is a contract between its hook and its renderer, documented with the hook. GDScript can read one as a `PackedFloat32Array` (`get_channel(name)`) for debugging only. The built-in `debug.clock` channel (tick, speed, paused) exists to test the path.
+- **Grids.** Big data that rarely changes (the test map's walkable cells) is a `SnapshotGrid` in `RenderSnapshot::grids`: `width`, `height`, `cell_size` and a *shared* `cells` pointer. The publish hook (`debug::TestMapPublisher`) hands out the same pointer until the map changes, so a renderer compares pointers and rebuilds only on a new grid (`TestMapView` does). `AgentRenderer` and `TestMapView` are GDExtension nodes that read the previous and current snapshot from `CitySim` directly.
 
 ## 8. Content & Mods
 
@@ -231,10 +237,10 @@ All of these values are **tunable through content data** (`game/content/base/def
 ## 9. Localization
 
 - Every player-facing string is a key: definitions use `*_key` fields (e.g., `"name_key": "era.ancient.name"`).
-- Tables are stored at `loc/<lang>/*.json` as flat `{ "key": "text" }`, with `{named}` placeholders.
+- Tables are stored at `loc/<lang>/*.json` as flat `{ "key": "text" }`, with `{named}` placeholders (`{{` and `}}` are literal braces; a placeholder with no argument stays visible). Mods load in order, so a later mod's text replaces an earlier one.
 - `Localizer` looks up the current language, falls back to `en`, then falls back to the key itself (visible in debug builds).
 - The Godot UI uses `tr()`. At startup the bridge builds a Godot `Translation` from the loaded tables, so `.tscn` labels hold keys.
-- English only at launch. The validator flags missing `en` keys as errors and missing keys in other languages as warnings.
+- English only at launch. The validator flags missing `en` keys as errors and missing keys in other languages as warnings; `en` keys no definition refers to are reported only with `--verbose` (code looks some up directly, such as calendar names).
 
 ## 10. Save / Load
 
@@ -249,29 +255,41 @@ All of these values are **tunable through content data** (`game/content/base/def
     - content hash
     - mod list (id + version)
     - real-world save timestamp (metadata only)
-  - Body: **sections** (4-char tag + section version + length), zstd-compressed. Unknown sections are skipped with a warning.
+  - Body: **sections** (4-char tag, u16 section version, u32 compressed length, u32 raw length, then zstd bytes). Unknown sections are skipped with a warning. The header itself is uncompressed so a load menu can read it, and the file ends with an XXH3 checksum of everything before it.
   - Core sections:
-    - `META`
-    - `CLCK` (clock and calendar)
-    - `ENTS` (entity list)
-    - one section per registered component type (sorted by stable name)
+    - `META` (world seed and tick; also in the header)
+    - `WRLD`: the whole World. Entities, every registered component type and every singleton (the game clock and calendar among them), each as a block sorted by stable name (see `save_world`). One section rather than separate `CLCK`/`ENTS`/per-type sections, because the clock and calendar are registered singletons and per-type versions live inside the blocks.
     - `CMDQ` (pending commands)
     - `ILOG` (optional input log)
-- **Entity ids** are remapped on load. Components that reference entities serialize them through the archive's remap table.
+- **Entity ids** are remapped on load. Components that reference entities serialize them through the archive's remap table (`ar.entity`, or `io()` on an `entt::entity`). A save holds dense indices (0..n-1 in ascending entity order), so a load gives every entity a fresh, dense id. Consequences for simulation code:
+  - Entity ids and the storage order of views are not stable across a save/load. State must not depend on them beyond what is saved. Sort by something stable (an id stored in a component) when order matters.
+  - `World::state_hash()` hashes raw entity values, so a world that has destroyed and recycled entities hashes differently after a save and load, even though the data is the same. Round-trip and continuation tests therefore use worlds without recycled ids until the hash is made rank-based (open question for the owner).
+- **Content references** (`DefHandle`) are saved as ids and need the `ContentDatabase` on the archive (`BinaryWriter(nullptr, &content)`); loading an id the content lacks is a `SaveFormatError`.
+- **Per-type blocks:** `save_world` writes each component type and singleton as `name, version, byte length, payload`, so a type this build does not register is skipped and reported. A registered, non-empty type with no serialize hooks makes saving fail (§4 rule 8).
 - **Required tests:**
   - save → load → `state_hash` is equal
   - (run N ticks) vs (run k ticks, save, load, run N−k ticks) gives equal hashes
-- **Versioning:** each section has a version. `MigrationRegistry` holds `(section, from_version) → fn` upgrades, and fixture saves for old versions live in `sim/tests/fixtures/saves/`.
+- **Versioning:** each section, and each component or singleton type inside `WRLD`, has a version. `MigrationRegistry` holds upgrades one version at a time: per-type migrations (`add_type(stable_name, from_version, fn)`, which convert one instance from the layout of `from_version` to the next) and per-section migrations (`add_section(tag, from_version, fn)`). A load runs the chain up to the current version and then calls the current `serialize()`, so `serialize()` only ever describes the current layout. A missing step is an error naming the type and the versions.
+
+### Saves: when to bump a version
+- Bump a type's version (the `version` argument of `save::bind_serializer`) on **any** change to its serialized layout: adding, removing, reordering or retyping a field, or changing how a value is encoded. A change that leaves the bytes identical (renaming a C++ field) needs nothing.
+- In the same change: register a migration from the previous version (copy the old fields, write the new layout, fill new fields with a sensible default) and add a **fixture save** written with the old layout to `sim/tests/fixtures/saves/`. The migration is covered by a test that loads the fixture.
+- Fixtures are never regenerated with a newer layout: they are the proof that old saves still load. The generator that writes one is a hidden test (`citysim_tests "[generate]"`) holding a copy of the old struct. Fixtures are small binary files marked `binary` in `.gitattributes`, not Git LFS.
+- Releasing a version without its migration breaks every save made with the previous one; there is no “just this once”. A migration may be dropped only when the owner decides to stop supporting saves from that version, and the loader's error message for it must then say so.
+- `save_simulation` / `load_simulation` (`citysim/save/simulation_io.hpp`) write and read a whole `Simulation`: loading goes into a fresh `Simulation` with the same modules installed, and returns warnings (content hash, mod list or game version differ; unknown sections or types skipped) rather than refusing. The wall-clock save time is supplied by the caller, since simulation code never reads the clock.
 - Saving and loading are commands that the runner executes **between ticks**.
 
 ## 11. Godot Bridge & Rendering
 
 - **`CitySim`** is a GDExtension class (Node). The game registers it as the autoload `Sim`. Its API:
-  - lifecycle: `new_game`, `load_game`, `save_game`, `shutdown`
-  - `submit_command(Dictionary)`, which converts to typed commands and **validates in C++**
-  - `get_snapshot_info()` for UI data
-  - stats
-  - signals emitted on the main thread from snapshot events
+  - lifecycle: `new_game(seed, content_roots, enabled_mods, era_id)` → `{ok, errors, warnings}`, `shutdown()`, `is_running()`. Loading and saving are commands (below).
+  - `submit_command(Dictionary)`, which converts to typed commands (`gdext/src/command_marshal.cpp`, one table line per command) and **validates in C++**: unknown types, missing, extra or wrongly typed fields, out-of-range values and unknown content ids are rejected with `push_error`. Commands: `set_speed`, `toggle_pause`, `set_era`, `save_game`, `load_game`, `state_hash`, `spawn_agents`, `clear_agents`, `set_time_scale` (changes `movement_scale` and `day_length_ticks` in the hashed `TimeDefines`; a normal recorded command).
+  - `get_stats()` → `{tick, tps, tick_ms_avg, tick_ms_last, entity_count, speed, paused, date_text, time_text}` from the newest snapshot
+  - signals emitted from `_process` on the main thread when a snapshot changes: `tick_advanced(tick)`, `date_changed(text)`, `speed_changed(speed, paused)`, `save_completed(path, ok, msg)`, `load_completed(path, ok, msg)`, `state_hash_ready(tick, hash)` (the answer to `state_hash`: `World::state_hash()` taken between ticks, as 16 hex digits)
+  - The loaded localization tables are given to Godot as `Translation`s, so `tr("key")` works.
+  - The game never uses `CitySim` directly: the autoload `Sim` (`game/scripts/autoload/sim.gd`) owns it, supplies the default content and forwards the signals.
+  - Content is read from real folders, so it works in the editor and in a build that ships `content/` next to the executable. Reading it from a packed `.pck` is not supported yet.
+  - The glue that is not Godot-specific (loading content, creating the runner, installing the time module and calendar) is `runner::GameSession` in `sim/`, which has native tests.
 - **Fast renderers** are C++ GDExtension nodes (e.g., `AgentRenderer`). They read snapshot arrays and write `MultiMesh` instance buffers directly (`set_buffer`), with no per-agent GDScript.
 - **GDScript** handles UI, camera, input mapping, scene composition, and tool modes. It never runs per-entity loops.
 - **Units and coordinates:**

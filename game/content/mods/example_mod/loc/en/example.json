@@ -1,0 +1,4 @@
+{
+  "mod.example_mod.name": "Example Mod",
+  "example_mod.era.ancient.desc": "An example of a mod that patches the base game: this text replaces the Ancient Era description."
+}

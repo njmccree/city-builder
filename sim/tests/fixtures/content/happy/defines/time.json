@@ -1,0 +1,11 @@
+{
+  "base_tick_rate": 30,
+  "speed_multipliers": [
+    0,
+    1,
+    2,
+    4
+  ],
+  "movement_scale": 2.5,
+  "day_length_ticks": 9000
+}

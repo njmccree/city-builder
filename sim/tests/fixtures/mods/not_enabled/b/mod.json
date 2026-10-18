@@ -1,0 +1,8 @@
+{
+  "id": "b",
+  "name_key": "mod.b.name",
+  "version": "1.0.0",
+  "depends_on": [],
+  "load_after": [],
+  "enabled_by_default": false
+}

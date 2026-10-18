@@ -49,7 +49,7 @@ Recommended interleaving: F0.1 → F0.2 → F0.4 (T0.4.1.1) → F0.3 → rest of
 - The `linux-debug` preset configures, builds and runs ≥ 1 Catch2 test.
 - Dependencies are pinned in `cmake/Dependencies.cmake` and recorded in `docs/versions.md`.
 
-#### [ ] T0.1.1.1 — Repo skeleton, ignore rules, formatting config
+#### [x] T0.1.1.1 — Repo skeleton, ignore rules, formatting config
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** —
 ```
 Task T0.1.1.1 (Story S0.1.1). Read CLAUDE.md and docs/architecture.md §2–§3.
@@ -83,7 +83,7 @@ Acceptance: the files exist; `git status` is clean after commit; no build output
 Follow the Task workflow in CLAUDE.md (branch story/S0.1.1-skeleton, commit "T0.1.1.1: ...").
 ```
 
-#### [ ] T0.1.1.2 — CMake project, presets, pinned dependencies, first test
+#### [x] T0.1.1.2 — CMake project, presets, pinned dependencies, first test
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.1.1.1
 ```
 Task T0.1.1.2 (Story S0.1.1, last task of the story). Read CLAUDE.md and docs/architecture.md §2–§3.
@@ -138,7 +138,7 @@ Follow the Task workflow in CLAUDE.md; this is the last task of S0.1.1, so open 
 - A SessionStart hook installs any missing tools and pre-builds the `linux-debug` preset.
 - The hook is idempotent and finishes quickly on a warm container.
 
-#### [ ] T0.1.2.1 — SessionStart hook for cloud sessions
+#### [x] T0.1.2.1 — SessionStart hook for cloud sessions
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.1.1.2
 ```
 Task T0.1.2.1 (Story S0.1.2). Use the session-start-hook skill.
@@ -167,7 +167,7 @@ Follow the Task workflow in CLAUDE.md (branch story/S0.1.2-session-hook); last t
 - `tools/check-env.ps1` reports pass or fail for every required tool.
 - The `windows-debug` preset builds and tests pass on the PC.
 
-#### [ ] T0.1.3.1 — Windows setup guide and environment check
+#### [x] T0.1.3.1 — Windows setup guide and environment check
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.1.1.2
 ```
 Task T0.1.3.1 (Story S0.1.3). Read CLAUDE.md and docs/versions.md.
@@ -198,7 +198,7 @@ Follow the Task workflow in CLAUDE.md (branch story/S0.1.3-windows-env); open th
 - Jobs: Linux (GCC and Clang) build and test, Windows (MSVC) build and test, all with warnings as errors.
 - FetchContent downloads are cached.
 
-#### [ ] T0.1.4.1 — GitHub Actions CI
+#### [x] T0.1.4.1 — GitHub Actions CI
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.1.1.2
 ```
 Task T0.1.4.1 (Story S0.1.4). Read CLAUDE.md and docs/architecture.md §13.
@@ -233,7 +233,7 @@ Run tools/lint_determinism.sh locally. Follow the Task workflow in CLAUDE.md
 - `World` exposes entity create and destroy, component access, and singleton context state.
 - `ComponentRegistry` stores a stable name and hash/serialize hooks for each type. Unit tests cover it.
 
-#### [ ] T0.2.1.1 — World and ComponentRegistry
+#### [x] T0.2.1.1 — World and ComponentRegistry
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.1.1.2
 ```
 Task T0.2.1.1 (Story S0.2.1). Read CLAUDE.md and docs/architecture.md §4, §5.1, §10.
@@ -272,7 +272,7 @@ Follow the Task workflow in CLAUDE.md (branch story/S0.2.1-world); last task of 
 - The RNG API matches architecture §5.4, with golden-value tests.
 - `World::state_hash()` covers every registered component in a deterministic order.
 
-#### [ ] T0.2.2.1 — Deterministic RNG
+#### [x] T0.2.2.1 — Deterministic RNG
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.1.1
 ```
 Task T0.2.2.1 (Story S0.2.2). Read CLAUDE.md and docs/architecture.md §4 and §5.4.
@@ -302,7 +302,7 @@ Tests (sim/tests/core/rng_tests.cpp):
 Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.2.2-rng-hash).
 ```
 
-#### [ ] T0.2.2.2 — State hashing
+#### [x] T0.2.2.2 — State hashing
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.2.1
 ```
 Task T0.2.2.2 (Story S0.2.2, last task). Read docs/architecture.md §4, §5.1, §13.
@@ -332,7 +332,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md; last task of S0.2.2, so op
 - Commands carry sequence numbers and are recorded in a replayable input log.
 - `citysim_headless` runs N ticks and prints hashes, and can replay an input log with an identical result.
 
-#### [ ] T0.2.3.1 ★ — Scheduler, phases, TickContext, Simulation
+#### [x] T0.2.3.1 ★ — Scheduler, phases, TickContext, Simulation
 - **Model:** **Opus** · **Session:** [Cloud] · **Depends on:** T0.2.2.2
 ```
 Task T0.2.3.1 (Story S0.2.3). This is architecture-critical. Read docs/architecture.md §4–§7 fully.
@@ -362,7 +362,7 @@ small test system that mutates components with rng).
 Run all tests and the determinism lint. Follow the Task workflow in CLAUDE.md (branch story/S0.2.3-kernel).
 ```
 
-#### [ ] T0.2.3.2 — Commands, CommandQueue, input log
+#### [x] T0.2.3.2 — Commands, CommandQueue, input log
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.3.1
 ```
 Task T0.2.3.2 (Story S0.2.3). Read docs/architecture.md §5.3 and the kernel in sim/include/citysim/core/.
@@ -385,7 +385,7 @@ in sequence order), unhandled commands, input log contents.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.2.3.3 — Determinism harness and headless runner CLI
+#### [x] T0.2.3.3 — Determinism harness and headless runner CLI
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.3.2
 ```
 Task T0.2.3.3 (Story S0.2.3, last task). Read docs/architecture.md §5.3 and §13.
@@ -412,7 +412,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md; last task of S0.2.3, so op
 - `SimulationRunner` paces ticks for pause/1×/2×/4× and publishes triple-buffered snapshots.
 - Tests use a fake clock.
 
-#### [ ] T0.2.4.1 ★ — JobSystem with deterministic parallel_for
+#### [x] T0.2.4.1 ★ — JobSystem with deterministic parallel_for
 - **Model:** **Opus** · **Session:** [Cloud] · **Depends on:** T0.2.3.3
 ```
 Task T0.2.4.1 (Story S0.2.4). Architecture-critical. Read docs/architecture.md §4 and §7.2.
@@ -440,7 +440,7 @@ Also run the tests under ThreadSanitizer: add a linux-tsan preset (clang, -fsani
 Follow the Task workflow in CLAUDE.md (branch story/S0.2.4-threading).
 ```
 
-#### [ ] T0.2.4.2 ★ — SimulationRunner and snapshot triple buffer
+#### [x] T0.2.4.2 ★ — SimulationRunner and snapshot triple buffer
 - **Model:** **Opus** · **Session:** [Cloud] · **Depends on:** T0.2.4.1
 ```
 Task T0.2.4.2 (Story S0.2.4, last task). Architecture-critical. Read docs/architecture.md §6, §7.1, §7.3.
@@ -480,7 +480,7 @@ Follow the Task workflow in CLAUDE.md; last task of S0.2.4, so open the PR.
 - Tracy zones compile to nothing unless `CITYSIM_TRACY=ON`.
 - Logging never changes simulation state.
 
-#### [ ] T0.2.5.1 — Logging and optional Tracy
+#### [x] T0.2.5.1 — Logging and optional Tracy
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.4.2
 ```
 Task T0.2.5.1 (Story S0.2.5). Read CLAUDE.md and docs/architecture.md §3–§4.
@@ -511,7 +511,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.2.5-loggin
 - Time of day is derived from ticks and `day_length_ticks`.
 - Values come from `defines/time.json`, with built-in defaults as a fallback until content loading exists.
 
-#### [ ] T0.3.1.1 — GameClock: speeds, pause, daily cycle
+#### [x] T0.3.1.1 — GameClock: speeds, pause, daily cycle
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.4.2
 ```
 Task T0.3.1.1 (Story S0.3.1). Read docs/architecture.md §5.3, §6, §7.1.
@@ -541,7 +541,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.3.1-clock)
 - BCE/CE formatting uses localization keys.
 - Calendar boundary events fire in a deterministic order.
 
-#### [ ] T0.3.2.1 — Calendar date math and formatting
+#### [x] T0.3.2.1 — Calendar date math and formatting
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.3.1.1
 ```
 Task T0.3.2.1 (Story S0.3.2). Read docs/architecture.md §6 and §9.
@@ -561,7 +561,7 @@ Implement citysim::time::Calendar types:
 Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.3.2-calendar).
 ```
 
-#### [ ] T0.3.2.2 — Era cadence: exact calendar advance per tick
+#### [x] T0.3.2.2 — Era cadence: exact calendar advance per tick
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.3.2.1, T0.4.1.1
 ```
 Task T0.3.2.2 (Story S0.3.2). Read docs/architecture.md §6 and §8.
@@ -583,7 +583,7 @@ Task T0.3.2.2 (Story S0.3.2). Read docs/architecture.md §6 and §8.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.3.2.3 — Calendar scheduler (day/month/year boundaries, dated triggers)
+#### [x] T0.3.2.3 — Calendar scheduler (day/month/year boundaries, dated triggers)
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.3.2.2
 ```
 Task T0.3.2.3 (Story S0.3.2, last task). Read docs/architecture.md §5.2, §5.5, §6.
@@ -615,7 +615,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md; last task of S0.3.2, so op
 - The `citysim_validate` CLI runs in CI.
 - Base era definitions exist.
 
-#### [ ] T0.4.1.1 — Content loader and DefRegistry
+#### [x] T0.4.1.1 — Content loader and DefRegistry
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.2.1.1
 ```
 Task T0.4.1.1 (Story S0.4.1). Read docs/architecture.md §8 carefully.
@@ -640,7 +640,7 @@ Implement namespace citysim::content (single mod root for now; mod layering is T
 Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.4.1-content).
 ```
 
-#### [ ] T0.4.1.2 — References, validation, citysim_validate CLI
+#### [x] T0.4.1.2 — References, validation, citysim_validate CLI
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.4.1.1
 ```
 Task T0.4.1.2 (Story S0.4.1). Read docs/architecture.md §8 and §13.
@@ -658,7 +658,7 @@ Task T0.4.1.2 (Story S0.4.1). Read docs/architecture.md §8 and §13.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.4.1.3 — Author base era definitions and time defines (data entry)
+#### [x] T0.4.1.3 — Author base era definitions and time defines (data entry)
 - **Model:** **Haiku** · **Session:** [Cloud] · **Depends on:** T0.4.1.2
 ```
 Task T0.4.1.3 (Story S0.4.1, last task). Data entry only — do not change C++ code.
@@ -693,7 +693,7 @@ it passes. Follow the Task workflow in CLAUDE.md; last task of S0.4.1, so open t
 - A content hash covers the mod list and files.
 - The base game loads as mod `base`.
 
-#### [ ] T0.4.2.1 — Mod manifests, load order, override and patch, content hash
+#### [x] T0.4.2.1 — Mod manifests, load order, override and patch, content hash
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.4.1.3
 ```
 Task T0.4.2.1 (Story S0.4.2). Read docs/architecture.md §8.
@@ -725,7 +725,7 @@ Run all tests and citysim_validate. Follow the Task workflow in CLAUDE.md (branc
 - The validator checks that every `*_key` exists in `en`.
 - Calendar formatting renders through the Localizer.
 
-#### [ ] T0.4.3.1 — Localizer and key validation
+#### [x] T0.4.3.1 — Localizer and key validation
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.4.2.1, T0.3.2.1
 ```
 Task T0.4.3.1 (Story S0.4.3). Read docs/architecture.md §9.
@@ -756,7 +756,7 @@ Run all tests and citysim_validate. Follow the Task workflow in CLAUDE.md (branc
 - Section versioning with migrations and a fixture save.
 - Save and load are commands executed between ticks, with an autosave interval.
 
-#### [ ] T0.5.1.1 ★ — Serialization framework (archives and component hooks)
+#### [x] T0.5.1.1 ★ — Serialization framework (archives and component hooks)
 - **Model:** **Opus** · **Session:** [Cloud] · **Depends on:** T0.3.2.3, T0.4.2.1
 ```
 Task T0.5.1.1 (Story S0.5.1). Architecture-critical. Read docs/architecture.md §5.1 and §10 fully.
@@ -783,7 +783,7 @@ Document the pattern with a worked example at the top of archive.hpp (later Sonn
 Follow the Task workflow in CLAUDE.md (branch story/S0.5.1-save).
 ```
 
-#### [ ] T0.5.1.2 — `.csav` container, compression, continuation tests
+#### [x] T0.5.1.2 — `.csav` container, compression, continuation tests
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.5.1.1
 ```
 Task T0.5.1.2 (Story S0.5.1). Read docs/architecture.md §10 and the archive.hpp example.
@@ -805,7 +805,7 @@ Task T0.5.1.2 (Story S0.5.1). Read docs/architecture.md §10 and the archive.hpp
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.5.1.3 — Save versioning and migrations
+#### [x] T0.5.1.3 — Save versioning and migrations
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.5.1.2
 ```
 Task T0.5.1.3 (Story S0.5.1). Read docs/architecture.md §10.
@@ -824,7 +824,7 @@ Task T0.5.1.3 (Story S0.5.1). Read docs/architecture.md §10.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.5.1.4 — Save and load commands in the runner, autosave
+#### [x] T0.5.1.4 — Save and load commands in the runner, autosave
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.5.1.3
 ```
 Task T0.5.1.4 (Story S0.5.1, last task). Read docs/architecture.md §7.1 and §10.
@@ -856,7 +856,7 @@ Run all tests (including the tsan preset). Follow the Task workflow in CLAUDE.md
 - The Godot headless smoke test passes in CI.
 - The editor runs the main scene on the PC.
 
-#### [ ] T0.6.1.1 — godot-cpp submodule and GDExtension library
+#### [x] T0.6.1.1 — godot-cpp submodule and GDExtension library
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.5.1.4
 ```
 Task T0.6.1.1 (Story S0.6.1). Read CLAUDE.md and docs/architecture.md §2, §3, §11.
@@ -881,7 +881,7 @@ Verify the Linux build of the extension succeeds in this session. Follow the Tas
 (branch story/S0.6.1-gdext).
 ```
 
-#### [ ] T0.6.1.2 — Godot project skeleton and headless smoke test
+#### [x] T0.6.1.2 — Godot project skeleton and headless smoke test
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.6.1.1
 ```
 Task T0.6.1.2 (Story S0.6.1). Read docs/architecture.md §2 and §11. Godot files must be hand-written as
@@ -903,7 +903,7 @@ text (project.godot, .tscn, .gd) — keep them minimal and valid for the pinned 
 Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.6.1.3 — Windows build and editor verification
+#### [x] T0.6.1.3 — Windows build and editor verification
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.6.1.2
 ```
 Task T0.6.1.3 (Story S0.6.1, last task). Read CLAUDE.md and docs/dev-setup-windows.md.
@@ -928,7 +928,7 @@ example, the editor Output panel). Follow the Task workflow in CLAUDE.md; last t
 - Snapshot interpolation alpha is available.
 - Command dictionaries are validated in C++.
 
-#### [ ] T0.6.2.1 — CitySim API and Sim autoload
+#### [x] T0.6.2.1 — CitySim API and Sim autoload
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.6.1.3
 ```
 Task T0.6.2.1 (Story S0.6.2). Read docs/architecture.md §5.3, §7, §11.
@@ -957,7 +957,7 @@ Extend the CitySim GDExtension class (gdext/src/city_sim.*):
 Run the smoke test headless. Follow the Task workflow in CLAUDE.md (branch story/S0.6.2-sim-api).
 ```
 
-#### [ ] T0.6.2.2 — Snapshot access and interpolation for renderers
+#### [x] T0.6.2.2 — Snapshot access and interpolation for renderers
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.6.2.1
 ```
 Task T0.6.2.2 (Story S0.6.2, last task). Read docs/architecture.md §7.3 and §11.
@@ -990,7 +990,7 @@ Run all tests and the smoke test. Follow the Task workflow in CLAUDE.md; last ta
 - Smoothing, map bounds, and settings in a Resource.
 - Verified on the PC.
 
-#### [ ] T0.7.1.1 — Camera rig
+#### [x] T0.7.1.1 — Camera rig
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.6.2.2
 ```
 Task T0.7.1.1 (Story S0.7.1). Read CLAUDE.md (GDScript style: static typing) and docs/architecture.md §11.
@@ -1021,7 +1021,7 @@ final message, list the controls and what the user should try. Follow the Task w
 - The `~` console with a command registry and history.
 - All UI text uses loc keys.
 
-#### [ ] T0.7.2.1 — Debug overlay and speed controls
+#### [x] T0.7.2.1 — Debug overlay and speed controls
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.7.1.1
 ```
 Task T0.7.2.1 (Story S0.7.2). Read CLAUDE.md and docs/architecture.md §9, §11.
@@ -1042,7 +1042,7 @@ cadence (~1 year per 2 minutes at 1×). Report what you verified. Follow the Tas
 (branch story/S0.7.2-debug-ui).
 ```
 
-#### [ ] T0.7.2.2 — Developer console
+#### [x] T0.7.2.2 — Developer console
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.7.2.1
 ```
 Task T0.7.2.2 (Story S0.7.2, last task). Read CLAUDE.md.
@@ -1076,7 +1076,7 @@ Follow the Task workflow in CLAUDE.md; last task of S0.7.2, so open the PR.
 - Save and load mid-walk preserve hashes.
 - `docs/perf.md` records benchmarks (headless in the cloud as indicative, PC as authoritative).
 
-#### [ ] T0.8.1.1 — Test map, grid pathfinding, wandering agents (core)
+#### [x] T0.8.1.1 — Test map, grid pathfinding, wandering agents (core)
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.6.2.2
 ```
 Task T0.8.1.1 (Story S0.8.1). Read docs/architecture.md §4, §5, §6, §7.2.
@@ -1103,7 +1103,7 @@ production-quality *engineering* (deterministic, tested, uses the job system):
 Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S0.8.1-walking-skeleton).
 ```
 
-#### [ ] T0.8.1.2 — Agent snapshot channel and headless benchmark
+#### [x] T0.8.1.2 — Agent snapshot channel and headless benchmark
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T0.8.1.1
 ```
 Task T0.8.1.2 (Story S0.8.1). Read docs/architecture.md §7.3, §13, §14.
@@ -1122,7 +1122,7 @@ Task T0.8.1.2 (Story S0.8.1). Read docs/architecture.md §7.3, §13, §14.
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.8.1.3 — AgentRenderer (MultiMesh) and test map in Godot
+#### [x] T0.8.1.3 — AgentRenderer (MultiMesh) and test map in Godot
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.8.1.2, T0.7.2.2
 ```
 Task T0.8.1.3 (Story S0.8.1). Read docs/architecture.md §7.3, §11.
@@ -1144,7 +1144,7 @@ Run on this PC: spawn 1,000 then 10,000 agents; confirm smooth interpolated moti
 when paused. Report FPS from the debug overlay. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T0.8.1.4 — End-to-end verification and PC performance baseline
+#### [x] T0.8.1.4 — End-to-end verification and PC performance baseline
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.8.1.3
 ```
 Task T0.8.1.4 (Story S0.8.1, last task). Read docs/architecture.md §13–§14 and docs/perf.md.
@@ -1170,7 +1170,7 @@ S0.8.1, so open the PR.
 **Acceptance criteria**
 - `docs/spikes/time-scale.md` compares at least 3 settings, with measurements and a recommendation for the designer to approve.
 
-#### [ ] T0.8.2.1 — Time-scale spike
+#### [x] T0.8.2.1 — Time-scale spike
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T0.8.1.4
 ```
 Task T0.8.2.1 (Story S0.8.2). Read docs/architecture.md §6 and docs/gdd.md §3.3 (time cadence) and §10.11
@@ -1195,3 +1195,23 @@ review the recommendation.
 
 ## Follow-ups
 _Filled in by T0.8.1.4 and later reviews._
+
+No budget was missed on the reference machine (see `docs/perf.md`), so there are no performance fixes to propose.
+Findings from the measurements and from building the PC Tasks:
+
+- **F-1 Decide cross-platform determinism (owner question).** The same seed and commands give a different final hash
+  on MSVC/Windows than on GCC/Linux (10,000 agents: `749e8cfc1ebb0243` vs `c854ee2a1160dd12`), although every
+  thread count agrees on one machine. Saves and replays are therefore not portable between compilers. Decide whether
+  that matters (multiplayer, shared bug reports, cloud-made saves played on the PC) and, if it does, plan fixed-point
+  or otherwise compiler-independent math for simulation state.
+- **F-2 Spread path requests over time.** Both machines show the same shape: after spawning, the first few hundred
+  ticks are 5 to 8 times costlier than the steady state because every agent searches for its first path on one
+  thread. Real citizens will need queued or hierarchical pathfinding before the Citizens epic.
+- **F-3 Interpolation when ticks run late.** The renderer blends over one nominal tick interval. When the simulation
+  cannot keep up (Debug builds) motion stutters because the blend clamps at 1 and waits. Consider blending over the
+  measured interval, or showing a "simulation behind" warning in the overlay.
+- **F-4 Make the Debug build usable.** A Debug simulation is tens of times slower than Release (10,000 agents: about 65 ms per tick against under 1 ms), too slow to judge anything, which
+  makes the editor experience misleading. Consider building the core with optimization (for example `/O2` with debug
+  info) in a "dev" preset for everyday work.
+- **F-5 Hash after entity recycling** (already noted in `docs/architecture.md`): still open until the hash is
+  rank-based.

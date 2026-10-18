@@ -1,0 +1,15 @@
+{
+  "ui.debug.fps": "FPS: {fps}",
+  "ui.debug.tps": "Sim ticks/s: {tps}",
+  "ui.debug.tick_ms": "Tick ms: {last} (avg {avg})",
+  "ui.debug.tick": "Tick: {tick}",
+  "ui.debug.entities": "Entities: {count}",
+  "ui.debug.speed": "Speed: {speed}",
+  "ui.debug.speed_paused": "Paused",
+  "ui.debug.date": "Date: {date}",
+  "ui.debug.time": "Time of day: {time}",
+  "ui.debug.memory": "Memory: {static_mb} MB static, {video_mb} MB video",
+  "ui.debug.no_game": "No game is running.",
+  "ui.time.pause": "Pause",
+  "ui.time.speed": "{multiplier}x"
+}

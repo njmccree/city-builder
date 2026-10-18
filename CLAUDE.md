@@ -25,6 +25,7 @@ Read the architecture sections that a Task cites before writing code.
    - Every stateful component is registered in the `ComponentRegistry`.
 3. **All content is data** (architecture §8). Don't hard-code content ids in C++ outside tests.
 4. **All player-facing text uses localization keys** (architecture §9).
+   - Exception: the developer console (`game/scripts/debug/console_commands.gd`, `game/ui/debug/dev_console.*`) prints developer-facing English text, not keys.
 5. **Never commit build outputs** (`build/`, `game/bin/`, `game/.godot/`) or large binaries outside Git LFS.
 6. **Never use `-ffast-math`.** Keep warnings clean.
 
@@ -39,6 +40,7 @@ Read the architecture sections that a Task cites before writing code.
   - headers use `#pragma once`
 - One class per header/source pair. Public headers go in `sim/include/citysim/<module>/`, implementations in `sim/src/<module>/`, tests in `sim/tests/<module>/`.
 - GDScript: follow the official Godot style guide, use static typing everywhere (`var x: int`), and `class_name` for reusable scripts.
+- Diagnostics in `sim/` use `CS_LOG_*(Category, ...)` from `citysim/core/log.hpp`, never `std::cout`/`printf` (the lint enforces it). Log arguments must have no side effects. Profiler zones use `CS_PROFILE_ZONE`.
 - Comments explain *why*. Each system's header comment states which clock it runs on (architecture §6).
 
 ## Build & test
@@ -54,6 +56,9 @@ cmake --preset windows-debug
 cmake --build --preset windows-debug
 ctest --preset windows-debug --output-on-failure
 ```
+**Cloud session hook:** `.claude/hooks/session-start.sh` (registered in `.claude/settings.json`) runs at the start of every cloud session. It installs missing tools, updates submodules and pre-builds `linux-debug` without running tests. It downloads the Godot editor into `~/.cache/citysim/godot/<version>/` once `docs/versions.md` pins a version, and `tools/godot.sh` runs it. It is idempotent and only warns on network errors.
+
+- Data-race check for threading changes: `cmake --preset linux-tsan && cmake --build --preset linux-tsan && ctest --preset linux-tsan` (clang with ThreadSanitizer).
 - Content validation: `build/<preset>/sim/tools/validate/citysim_validate game/content`
 - Godot smoke test (once it exists): `godot --headless --path game -s res://tests/smoke.gd`
 
@@ -70,3 +75,11 @@ ctest --preset windows-debug --output-on-failure
 - **Session tags:**
   - `[Cloud]` Tasks need only build and test.
   - `[PC]` Tasks need the Godot editor, a GPU, or Windows. Don't claim visual or manual verification you could not perform; say what the user should check instead.
+
+## Response format
+End every reply to the user with these five sections, in this order, in plain language. Assume the user hasn't read the code.
+1. **What changed:** the files, commits or PRs touched and what each change does ("nothing" if nothing changed).
+2. **Status:** what passed, what failed, what couldn't be verified. Report test and CI results as they are, with the failing output if something failed. Don't claim visual or manual checks you didn't perform.
+3. **Action needed from you:** the exact commands, where to run them (which terminal and folder), and what to click or look for ("none" if nothing).
+4. **What's next:** the next Task id, a one-line description, and whether it needs the user at the editor.
+5. **Overall progress:** where we are in the Epic, with Tasks done out of total.

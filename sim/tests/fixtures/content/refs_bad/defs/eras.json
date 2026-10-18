@@ -1,0 +1,43 @@
+{
+  "defs": [
+    {
+      "type": "era",
+      "id": "test:era.a",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 1,
+      "next_era": "test:era.ghost"
+    },
+    {
+      "type": "era",
+      "id": "test:era.b",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 2,
+      "next_era": "Not An Id"
+    },
+    {
+      "type": "era",
+      "id": "test:era.c",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 3,
+      "next_era": "test:era.d"
+    },
+    {
+      "type": "era",
+      "id": "test:era.d",
+      "name_key": "era.x.name",
+      "desc_key": "era.x.desc",
+      "real_seconds_per_year": 300,
+      "default_start_year": 1600,
+      "order": 4
+    }
+  ]
+}
