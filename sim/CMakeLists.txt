@@ -54,6 +54,7 @@ add_library(citysim_core STATIC
     src/world/map_package.cpp
     src/world/raster.cpp
     src/world/terrain_publisher.cpp
+    src/world/terrain_deltas.cpp
     src/world/terrain_synth.cpp
     src/world/world_module.cpp
     src/world/world_terrain.cpp)

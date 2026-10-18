@@ -190,7 +190,7 @@ Replace the placeholder TerrainSynth with the real generator (k_terrain_generato
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T1.1.2.3 — Terrain edit deltas
+#### [x] T1.1.2.3 — Terrain edit deltas
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.1.2.2
 ```
 Task T1.1.2.3 (Story S1.1.2, last task). Read docs/architecture.md §4, §10 and §15.4.

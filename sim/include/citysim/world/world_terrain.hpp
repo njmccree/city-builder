@@ -3,10 +3,12 @@
 #include "citysim/world/city_tile.hpp"
 #include "citysim/world/frames.hpp"
 #include "citysim/world/loaded_map.hpp"
+#include "citysim/world/terrain_deltas.hpp"
 #include "citysim/world/terrain_synth.hpp"
 #include "citysim/world/tile_coord.hpp"
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -21,13 +23,16 @@ class JobSystem;
 
 namespace citysim::world {
 
-// What a save holds of the terrain (architecture §15.4): which map, which data and generator made it, and
-// which tiles were active. Never heights: those are synthesized again on load.
+// What a save holds of the terrain (architecture §15.4): which map, which data and generator made it, which
+// tiles were active, and the terrain edits (height offsets, see terrain_deltas.hpp). Never base heights:
+// those are synthesized again on load.
 struct SavedTerrain {
     std::string map_id;
     std::uint64_t package_hash = 0;
     std::uint32_t generator_version = 0;
     std::vector<TileCoord> active_tiles; // sorted, no repeats
+    // The terrain edits (architecture §15.4): one layer per edited tile, sorted by tile, no empty layers.
+    std::vector<SavedTileDelta> deltas;
 
     friend bool operator==(const SavedTerrain&, const SavedTerrain&) = default;
 };
@@ -44,9 +49,10 @@ struct TerrainNormal {
 // synthesized 4 m city tiles, and answers height, slope and normal queries anywhere on the map.
 //
 // State: the hashed and saved part is exactly SavedTerrain (map id, package hash, generator version, the set
-// of active tiles). The tiles' heights are derived from it, so they are neither hashed nor saved; a load
-// synthesizes them again (world::install's after-load hook). Terrain edits (sparse deltas, T1.1.2.3) will be
-// the only heights that are saved.
+// of active tiles, the terrain edits). The tiles' base heights are derived from it, so they are neither
+// hashed nor saved; a load synthesizes them again (world::install's after-load hook) and adds the edits.
+// The edits are the only heights that are saved: sparse per-tile offsets (TerrainDeltas), kept also for tiles
+// that are not active and applied again when such a tile is activated.
 //
 // Clock: none of its own. Tiles change only when a caller (founding a city, switching cities, loading)
 // activates or deactivates them, between or inside ticks, from the simulation thread.
@@ -71,13 +77,17 @@ class WorldTerrain {
 
     // Synthesizes the tiles that are not active yet (TerrainSynth::make_tile) on `jobs`, one chunk per tile,
     // and adds them in TileCoord order once all are done (architecture §7.2), so the result is identical for
-    // any worker count. Repeats and tiles already active are ignored. Throws std::out_of_range, before
-    // changing anything, if a tile lies outside the map; std::logic_error without a map.
+    // any worker count. A tile that has edits gets them added to its synthesized heights. Repeats and tiles
+    // already active are ignored. Throws std::out_of_range, before changing anything, if a tile lies outside
+    // the map; std::logic_error without a map.
     void activate_tiles(core::JobSystem& jobs, std::span<const TileCoord> tiles);
     // Drops the tiles from the cache; tiles that are not active are ignored. Snapshots that still hold a tile
-    // keep it alive until they are gone.
+    // keep it alive until they are gone. Their edits are kept.
     void deactivate_tiles(std::span<const TileCoord> tiles);
-    void deactivate_all() { tiles_.clear(); }
+    void deactivate_all() {
+        tiles_.clear();
+        bases_.clear();
+    }
 
     bool is_active(TileCoord tile) const { return tiles_.contains(tile); }
     std::vector<TileCoord> active_tiles() const; // sorted
@@ -99,12 +109,30 @@ class WorldTerrain {
     // The upward unit normal at a point, from the same differences as slope_at().
     TerrainNormal normal_at(WorldPos pos) const;
 
+    // What an edit function decides for one sample: given its coordinates in the tile (0..512, row 0 at the
+    // south) and its current height in meters, the height it should have. Must be deterministic and give a
+    // finite number.
+    using HeightFn = std::function<float(std::uint32_t sx, std::uint32_t sy, float current_height)>;
+    // Edits the heights of the samples in `rect` of an active tile (architecture §15.4). The new height of a
+    // sample is stored as an offset from the synthesized base, in the tile's delta layer (made on the first
+    // edit). The tile is replaced by a new immutable CityTile with version + 1, so only edited tiles get a
+    // new pointer. A sample on a tile edge is shared with the neighbor(s): they get the same offset, so edges
+    // stay equal; a neighbor that is not active keeps it in its layer until it is activated. Throws
+    // std::invalid_argument, before changing anything, for an invalid rect or a non-finite height, and
+    // std::logic_error if the tile is not active. Call it from the simulation thread, not while queries run.
+    void apply_delta(TileCoord tile, SampleRect rect, const HeightFn& fn);
+    // The edits, also those of tiles that are not active.
+    const TerrainDeltas& deltas() const { return deltas_; }
+
     // The part that is hashed and saved.
     SavedTerrain saved_state() const;
 
     // Loading: the serializer hands the saved part over here, and world::install's after-load hook takes it
     // and restores the terrain (restore_terrain in world_module.hpp). Not part of the state.
     void stage_restore(SavedTerrain saved) { staged_restore_ = std::move(saved); }
+    // Replaces the edits (restore_terrain, before it activates the saved tiles). Throws std::invalid_argument
+    // for layers TerrainDeltas::from_saved refuses. Tiles that are active are not changed: call it with none.
+    void restore_deltas(std::vector<SavedTileDelta> saved);
     std::optional<SavedTerrain> take_staged_restore();
 
   private:
@@ -116,6 +144,10 @@ class WorldTerrain {
     std::uint64_t map_seed_ = 0;
     std::uint32_t generator_version_ = k_terrain_generator_version;
     std::map<TileCoord, std::shared_ptr<const CityTile>> tiles_;
+    // Active tiles that have a delta layer, as synthesized: the heights before the edits. An active tile
+    // without a layer is its own base.
+    std::map<TileCoord, std::shared_ptr<const CityTile>> bases_;
+    TerrainDeltas deltas_;
     std::optional<SavedTerrain> staged_restore_;
 };
 

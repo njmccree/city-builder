@@ -4,7 +4,9 @@
 #include "citysim/profiling/profile.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <set>
 #include <stdexcept>
 #include <string>
 
@@ -13,6 +15,16 @@ namespace citysim::world {
 namespace {
 
 const std::string k_no_map_id;
+
+// The base heights plus a layer of offsets, as a new tile.
+std::shared_ptr<const CityTile> compose(const CityTile& base, const TileDelta& delta, std::uint64_t version) {
+    std::vector<float> heights(base.heights().begin(), base.heights().end());
+    const std::span<const float> offsets = delta.offsets();
+    for (std::size_t i = 0; i < heights.size(); ++i) {
+        heights[i] += offsets[i];
+    }
+    return std::make_shared<const CityTile>(base.coord(), version, std::move(heights));
+}
 
 } // namespace
 
@@ -67,6 +79,10 @@ void WorldTerrain::activate_tiles(core::JobSystem& jobs, std::span<const TileCoo
         }
     });
     for (std::size_t i = 0; i < missing.size(); ++i) {
+        if (const TileDelta* delta = deltas_.find(missing[i]); delta != nullptr) {
+            bases_[missing[i]] = made[i];
+            made[i] = compose(*made[i], *delta, made[i]->version());
+        }
         tiles_.emplace(missing[i], std::move(made[i]));
     }
 }
@@ -74,6 +90,7 @@ void WorldTerrain::activate_tiles(core::JobSystem& jobs, std::span<const TileCoo
 void WorldTerrain::deactivate_tiles(std::span<const TileCoord> tiles) {
     for (const TileCoord tile : tiles) {
         tiles_.erase(tile);
+        bases_.erase(tile);
     }
 }
 
@@ -143,7 +160,105 @@ SavedTerrain WorldTerrain::saved_state() const {
     saved.package_hash = package_hash();
     saved.generator_version = generator_version_;
     saved.active_tiles = active_tiles();
+    saved.deltas = deltas_.to_saved();
     return saved;
+}
+
+void WorldTerrain::restore_deltas(std::vector<SavedTileDelta> saved) {
+    deltas_ = TerrainDeltas::from_saved(std::move(saved));
+    bases_.clear();
+}
+
+void WorldTerrain::apply_delta(TileCoord coord, SampleRect rect, const HeightFn& fn) {
+    CS_PROFILE_ZONE("world.apply_delta");
+    const LoadedMap& map = require_map();
+    if (!rect.valid()) {
+        throw std::invalid_argument("the edit rectangle is not inside the tile");
+    }
+    const auto found = tiles_.find(coord);
+    if (found == tiles_.end()) {
+        throw std::logic_error("tile (" + std::to_string(coord.tx) + ", " + std::to_string(coord.ty) +
+                               ") is not active, so it cannot be edited");
+    }
+    const std::shared_ptr<const CityTile> current = found->second;
+    const auto own_base = bases_.find(coord);
+    const CityTile& base = own_base != bases_.end() ? *own_base->second : *current;
+
+    // 1. Decide every new offset before changing anything, so a bad height leaves the terrain as it was.
+    const std::uint32_t width = rect.x1 - rect.x0 + 1;
+    std::vector<float> offsets(static_cast<std::size_t>(width) * (rect.y1 - rect.y0 + 1));
+    for (std::uint32_t sy = rect.y0; sy <= rect.y1; ++sy) {
+        for (std::uint32_t sx = rect.x0; sx <= rect.x1; ++sx) {
+            const float height = fn(sx, sy, current->sample(sx, sy));
+            const float offset = height - base.sample(sx, sy);
+            if (!std::isfinite(height) || !std::isfinite(offset)) {
+                throw std::invalid_argument("the terrain edit gave a height that is not a finite number");
+            }
+            offsets[static_cast<std::size_t>(sy - rect.y0) * width + (sx - rect.x0)] = offset;
+        }
+    }
+
+    // 2. Store them, in this tile and in every neighbor that shares the sample (an edge, or a corner shared
+    //    by four tiles): the same offset on the same base height keeps the shared samples bit-equal.
+    std::set<TileCoord> touched{coord};
+    for (std::uint32_t sy = rect.y0; sy <= rect.y1; ++sy) {
+        for (std::uint32_t sx = rect.x0; sx <= rect.x1; ++sx) {
+            const float offset = offsets[static_cast<std::size_t>(sy - rect.y0) * width + (sx - rect.x0)];
+            deltas_.set_offset(coord, sx, sy, offset);
+            struct Step {
+                std::int32_t tile;
+                std::uint32_t sample;
+            };
+            std::array<Step, 2> xs{Step{0, sx}, Step{0, sx}};
+            std::array<Step, 2> ys{Step{0, sy}, Step{0, sy}};
+            std::size_t x_count = 1;
+            std::size_t y_count = 1;
+            if (sx == 0) {
+                xs[x_count++] = Step{-1, k_city_tile_samples - 1};
+            } else if (sx == k_city_tile_samples - 1) {
+                xs[x_count++] = Step{1, 0};
+            }
+            if (sy == 0) {
+                ys[y_count++] = Step{-1, k_city_tile_samples - 1};
+            } else if (sy == k_city_tile_samples - 1) {
+                ys[y_count++] = Step{1, 0};
+            }
+            for (std::size_t xi = 0; xi < x_count; ++xi) {
+                for (std::size_t yi = 0; yi < y_count; ++yi) {
+                    if (xi == 0 && yi == 0) {
+                        continue; // the sample itself
+                    }
+                    const TileCoord other{coord.tx + xs[xi].tile, coord.ty + ys[yi].tile};
+                    if (map.contains_tile(other)) {
+                        deltas_.set_offset(other, xs[xi].sample, ys[yi].sample, offset);
+                        touched.insert(other);
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Replace each touched active tile by a new version (the others, and their pointers, stay).
+    for (const TileCoord tile : touched) {
+        deltas_.prune(tile);
+        const auto active = tiles_.find(tile);
+        if (active == tiles_.end()) {
+            continue; // kept in the layer until the tile is activated
+        }
+        const std::shared_ptr<const CityTile> before = active->second;
+        const auto recorded = bases_.find(tile);
+        const std::shared_ptr<const CityTile> tile_base =
+            recorded != bases_.end() ? recorded->second : before;
+        if (const TileDelta* layer = deltas_.find(tile); layer != nullptr) {
+            bases_[tile] = tile_base;
+            active->second = compose(*tile_base, *layer, before->version() + 1);
+        } else if (recorded != bases_.end()) { // every edit was undone: back to the synthesized heights
+            std::vector<float> heights(tile_base->heights().begin(), tile_base->heights().end());
+            bases_.erase(recorded);
+            active->second =
+                std::make_shared<const CityTile>(tile, before->version() + 1, std::move(heights));
+        }
+    }
 }
 
 std::optional<SavedTerrain> WorldTerrain::take_staged_restore() {

@@ -24,6 +24,7 @@ void hash_terrain(core::StateHasher& hasher, const WorldTerrain& terrain) {
         hasher.add_pod(entry.first.tx);
         hasher.add_pod(entry.first.ty);
     }
+    terrain.deltas().hash(hasher);
 }
 
 std::string tile_text(TileCoord tile) {
@@ -96,6 +97,7 @@ std::vector<std::string> restore_terrain(WorldTerrain& terrain, const SavedTerra
                                          const content::ContentDatabase& content, core::JobSystem& jobs) {
     std::vector<std::string> warnings;
     terrain.deactivate_all();
+    terrain.restore_deltas({});
     if (!terrain.has_map() || saved.map_id != terrain.map_id()) {
         const auto& maps = content.registry<content::MapDef>();
         if (!maps.find(saved.map_id)) {
@@ -115,6 +117,18 @@ std::vector<std::string> restore_terrain(WorldTerrain& terrain, const SavedTerra
                            std::to_string(saved.generator_version) + ", now " +
                            std::to_string(terrain.generator_version()) + "); the terrain may differ");
     }
+    // The edits first, so that activating a tile adds its edits to the synthesized heights. Layers of tiles
+    // that are not on the map (a smaller map under the same id) are dropped with a warning.
+    std::vector<SavedTileDelta> deltas;
+    for (const SavedTileDelta& delta : saved.deltas) {
+        if (terrain.map()->contains_tile(delta.coord)) {
+            deltas.push_back(delta);
+        } else {
+            warnings.push_back("skipped the terrain edits of tile " + tile_text(delta.coord) +
+                               ", which is not on the map");
+        }
+    }
+    terrain.restore_deltas(std::move(deltas));
     std::vector<TileCoord> tiles;
     tiles.reserve(saved.active_tiles.size());
     for (const TileCoord tile : saved.active_tiles) {
