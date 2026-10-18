@@ -227,14 +227,14 @@ TEST_CASE("a rising river floods the low land beside it, inside its floodplain",
     CHECK(done[0].flooded_area_m2 <= 16.0 * static_cast<double>(marked));
     CHECK(done[0].flooded_area_m2 >= 0.9 * 16.0 * static_cast<double>(marked));
     // flooded_at() reads the same marks.
-    for (const auto& [tile, grid] : flood.grids()) {
+    {
+        const auto& [tile, grid] = *flood.grids().begin();
         const std::size_t first =
             static_cast<std::size_t>(std::find(grid->begin(), grid->end(), std::uint8_t{1}) - grid->begin());
         const WorldPos origin = tile_origin(tile);
         CHECK(flood.flooded_at(
             WorldPos{origin.x + 4.0 * static_cast<double>(first % k_city_tile_samples) + 0.5,
                      origin.z + 4.0 * static_cast<double>(first / k_city_tile_samples) + 0.5}));
-        break;
     }
     CHECK(!flood.flooded_at(WorldPos{0.0, 0.0}));
 }
