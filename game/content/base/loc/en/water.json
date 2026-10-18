@@ -1,0 +1,4 @@
+{
+  "water.river_level.error.unknown_reach": "There is no such river reach.",
+  "water.river_level.error.offset": "The water level must be a finite number."
+}

@@ -40,6 +40,10 @@ struct Reach {
     double discharge_m3s = 0.0;
     std::vector<std::uint32_t> downstream; // reach indices of the reaches that start where this one ends
     std::vector<RiverVertex> vertices;     // at least 2
+    // The land beside the channel that can flood (flood extents, architecture §15.6): closed outer rings in
+    // the world frame, written by the pipeline. Empty when the file has none, and then the reach floods
+    // nothing. A ring has at least 3 points and does not repeat its first point at the end.
+    std::vector<std::vector<WorldPos>> floodplain;
 };
 
 // How a point relates to the closest part of one segment of a reach: its distance from the centerline and the
@@ -71,6 +75,10 @@ class RiverNetwork {
     std::optional<std::uint32_t> find_reach(std::string_view river_id, std::string_view reach_id) const;
     // The reach indices of a river by its name (rivers.json "name"), in file order.
     std::vector<std::uint32_t> reaches_of_river(std::string_view river_name) const;
+
+    // The index of the first segment of a reach, for measure_segment(): the segment that starts at vertex v
+    // of reach r has the index first_segment(r) + v.
+    std::uint32_t first_segment(std::uint32_t reach) const { return reach_first_segment_[reach]; }
 
     // True if some segment could lie within `radius` meters of the box [min_x, max_x] x [min_z, max_z]: a
     // cheap test so that a tile far from every river skips the per-sample work.
@@ -144,6 +152,7 @@ class RiverNetwork {
 
     std::vector<Reach> reaches_;
     std::vector<Segment> segments_;
+    std::vector<std::uint32_t> reach_first_segment_;
     // Cell -> indices into segments_, ascending. Only looked up, never iterated, so its order cannot matter.
     std::map<std::uint64_t, std::vector<std::uint32_t>> grid_;
     double max_half_width_m_ = 0.0;

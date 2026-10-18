@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace citysim::mapgen {
@@ -108,6 +109,7 @@ struct Reach {
     double discharge_m3s = 0.0;
     std::vector<std::string> downstream;
     std::vector<Vertex> vertices;
+    std::vector<std::pair<double, double>> floodplain; // one closed ring (x, z), the first point not repeated
 };
 
 // Which detail tiles the map has: a tile-aligned rectangle over the valley and delta.
@@ -203,6 +205,35 @@ class Terrain {
     Noise branch_noise_;
 };
 
+// The land beside a reach that may flood: a strip `distance_m` to each side of the centerline, as a ring
+// (the left side from upstream to downstream, then the right side back). The normal at a vertex follows the
+// average direction of the two segments that meet there.
+std::vector<std::pair<double, double>> floodplain_ring(const std::vector<Vertex>& vertices,
+                                                       double distance_m) {
+    std::vector<std::pair<double, double>> left;
+    std::vector<std::pair<double, double>> right;
+    for (std::size_t i = 0; i < vertices.size(); ++i) {
+        const Vertex& before = vertices[i == 0 ? 0 : i - 1];
+        const Vertex& after = vertices[i + 1 < vertices.size() ? i + 1 : i];
+        double dx = after.x - before.x;
+        double dz = after.z - before.z;
+        const double length = std::sqrt(dx * dx + dz * dz);
+        if (length > 0.0) {
+            dx /= length;
+            dz /= length;
+        }
+        left.emplace_back(round_to(vertices[i].x - dz * distance_m, 10.0),
+                          round_to(vertices[i].z + dx * distance_m, 10.0));
+        right.emplace_back(round_to(vertices[i].x + dz * distance_m, 10.0),
+                           round_to(vertices[i].z - dx * distance_m, 10.0));
+    }
+    left.insert(left.end(), right.rbegin(), right.rend());
+    return left;
+}
+
+// How far from a river's centerline its floodplain reaches, in meters.
+constexpr double k_synthetic_floodplain_m = 1200.0;
+
 // The river: one main channel from the south edge to the split, then three branches (west, center, east) that
 // reach the sea. Vertices are about one region cell apart.
 std::vector<Reach> make_rivers(const Terrain& terrain) {
@@ -259,6 +290,9 @@ std::vector<Reach> make_rivers(const Terrain& terrain) {
         reaches.push_back(std::move(reach));
         ++index;
     }
+    for (Reach& reach : reaches) {
+        reach.floodplain = floodplain_ring(reach.vertices, k_synthetic_floodplain_m);
+    }
     return reaches;
 }
 
@@ -273,11 +307,16 @@ json rivers_json(const std::vector<Reach>& reaches) {
                                     {"depth_m", v.depth_m},
                                     {"water_level_m", v.water_level_m}});
         }
+        json ring = json::array();
+        for (const auto& [x, z] : reach.floodplain) {
+            ring.push_back(json::array({x, z}));
+        }
         list.push_back(json{{"id", reach.id},
                             {"order", reach.order},
                             {"discharge_m3s", reach.discharge_m3s},
                             {"downstream", reach.downstream},
-                            {"vertices", vertices}});
+                            {"vertices", vertices},
+                            {"floodplain", json::array({ring})}});
     }
     return json{
         {"format", 1},

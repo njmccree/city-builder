@@ -100,6 +100,13 @@ func set_active_city(city_id: int) -> bool:
 	return core.submit_command({"type": "set_active_city", "city_id": city_id})
 
 
+## Debug and testing: raises (or lowers) the water of a river reach by `offset_m` meters above its base level.
+## The flood spreads over the next ticks. A reach index or level that is refused arrives as a `sim_notice`
+## ("river_level_failed"). Returns false if the command itself was malformed.
+func set_river_level(reach: int, offset_m: float) -> bool:
+	return core.submit_command({"type": "set_river_level", "reach": reach, "offset_m": offset_m})
+
+
 ## The founded cities: [{id, name, origin_tx, origin_ty, active}].
 func get_cities() -> Array:
 	return core.get_cities()

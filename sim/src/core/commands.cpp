@@ -31,6 +31,10 @@ struct Describe {
     std::string operator()(const world::SetActiveCity& cmd) const {
         return "SetActiveCity city_id=" + std::to_string(cmd.city_id);
     }
+    std::string operator()(const world::SetRiverLevel& cmd) const {
+        return "SetRiverLevel reach=" + std::to_string(cmd.reach_index) +
+               " offset_m=" + std::to_string(cmd.offset_m);
+    }
     std::string operator()(const time::SetTimeScale& cmd) const {
         return "SetTimeScale movement_scale=" + std::to_string(cmd.movement_scale) +
                " day_length_ticks=" + std::to_string(cmd.day_length_ticks);

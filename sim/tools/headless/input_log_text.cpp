@@ -57,6 +57,9 @@ struct WriteCommand {
     void operator()(const citysim::world::SetActiveCity& cmd) const {
         out << "SetActiveCity " << cmd.city_id;
     }
+    void operator()(const citysim::world::SetRiverLevel& cmd) const {
+        out << "SetRiverLevel " << cmd.reach_index << ' ' << std::setprecision(9) << cmd.offset_m;
+    }
     void operator()(const citysim::time::SetSpeed& cmd) const {
         out << "SetSpeed " << static_cast<unsigned>(cmd.speed);
     }
@@ -173,6 +176,11 @@ Command parse_command(const std::vector<std::string>& tokens, std::size_t line) 
     if (name == "SetActiveCity") {
         expect_arg_count(tokens, 1, line);
         return citysim::world::SetActiveCity{parse_number<std::uint32_t>(tokens[3], line, "city_id")};
+    }
+    if (name == "SetRiverLevel") {
+        expect_arg_count(tokens, 2, line);
+        return citysim::world::SetRiverLevel{parse_number<std::uint32_t>(tokens[3], line, "reach_index"),
+                                             parse_float(tokens[4], line, "offset_m")};
     }
     if (name == "SetEra") {
         expect_arg_count(tokens, 1, line);

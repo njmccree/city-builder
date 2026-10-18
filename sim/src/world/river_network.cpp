@@ -46,6 +46,43 @@ double number_field(const json& object, const std::string& source, std::string_v
     return number;
 }
 
+// The "floodplain" of a reach: an array of closed rings, each an array of [x, z] points. A ring that repeats
+// its first point at the end (as GeoJSON does) loses the repeat.
+std::vector<std::vector<WorldPos>> parse_floodplain(const json& rings, const std::string& source,
+                                                    const std::string& pointer) {
+    if (!rings.is_array()) {
+        fail(source, pointer, "expected an array of rings");
+    }
+    std::vector<std::vector<WorldPos>> out;
+    for (std::size_t r = 0; r < rings.size(); ++r) {
+        const std::string ring_pointer = pointer + "/" + std::to_string(r);
+        if (!rings[r].is_array()) {
+            fail(source, ring_pointer, "expected an array of [x, z] points");
+        }
+        std::vector<WorldPos> ring;
+        for (std::size_t i = 0; i < rings[r].size(); ++i) {
+            const json& point = rings[r][i];
+            const std::string point_pointer = ring_pointer + "/" + std::to_string(i);
+            if (!point.is_array() || point.size() != 2 || !point[0].is_number() || !point[1].is_number()) {
+                fail(source, point_pointer, "expected a point [x, z]");
+            }
+            const WorldPos pos{point[0].get<double>(), point[1].get<double>()};
+            if (!std::isfinite(pos.x) || !std::isfinite(pos.z)) {
+                fail(source, point_pointer, "must be finite");
+            }
+            ring.push_back(pos);
+        }
+        if (ring.size() >= 2 && ring.front().x == ring.back().x && ring.front().z == ring.back().z) {
+            ring.pop_back();
+        }
+        if (ring.size() < 3) {
+            fail(source, ring_pointer, "a ring needs at least 3 different points");
+        }
+        out.push_back(std::move(ring));
+    }
+    return out;
+}
+
 float lerp(float a, float b, double t) {
     return static_cast<float>(static_cast<double>(a) + (static_cast<double>(b) - static_cast<double>(a)) * t);
 }
@@ -137,6 +174,10 @@ RiverNetwork RiverNetwork::parse(const json& root, const std::string& source) {
                     std::max(network.max_half_width_m_, 0.5 * static_cast<double>(out.width_m));
                 reach.vertices.push_back(out);
             }
+            if (entry.contains("floodplain")) {
+                reach.floodplain =
+                    parse_floodplain(entry["floodplain"], source, reach_pointer + "/floodplain");
+            }
             network.reaches_.push_back(std::move(reach));
             pending.push_back(std::move(link));
         }
@@ -159,6 +200,7 @@ RiverNetwork RiverNetwork::parse(const json& root, const std::string& source) {
 
     // The segment index.
     for (std::uint32_t r = 0; r < network.reaches_.size(); ++r) {
+        network.reach_first_segment_.push_back(static_cast<std::uint32_t>(network.segments_.size()));
         const std::vector<RiverVertex>& vertices = network.reaches_[r].vertices;
         for (std::uint32_t v = 0; v + 1 < vertices.size(); ++v) {
             Segment segment;

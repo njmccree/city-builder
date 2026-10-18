@@ -483,7 +483,7 @@ Task T1.3.1.1 (Story S1.3.1). Read docs/architecture.md §15.4 and §15.6.
 Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S1.3.1-rivers).
 ```
 
-#### [ ] T1.3.1.2 — Flood extents (incremental, time-sliced)
+#### [x] T1.3.1.2 — Flood extents (incremental, time-sliced)
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.3.1.1
 ```
 Task T1.3.1.2 (Story S1.3.1, last task). Read docs/architecture.md §5.5, §7.2 and §15.6.

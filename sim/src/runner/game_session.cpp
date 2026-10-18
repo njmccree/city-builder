@@ -90,6 +90,7 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
         if (!world_config.map_id.empty()) {
             all_hooks.emplace_back(&world::publish_terrain_tiles);
             all_hooks.emplace_back(&world::publish_cities);
+            all_hooks.emplace_back(&world::publish_flood_extents);
         }
         if (test_map_size > 0) {
             all_hooks.emplace_back(&debug::publish_agent_snapshot);

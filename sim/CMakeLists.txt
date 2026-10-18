@@ -52,6 +52,8 @@ add_library(citysim_core STATIC
     src/world/city_module.cpp
     src/world/city_registry.cpp
     src/world/city_tile.cpp
+    src/world/flood_map.cpp
+    src/world/flood_module.cpp
     src/world/loaded_map.cpp
     src/world/map_package.cpp
     src/world/raster.cpp

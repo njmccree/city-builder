@@ -157,6 +157,9 @@ func _register_builtins() -> void:
 	register("time_scale", _cmd_time_scale,
 		"Set movement_scale (simulated seconds of walking per real second at 1x) and day_length_ticks (20 ticks = 1 s at 1x).",
 		["float", "int"])
+	register("river_level", _cmd_river_level,
+		"Raise a river reach: river_level <reach> <meters above its base level>; 0 puts it back.",
+		["int", "float"])
 	register("new_test_map", _cmd_new_test_map,
 		"Start a new game on a fresh test map: new_test_map <seed> <cells per side, 16-1024>.", ["int", "int"])
 
@@ -204,6 +207,14 @@ func _cmd_new_test_map(map_seed: int, size: int) -> String:
 	if not bool(result["ok"]):
 		return "The game could not start: %s" % str(result["errors"])
 	return "New game: seed %d, map %d x %d cells (%d m)." % [map_seed, size, size, size * 4]
+
+
+func _cmd_river_level(reach: int, offset_m: float) -> String:
+	if reach < 0 or offset_m < -1000.0 or offset_m > 1000.0:
+		return "reach must be 0 or more and the level between -1000 and 1000 meters."
+	if Sim.set_river_level(reach, offset_m):
+		return "River level requested: reach %d at %s m. The flood spreads over the next ticks." % [reach, str(offset_m)]
+	return ""
 
 
 func _cmd_time_scale(movement_scale: float, day_length_ticks: int) -> String:
