@@ -1,7 +1,9 @@
 # Spike: movement scale and day length
 
-**Status: pending designer approval.** This is evidence and a recommendation, not a decision. Nothing in the game
-changes its defaults until the designer approves one (the values live in `game/content/base/defines/time.json`).
+**Status: approved by the designer on 2026-10-18: option C.** `movement_scale` 6 and `day_length_ticks` 28,800 are now
+the defaults (`game/content/base/defines/time.json` and `TimeDefines`). The measurements and the reasoning below are
+unchanged; the recommendation section is what was approved. The mitigations (options 1 to 3: fast-forwarding unobserved
+trips, coarse schedule blocks, faster vehicles) are still to be built; the open questions at the end are not decided yet.
 
 Story S0.8.2, Task T0.8.2.1. Related: `docs/architecture.md` §6 (the time model and its "known design risk"),
 `docs/gdd.md` §3.3 (time cadence) and §10.11 (daily life).

@@ -80,14 +80,14 @@ func _run() -> void:
 	_console.execute("hash")
 	await create_timer(0.5).timeout
 	var before_scale: String = _hash_in_output()
-	_console.execute("time_scale 6 28800")
+	_console.execute("time_scale 3 14400")
 	_check(_last().contains("Time scale requested"), "a good time_scale is accepted")
 	await create_timer(0.5).timeout
 	_lines.clear()
 	_console.execute("hash")
 	await create_timer(0.5).timeout
 	_check(_hash_in_output() != before_scale, "the time scale is part of the game state hash")
-	_console.execute("time_scale 3 14400")
+	_console.execute("time_scale 6 28800")
 
 	# Save names are plain file names.
 	_console.execute("save ../evil")
