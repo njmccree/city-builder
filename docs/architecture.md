@@ -147,15 +147,15 @@ Enforcement:
 
 ## 6. Time Model
 
-All of these values are **tunable through content data** (`game/content/base/defines/time.json`). The numbers below are starting defaults to be tuned in spike S0.8.2.
+All of these values are **tunable through content data** (`game/content/base/defines/time.json`). The movement and daily-cycle defaults below were chosen in spike S0.8.2 (`docs/spikes/time-scale.md`, approved 2026-10-18); the rest are starting values.
 
 | Concept | Definition | Default |
 |---|---|---|
 | **Tick** | one `Simulation::step()` | — |
 | **Base tick rate** | ticks per real second at 1× | 20 |
 | **Speeds** | pause, 1×, 2×, 4× (tick-rate multipliers) | 0 / 20 / 40 / 80 tps |
-| **Movement time** | simulated seconds of agent movement per tick = `movement_scale / base_tick_rate` | movement_scale = 3 |
-| **Daily cycle** | time of day that drives citizen routines and lighting; one day = `day_length_ticks` | 14,400 ticks (12 real min at 1×) |
+| **Movement time** | simulated seconds of agent movement per tick = `movement_scale / base_tick_rate` | movement_scale = 6 |
+| **Daily cycle** | time of day that drives citizen routines and lighting; one day = `day_length_ticks` | 28,800 ticks (24 real min at 1×; 6 at 4×) |
 | **Calendar** | date (year, month, day), advancing at the era cadence | see below |
 
 - **Era cadence:** each `EraDef` has `real_seconds_per_year` (at 1×):

@@ -25,9 +25,9 @@ TEST_CASE("time defaults match the architecture time model", "[time][clock]") {
     const TimeDefines defines;
     REQUIRE(defines.base_tick_rate == 20);
     REQUIRE(defines.speed_multipliers == std::array<std::uint32_t, 4>{0, 1, 2, 4});
-    REQUIRE(defines.movement_scale == 3.0F);
-    REQUIRE(defines.day_length_ticks == 14400);
-    REQUIRE(time::movement_seconds_per_tick(defines) == 0.15F);
+    REQUIRE(defines.movement_scale == 6.0F);
+    REQUIRE(defines.day_length_ticks == 28800);
+    REQUIRE(time::movement_seconds_per_tick(defines) == 0.3F);
 }
 
 TEST_CASE("the day wraps exactly at day_length_ticks", "[time][clock]") {
@@ -71,9 +71,9 @@ TEST_CASE("hour, minute and time of day are exact integer math", "[time][clock]"
     clock.day_tick = 720;
     REQUIRE(time::time_of_day_fraction(clock, defines) == 0.5);
 
-    // The default day: 14,400 ticks, so 600 ticks per hour and 10 per minute.
+    // The default day: 28,800 ticks, so 1,200 ticks per hour and 20 per minute.
     const TimeDefines normal;
-    clock.day_tick = 600 * 7 + 10 * 25;
+    clock.day_tick = 1200 * 7 + 20 * 25;
     REQUIRE(time::hour(clock, normal) == 7);
     REQUIRE(time::minute(clock, normal) == 25);
 }
@@ -123,22 +123,22 @@ TEST_CASE("SetTimeScale changes movement and day length, and ignores bad values"
     const auto defines = [&sim]() -> const time::TimeDefines& {
         return sim.world().ctx().get<TimeDefines>();
     };
-    REQUIRE(defines().movement_scale == 3.0F);
-    REQUIRE(defines().day_length_ticks == 14400);
+    REQUIRE(defines().movement_scale == 6.0F);
+    REQUIRE(defines().day_length_ticks == 28800);
 
-    sim.enqueue({command(1, time::SetTimeScale{6.0F, 28800})});
+    sim.enqueue({command(1, time::SetTimeScale{3.0F, 14400})});
     sim.step();
-    CHECK(defines().movement_scale == 6.0F);
-    CHECK(defines().day_length_ticks == 28800);
-    CHECK(time::movement_seconds_per_tick(defines()) == 6.0F / 20.0F);
+    CHECK(defines().movement_scale == 3.0F);
+    CHECK(defines().day_length_ticks == 14400);
+    CHECK(time::movement_seconds_per_tick(defines()) == 3.0F / 20.0F);
 
     // Not above 0, too big, or a day too short to have 24 ticks: ignored, nothing changes.
     sim.enqueue({command(2, time::SetTimeScale{0.0F, 28800}), command(3, time::SetTimeScale{-1.0F, 28800}),
                  command(4, time::SetTimeScale{500.0F, 28800}), command(5, time::SetTimeScale{6.0F, 10}),
                  command(6, time::SetTimeScale{std::nanf(""), 28800})});
     sim.step();
-    CHECK(defines().movement_scale == 6.0F);
-    CHECK(defines().day_length_ticks == 28800);
+    CHECK(defines().movement_scale == 3.0F);
+    CHECK(defines().day_length_ticks == 14400);
 
     // Shortening the day never leaves the clock past its end.
     for (int i = 0; i < 500; ++i) {

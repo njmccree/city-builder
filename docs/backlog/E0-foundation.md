@@ -30,12 +30,14 @@ F0.8  T0.8.1.1 → T0.8.1.2 → T0.8.1.3(PC) → T0.8.1.4(PC) → T0.8.2.1(PC)
 Recommended interleaving: F0.1 → F0.2 → F0.4 (T0.4.1.1) → F0.3 → rest of F0.4 → F0.5 → F0.6 → F0.7 → F0.8.
 
 ## Epic acceptance criteria
-- [ ] `cmake --preset linux-debug && cmake --build --preset linux-debug && ctest --preset linux-debug` passes in a fresh cloud session. The same works with the `windows-debug` preset on the PC.
-- [ ] CI runs on every PR: Linux and Windows builds and tests, content validation, Godot headless smoke test.
-- [ ] Opening `game/` in Godot and pressing Play shows a flat test map, a working camera, speed controls, the date in the Ancient calendar, and a debug overlay.
-- [ ] Console `spawn_agents 10000` → agents wander at ≥ 60 FPS on the GTX 1660 Ti at 1×.
-- [ ] Save mid-game → load → the simulation continues with identical state hashes compared with an uninterrupted run.
-- [ ] A test mod can override an era definition and a localization string without code changes.
+- [x] `cmake --preset linux-debug && cmake --build --preset linux-debug && ctest --preset linux-debug` passes in a fresh cloud session. The same works with the `windows-debug` preset on the PC.
+- [x] CI runs on every PR: Linux and Windows builds and tests, content validation, Godot headless smoke test.
+- [x] Opening `game/` in Godot and pressing Play shows a flat test map, a working camera, speed controls, the date in the Ancient calendar, and a debug overlay.
+- [x] Console `spawn_agents 10000` → agents wander at ≥ 60 FPS on the GTX 1660 Ti at 1×.
+- [x] Save mid-game → load → the simulation continues with identical state hashes compared with an uninterrupted run.
+- [x] A test mod can override an era definition and a localization string without code changes.
+
+Signed off by the owner on 2026-10-18 (criterion 1 on the strength of the green Linux CI jobs, the others after review of the evidence in `docs/perf.md` and the in-game check).
 
 ---
 
