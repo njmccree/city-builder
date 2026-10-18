@@ -10,7 +10,9 @@
 | 1 | Vision & Identity | **Complete** |
 | 2 | Core Gameplay Loop & City Building | **Complete** (incl. rank follow-ups 26a–26f) |
 | 3 | Citizens & Society | **Complete** |
-| 4 | Economy, Industry & Trade | In progress (Q41–Q43 answered; Q44–Q52 open) |
+| 4 | Economy, Industry & Trade | **Complete** |
+| E1 | World & Terrain follow-ups (E1-a…f) | **Complete** → backlog E1 drafted |
+| 5 | Government, Politics, Diplomacy & War | In progress (questions sent; Rounds 6–7 recommended first) |
 | T | Technology & Workflow | **Complete** → `docs/architecture.md`, backlog E0 drafted |
 
 ---
@@ -425,9 +427,68 @@ One system that gains layers as **institutions are unlocked**. The unlocks are d
   - This **drives emergent neighborhoods** (ties to §10.9 and the neighborhood identity aggregates in §10.7).
 - **Performance:** a coarse grid, incremental updates, and land values that change slowly on calendar time (monthly).
 
-### 12.4 Remaining Round 4 Questions — _OPEN_
-44 Businesses and ownership · 45 Production-chain depth · 46 Labor, guilds, unions · 47 Natural resources ·
-48 Taxes and money flowing between ranks · 49 Debt and bankruptcy · 50 Corruption · 51 Trade routes · 52 Economic cycles
+### 12.4 Businesses (Q44)
+- **Every business is its own entity**, with an **owner**, **employees**, **profit**, and the possibility of **bankruptcy**.
+- **Notable people** can be **owners or employees**. Titles like "merchant prince," "guild master," or "industrialist" are **era-specific labels**.
+- **Political influence from business** comes **only through notable people** tied to a business. How much they get **depends on their title or position**. Ordinary employees have no direct business-based influence; they act through politics (§10.6) and labor organizations (§12.6).
+
+### 12.5 Production Chains (Q45)
+- Chains are **transformations of goods**, defined as data **recipes**: inputs → outputs, plus the workplace type, workers and skills, duration, and era or tech requirements.
+- Example chains (Ancient unless noted):
+  - Logs → Planks → Furniture
+  - Stone → Cut Stone
+  - Iron Ore → Iron → Iron Tools → *Machinery (later era)*
+  - Wheat → Flour → Bread
+- Chains grow and branch as eras and techs unlock new recipes and workplaces.
+
+### 12.6 Labor (Q46)
+- **Jobs require skills and/or education**, depending on the job type.
+- **Wages are generalized, not tracked per citizen.** Each job type has a wage tier, adjusted by the local economy. A citizen's **income tier sets their class or caste level** (see the note below on hereditary systems).
+- **No per-citizen wealth or wage statistics.** Only **notable people** have a **currency wealth balance**, as the player does.
+- **Unemployment is a mechanic.**
+- **Guilds and unions** can **strike and lobby**. They **only form when appropriate to the era**: **tech and culture trees unlock** the guild and union mechanics.
+
+**How this fits with other systems:**
+- **Housing and prices (§12.2–12.3):** with no per-citizen wealth, affordability works **by income tier**. Each tier has an affordability band for rent and goods. Households that fall below their band move away, crowd together, or lose needs satisfaction.
+- **Hereditary class systems (§10.4) — 46a, option (c):** the balance depends on the era. **Birth or legal status dominates in Ancient and Colonial societies**, with income setting a citizen's standing *within* their status. **Income dominates in Modern societies.** **Laws and reform movements** can shift the balance. _Details to be decided later._
+
+### 12.7 Natural Resources (Q47)
+- **CS2-style resource overlays:** **soil fertility**, **stone deposits**, **ore deposits**, **oil deposits** (oil becomes relevant in later eras).
+- **Resources can be depleted.** Players can secure supply through **trade agreements** so they don't exhaust their own deposits.
+- **Seasons** are **mostly visual** for now and not a gameplay mechanic.
+- **Nile flooding is the test case for the natural disaster / event mechanic.** _Claude's note:_ the historical inundation was mostly *beneficial* (it deposited silt and renewed soil fertility). Low floods caused famine and high floods caused destruction. The event mechanic should support good outcomes as well as bad ones.
+- **Natural disasters can cause environmental damage** (lost fertility, destroyed forests, contamination, and so on).
+
+### 12.8 Taxes & Money Between Ranks (Q48)
+- **Every ruler collects taxes from their direct vassals** (title holders under them). The amount depends on **government type**, **whether the vassal's realm needs are being met**, and other factors (opinion, laws, the vassal's traits).
+- **Taxes can also be levied on citizens** (era- and government-appropriate tax types, as data).
+- Money flows up the vassal chain: ward → city → region → nation → empire, one link at a time (CK3-style). Each liege taxes only their *direct* vassals.
+
+### 12.9 Debt & Bankruptcy (Q49)
+- **Loans:** simple, modeled on the **CS2 loan framework** (fixed amount, interest rate, term).
+- **No** currency debasement and **no** bond issuing.
+- **Bankruptcy:** full handling is deferred. For now, a bankrupt player is **offered a loan**.
+
+### 12.10 Corruption (Q50)
+- **Officials and company leaders** can be corrupt (embezzlement, bribery, favoritism), influenced by their **traits**.
+
+### 12.11 Trade Routes (Q51)
+- **Routes don't require construction.** When a route is established, a **path is created** between origin and destination.
+- The path can be **upgraded** to **reduce travel time and/or increase how many goods it carries** (51a confirmed).
+- **Trade beyond the map edge** with distant lands is supported (an abstracted off-map market).
+- **Disruptions:** war, piracy, embargoes, and natural disasters.
+
+### 12.12 Economic Cycles (Q52)
+- Booms, recessions, inflation, and crashes come from **both scripted history** (e.g., 1929) **and the simulation's own dynamics**.
+
+## 13. World & Terrain (E1 decisions)
+- **E1-a:** **M1 is the Nile Delta in the Ancient era.**
+- **E1-b:** a city area is **8 × 8 km** for now (technically 8,192 m: 4 × 4 terrain tiles).
+- **E1-c:** the region map is **both** 3D terrain and a stylized paper map, **blending as the camera zooms out**.
+- **E1-d:** **light historical corrections** to the modern terrain data (e.g., remove the Suez Canal, Lake Nasser and modern reservoirs; approximate ancient Nile branches and the ancient Gulf shoreline), every one sourced and reviewed by the designer.
+- **E1-e:** **fixed rivers whose water level can change** (the Nile inundation); no flowing-water simulation for now.
+- **E1-f:** **neighboring cities share one continuous terrain.**
+- Technical design: `docs/architecture.md` §15. Backlog: `docs/backlog/E1-terrain.md`.
 
 ## 6. Scope Notes & Risks (living)
 - **Content multiplication:** launch maps × launch eras × playable cultures. Because full playthroughs stay on one map (4n), the Middle East map needs Ancient, Colonial, and Modern content. _Launch scope decision OPEN._
