@@ -82,3 +82,69 @@ def test_a_network_failure_is_a_clean_error(tmp_path, capsys):
     map_file = write_map(tmp_path, sources=[{"dataset": "d", "name": "x", "url": "http://127.0.0.1:1/x"}])
     assert run(tmp_path, str(map_file), "--steps", "fetch") == 1
     assert "HTTPS_PROXY" in capsys.readouterr().err
+
+
+# --- the corrections step ------------------------------------------------------------------------------------------
+
+BOUNDS = {"min_lon": 24.0, "min_lat": 21.0, "max_lon": 50.0, "max_lat": 38.5}
+
+
+def write_overlay(path, *features):
+    path.write_text(json.dumps({"type": "FeatureCollection", "features": list(features)}))
+
+
+def overlay_feature(op="set_water", **properties):
+    ring = [[30.0, 29.0], [31.0, 29.0], [31.0, 30.0], [30.0, 30.0], [30.0, 29.0]]
+    props = {"op": op, "source": "a test", "confidence": "medium", "level_m": 0, **properties}
+    return {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [ring]}, "properties": props}
+
+
+def test_the_corrections_step_checks_the_listed_files(tmp_path, capsys):
+    write_overlay(tmp_path / "a.geojson", overlay_feature(name="Gulf"))
+    map_file = write_map(tmp_path, bounds=BOUNDS, corrections=["a.geojson"])
+    assert run(tmp_path, str(map_file), "--steps", "corrections") == 0
+    assert "1 correction(s) in 1 file(s) read and checked" in capsys.readouterr().out
+
+    write_overlay(tmp_path / "a.geojson", overlay_feature(source=""))
+    assert run(tmp_path, str(map_file), "--steps", "corrections") == 1
+    assert "missing property 'source'" in capsys.readouterr().err
+
+    map_file = write_map(tmp_path, bounds=BOUNDS, corrections=["missing.geojson"])
+    assert run(tmp_path, str(map_file), "--steps", "corrections") == 1
+    assert "cannot read the file" in capsys.readouterr().err
+
+
+def test_the_corrections_step_needs_bounds_and_lists_nothing_otherwise(tmp_path, capsys):
+    write_overlay(tmp_path / "a.geojson", overlay_feature())
+    assert run(tmp_path, str(write_map(tmp_path, corrections=["a.geojson"])), "--steps", "corrections") == 1
+    assert "needs 'bounds'" in capsys.readouterr().err
+    assert run(tmp_path, str(write_map(tmp_path)), "--steps", "corrections") == 0
+    assert "lists none" in capsys.readouterr().out
+    assert run(tmp_path, str(write_map(tmp_path, corrections="a.geojson")), "--steps", "corrections") == 1
+
+
+def test_the_corrections_step_applies_them_when_the_ground_exists(tmp_path):
+    import numpy as np
+
+    from terrain.cache import DownloadCache
+    from terrain.corrections import Grid, MapState
+    from terrain.projection import make_to_world, world_size
+    from terrain.steps import Context, load_map_def, select_steps
+
+    write_overlay(tmp_path / "a.geojson", overlay_feature(name="Gulf", level_m=0))
+    map_file = write_map(tmp_path, bounds=BOUNDS, corrections=["a.geojson"])
+    map_def = load_map_def(map_file)
+    width_m, height_m = world_size(map_def)
+    cells = (int(height_m // 5000) + 1, int(width_m // 5000) + 1)
+    state = MapState(Grid(np.full(cells, 50.0), 0.0, 0.0, 5000.0), Grid(np.ones(cells, dtype=bool), 0.0, 0.0, 5000.0))
+    logs = []
+    context = Context(map_file=map_file, map_def=map_def, out_dir=tmp_path / "out" / "pkg",
+                      cache=DownloadCache(tmp_path / "cache"), log=logs.append, state=state)
+    select_steps(["corrections"])[0].run(context)
+    x, z = make_to_world(map_def)(30.5, 29.5)  # inside the polygon
+    row, col = int(z // 5000), int(x // 5000)
+    assert state.dem.data[row, col] == -2.0 and not state.land.data[row, col]
+    assert state.dem.data[0, 0] == 50.0
+    report = tmp_path / "out" / "pkg.reports" / "corrections.md"
+    assert "## 1. set_water: Gulf" in report.read_text(encoding="utf-8")
+    assert any("applied 1 correction(s)" in line for line in logs)

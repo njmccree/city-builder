@@ -38,9 +38,14 @@ python -m terrain.build_map tools/terrain/maps/<map>/map.json [--out DIR] [--ste
 - `map.json` needs `map_id` and `package` (the folder under `maps/`); `mod` (default `base`) and `sources` are
   optional. A source is `{ "dataset", "name", "url", "size"?, "sha256"? }`.
 - `--out` defaults to `game/content/<mod>/maps/<package>` (gitignored; architecture §15.2).
+- `corrections` (optional, in `map.json`): GeoJSON overlay files, relative to `map.json`, applied in this order by the
+  `corrections` step. See the docstring of `terrain/corrections.py` for the operations (`set_water`, `set_land`,
+  `elevation_offset`, `flatten_to`, `remove_river`, `river_path`, `fill_reservoir`); every feature needs `source` and
+  `confidence`. `bounds` (`min_lon`, `min_lat`, `max_lon`, `max_lat`) and optionally `projection` (`lat_0`, `lon_0`)
+  give the projection.
 - `--steps` picks steps from `fetch, mosaic, reproject, corrections, region, detail, rivers, layers, package`; they
-  always run in that order. Only `fetch` does real work so far. The others print which Task fills them in
-  (T1.2.2.1 rasters, T1.2.3.1 rivers, T1.2.4.1 layers, T1.2.5.1 corrections, T1.2.6.1 the full build).
+  always run in that order. `fetch` and `corrections` do real work so far (`corrections` only checks the files until the ground is built). The others print which Task fills them in
+  (T1.2.2.1 rasters, T1.2.3.1 rivers, T1.2.4.1 layers, T1.2.6.1 the full build).
 - `--offline` never downloads and fails at once, before any work, if a needed file is not in the cache.
 - Exit status: 0 success, 1 a step failed (network, checksum, ...), 2 a usage error.
 
@@ -58,6 +63,8 @@ Behind a proxy, set `HTTPS_PROXY` / `HTTP_PROXY`; network errors say so.
 | `terrain/csr.py` | `write_csr` / `read_csr` / `read_csr_header`: the `.csr` raster format, byte for byte as `sim/src/world/raster.cpp` |
 | `terrain/package.py` | `write_package_json`, `verify_package`, file checksums and the package hash (XXH3-64, as `world::compute_package_hash`) |
 | `terrain/cache.py` | the download cache |
+| `terrain/corrections.py` | the historical correction overlays (GeoJSON, architecture §15.7): operations, the working data they change, the report |
+| `terrain/projection.py` | the map's projection and world frame; every step that turns lon/lat into map positions uses `make_to_world` |
 | `terrain/steps.py`, `terrain/build_map.py` | the step registry and the command line |
 
 ## Tests

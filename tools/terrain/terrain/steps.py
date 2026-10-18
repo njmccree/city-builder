@@ -1,7 +1,7 @@
 """The build steps of ``python -m terrain.build_map`` and their registry.
 
 A step is a function ``run(context)``. They run in this order (``STEP_ORDER``); ``--steps`` picks some of them.
-Today only ``fetch`` does real work; the others are stubs that say which Task fills them in, so the command
+Today ``fetch`` and ``corrections`` do real work; the others are stubs that say which Task fills them in, so the command
 line, the step selection and the offline check are all in place and tested before the data work starts.
 """
 
@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .cache import CacheError, DownloadCache, Source
+from .corrections import CorrectionError, MapState, apply_corrections, load_correction_files, write_report
+from .projection import ProjectionError, make_to_world
 
 
 class StepError(RuntimeError):
@@ -31,6 +33,8 @@ class Context:
     log: Callable[[str], None] = print
     # Files steps leave for each other (name -> path), e.g. the mosaic for the reprojection step.
     products: dict[str, Path] = field(default_factory=dict)
+    # The working data (ground, land mask, rivers) once the steps that build it have run; None before.
+    state: MapState | None = None
 
     def sources(self) -> list[Source]:
         entries = self.map_def.get("sources", [])
@@ -77,6 +81,31 @@ def _fetch(context: Context) -> None:
         context.log(f"fetch: {source.dataset}/{source.name} {'(cached)' if cached else '(downloaded)'} -> {path}")
 
 
+def _corrections(context: Context) -> None:
+    """Reads the overlay files listed in map.json ("corrections": [paths relative to map.json]) and checks them.
+    If the working data exists, applies them in order and writes a report beside the package; if not (the steps
+    that build it are T1.2.2.1), it only validates the files."""
+    listed = context.map_def.get("corrections", [])
+    if not isinstance(listed, list) or not all(isinstance(p, str) for p in listed):
+        raise StepError(f"{context.map_file}: 'corrections' must be a list of file paths")
+    if not listed:
+        context.log("corrections: map.json lists none; nothing to do")
+        return
+    try:
+        to_world = make_to_world(context.map_def)
+        corrections = load_correction_files([context.map_file.parent / p for p in listed], to_world)
+        if context.state is None:
+            context.log(f"corrections: {len(corrections)} correction(s) in {len(listed)} file(s) read and checked; "
+                        "the ground is not built yet (T1.2.2.1), so none was applied")
+            return
+        effects = apply_corrections(context.state, corrections, to_world)
+    except (CorrectionError, ProjectionError) as error:
+        raise StepError(str(error)) from None
+    report = context.out_dir.parent / f"{context.out_dir.name}.reports" / "corrections.md"
+    write_report(report, effects, f"Historical corrections: {context.map_def['map_id']}")
+    context.log(f"corrections: applied {len(effects)} correction(s); report: {report}")
+
+
 def _stub(name: str, task: str, what: str) -> Callable[[Context], None]:
     def run(context: Context) -> None:
         context.log(f"{name}: not implemented yet ({task}: {what}); nothing done")
@@ -89,8 +118,7 @@ STEPS: tuple[Step, ...] = (
     Step("mosaic", _stub("mosaic", "T1.2.2.1", "join the DEM tiles"), "join the source DEM tiles"),
     Step("reproject", _stub("reproject", "T1.2.2.1", "reproject to the map projection"),
          "reproject to the map's equal-area projection"),
-    Step("corrections", _stub("corrections", "T1.2.5.1", "apply the historical correction overlays"),
-         "apply the historical correction overlays"),
+    Step("corrections", _corrections, "apply the historical correction overlays (architecture §15.7)"),
     Step("region", _stub("region", "T1.2.2.1", "write the region rasters"), "write the 1 km region rasters"),
     Step("detail", _stub("detail", "T1.2.2.1", "write the 32 m detail tiles"), "write the 32 m detail tiles"),
     Step("rivers", _stub("rivers", "T1.2.3.1", "extract rivers and lakes"), "extract rivers and lakes"),
