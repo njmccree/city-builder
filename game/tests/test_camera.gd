@@ -95,6 +95,30 @@ func _run() -> void:
 	camera.step(0.016, Vector2.ZERO, 0.0)
 	_check(camera.position.x > 1000.0 and camera.position.x < 1100.0, "smoothing eases toward the target")
 
+	# While a text box has the keyboard, held camera keys do nothing; once it lets go, they work again.
+	camera.focus_on(Vector3(1000.0, 0.0, 1000.0))
+	camera.set_zoom_distance(100.0)
+	camera.snap()
+	var box: LineEdit = LineEdit.new()
+	root.add_child(box)
+	box.grab_focus()
+	await process_frame
+	Input.action_press("cam_forward")
+	Input.action_press("cam_rotate_right")
+	var held_before: Vector3 = camera.get_target_pivot()
+	var yaw_before: float = camera.get_target_yaw()
+	for i: int in 10:
+		await process_frame
+	_check(camera.get_target_pivot() == held_before and camera.get_target_yaw() == yaw_before,
+		"held camera keys are ignored while a text box has focus")
+	box.release_focus()
+	for i: int in 10:
+		await process_frame
+	_check(camera.get_target_pivot() != held_before, "held camera keys work again after the text box lets go")
+	Input.action_release("cam_forward")
+	Input.action_release("cam_rotate_right")
+	box.queue_free()
+
 	# main.tscn composes the camera, ground, light and environment.
 	var main_packed: PackedScene = load("res://scenes/main.tscn")
 	_check(main_packed != null, "main.tscn loads")
