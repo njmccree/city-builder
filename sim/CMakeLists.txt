@@ -49,6 +49,8 @@ add_library(citysim_core STATIC
     src/runner/game_session.cpp
     src/runner/simulation_runner.cpp
     src/runner/snapshot_view.cpp
+    src/world/city_module.cpp
+    src/world/city_registry.cpp
     src/world/city_tile.cpp
     src/world/loaded_map.cpp
     src/world/map_package.cpp

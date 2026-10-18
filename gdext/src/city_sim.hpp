@@ -5,6 +5,7 @@
 
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/translation.hpp>
+#include <godot_cpp/variant/array.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/packed_float32_array.hpp>
 #include <godot_cpp/variant/packed_string_array.hpp>
@@ -36,7 +37,7 @@ class CitySim : public godot::Node {
     // agents on a square test map that many cells wide.
     godot::Dictionary new_game(int64_t seed, const godot::PackedStringArray& content_roots,
                                const godot::PackedStringArray& enabled_mods, const godot::String& era_id,
-                               int64_t test_map_size = 0);
+                               int64_t test_map_size = 0, const godot::String& map_id = godot::String());
     void shutdown();
     bool is_running() const;
 
@@ -55,6 +56,11 @@ class CitySim : public godot::Node {
     // A snapshot channel by name as a flat array (see SnapshotChannel), for debugging; empty if there is
     // none. Fast renderers use snapshot_view() instead and never copy.
     godot::PackedFloat32Array get_channel(const godot::String& name) const;
+
+    // The founded cities from the newest snapshot, in founding order: [{id, name, origin_tx, origin_ty,
+    // active}], and the id of the active one (0 for none). Empty without a map (new_game's `map_id`).
+    godot::Array get_cities() const;
+    int64_t get_active_city_id() const { return static_cast<int64_t>(last_.active_city_id); }
 
     // For C++ renderer nodes: the previous and current snapshot, and the alpha to blend them with.
     const runner::SnapshotView& snapshot_view() const { return view_; }

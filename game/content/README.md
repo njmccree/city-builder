@@ -96,3 +96,10 @@ World-frame coordinates: meters from the south-west corner of the map, `x` east 
 - `order` is a stream order (a bigger number is a bigger river) and `discharge_m3s` the mean discharge.
 - `downstream` lists the reaches that start where this one ends (their first vertex equals this reach's last vertex). A delta is one reach with several downstream reaches.
 - `lakes.json` is `{ "format": 1, "lakes": [] }` in the synthetic package. Floodplain polygons are added by the pipeline (T1.2.3.1).
+
+## Defines
+
+`defines/*.json` files hold numbers the simulation reads. Later mods override earlier ones field by field.
+- `defines/time.json`: tick rate, speeds, day length (see `time::TimeDefines`).
+- `defines/world.json`: `max_player_cities` (default 10), `min_land_fraction` (0.5: how much of a city area must be
+  land) and `active_ring_tiles` (1: tiles around the active city that are synthesized too).

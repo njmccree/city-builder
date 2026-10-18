@@ -7,6 +7,7 @@
 #include "citysim/core/job_system.hpp"
 #include "citysim/core/scheduler.hpp"
 #include "citysim/core/system_observer.hpp"
+#include "citysim/core/ui_notice.hpp"
 #include "citysim/core/world.hpp"
 
 #include <cstdint>

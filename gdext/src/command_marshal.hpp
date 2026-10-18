@@ -28,6 +28,8 @@ struct MarshalResult {
 //   {"type": "set_era", "era_id": "base:era.modern"}   must be an era in the loaded content
 //   {"type": "save_game", "path": "user://saves/a.csav"}
 //   {"type": "load_game", "path": "user://saves/a.csav"}
+//   {"type": "found_city", "origin_tx": 20, "origin_ty": 22, "name": "Memphis"}   name is optional
+//   {"type": "set_active_city", "city_id": 2}
 //
 // HOW TO ADD A COMMAND: write a parse function in command_marshal.cpp and add one line to the table there.
 MarshalResult marshal_command(const godot::Dictionary& dictionary, const MarshalContext& context);

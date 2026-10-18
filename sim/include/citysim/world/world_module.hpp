@@ -3,6 +3,7 @@
 #include "citysim/content/content_database.hpp"
 #include "citysim/content/map_def.hpp"
 #include "citysim/core/simulation.hpp"
+#include "citysim/world/city_defines.hpp"
 #include "citysim/world/loaded_map.hpp"
 #include "citysim/world/world_terrain.hpp"
 
@@ -19,6 +20,9 @@ struct WorldConfig {
     // The map already opened with open_map(), or null to open it here. A game session opens it once and
     // passes it to every Simulation it builds (a load builds a new one), so the package is read only once.
     std::shared_ptr<const LoadedMap> map;
+    // Founding and activating cities (the demesne limit, the land needed, the ring of tiles). Content fills
+    // it from defines/world.json; these are the built-in defaults.
+    CityDefines cities{};
 };
 
 // The MapDef with this id. Throws std::invalid_argument if the content has none.

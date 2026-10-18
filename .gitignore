@@ -36,3 +36,6 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
+
+# Local dependency downloads (cmake -DFETCHCONTENT_BASE_DIR=.fetchcontent, as CI does)
+.fetchcontent/
