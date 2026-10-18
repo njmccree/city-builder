@@ -256,7 +256,7 @@ In your final message, summarize the license findings for the user.
 - For the map bounds: the GLO-30 tiles are fetched, mosaicked, reprojected to LAEA, and turned into region (1 km) and detail (32 m tiles, detail regions only) rasters plus a land mask.
 - Outputs are visually checked with preview PNGs.
 
-#### [ ] T1.2.2.1 — Elevation, reprojection, region and detail rasters
+#### [x] T1.2.2.1 — Elevation, reprojection, region and detail rasters
 - **Model:** Sonnet · **Session:** [PC] · **Depends on:** T1.2.1.1, T1.2.5.1
 ```
 Task T1.2.2.1 (Story S1.2.2). Read docs/architecture.md §15.1–§15.3, §15.5, §15.7 and tools/terrain/README.md.

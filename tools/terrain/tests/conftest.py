@@ -37,7 +37,7 @@ class RangeHandler(http.server.BaseHTTPRequestHandler):
         data = self.server.files.get(self.path)
         self.server.requests.append((self.path, self.headers.get("Range")))
         if data is None:
-            self.send_error(404)
+            self.send_error(self.server.missing_status)
             return
         start = 0
         range_header = self.headers.get("Range")
@@ -66,6 +66,7 @@ def server():
     httpd.files = {}
     httpd.requests = []
     httpd.fail_after = None
+    httpd.missing_status = 404  # what an absent file answers (AWS S3 answers 403)
     httpd.fail_count = 0
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     thread.start()

@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 
 from terrain.csr import write_csr
-from terrain.package import PackageError, file_checksum, hex64, package_hash, verify_package, write_package_json
+from terrain.package import (PackageError, file_checksum, hex64, list_package_files, package_hash, verify_package,
+                             write_package_json)
 
 
 def make_package(path):
@@ -67,3 +68,11 @@ def test_a_manifest_naming_a_missing_file_is_refused(tmp_path):
     with pytest.raises(PackageError, match="lakes.json"):
         write_package_json(tmp_path, map_id="x", sources=[], projection={}, bounds_m=(1.0, 1.0),
                            region={"layers": {}}, detail={"tiles": []})
+
+
+def test_previews_are_not_part_of_the_package(tmp_path):
+    (tmp_path / "region").mkdir()
+    (tmp_path / "region" / "elevation.csr").write_bytes(b"x")
+    (tmp_path / "previews").mkdir()
+    (tmp_path / "previews" / "region.png").write_bytes(b"png")
+    assert list_package_files(tmp_path) == ["region/elevation.csr"]

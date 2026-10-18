@@ -44,11 +44,12 @@ def package_hash(files: dict[str, int]) -> int:
 
 
 def list_package_files(package_dir: Path) -> list[str]:
-    """Every file under the folder except ``package.json`` and ``map_def.json`` (not part of a package),
-    as ``/``-separated relative paths in byte-wise sorted order."""
+    """Every file under the folder except ``package.json``, ``map_def.json`` and the ``previews/`` images (none of
+    them are part of a package), as ``/``-separated relative paths in byte-wise sorted order."""
     root = Path(package_dir)
     names = [path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file()]
-    names = [name for name in names if name not in (PACKAGE_FILE, "map_def.json") and not name.endswith(".part")]
+    names = [name for name in names if name not in (PACKAGE_FILE, "map_def.json") and not name.endswith(".part")
+             and not name.startswith("previews/")]
     return sorted(names, key=lambda p: p.encode("utf-8"))
 
 
