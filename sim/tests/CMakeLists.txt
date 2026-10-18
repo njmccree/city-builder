@@ -35,8 +35,11 @@ add_executable(citysim_tests
     time/calendar_system_tests.cpp
     time/calendar_tests.cpp
     time/clock_tests.cpp
+    world/frames_tests.cpp
     world/package_tests.cpp
-    world/raster_tests.cpp)
+    world/raster_tests.cpp
+    world/terrain_deltas_tests.cpp
+    world/terrain_synth_tests.cpp)
 target_include_directories(citysim_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(citysim_tests PRIVATE CITYSIM_TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
     CITYSIM_GAME_CONTENT_DIR="${CMAKE_SOURCE_DIR}/game/content"
@@ -52,7 +55,9 @@ endif()
 
 # The synthetic map generator (citysim_mapgen --synthetic) has unit tests too.
 if(TARGET citysim_mapgen_support)
-    target_sources(citysim_tests PRIVATE tools/mapgen_tests.cpp)
+    # So do the terrain tests, which build test maps with it.
+    target_sources(citysim_tests PRIVATE tools/mapgen_tests.cpp world/loaded_map_tests.cpp
+        world/world_module_tests.cpp world/world_terrain_tests.cpp)
     target_link_libraries(citysim_tests PRIVATE citysim_mapgen_support)
 endif()
 

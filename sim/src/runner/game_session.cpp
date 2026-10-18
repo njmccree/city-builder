@@ -4,6 +4,8 @@
 #include "citysim/debug/agent_snapshot.hpp"
 #include "citysim/debug/walking_skeleton.hpp"
 #include "citysim/time/calendar_module.hpp"
+#include "citysim/world/terrain_publisher.hpp"
+#include "citysim/world/world_module.hpp"
 
 #include <exception>
 
@@ -45,6 +47,13 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
             return outcome;
         }
 
+        // Opened once: a load builds a new Simulation, which gets the same map.
+        world::WorldConfig world_config;
+        if (!request.map_id.empty()) {
+            world_config.map_id = request.map_id;
+            world_config.map = world::open_map(*session->content_, request.map_id);
+        }
+
         if (request.clock == nullptr) {
             session->owned_clock_ = std::make_unique<SteadyClock>();
         }
@@ -62,16 +71,23 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
         const content::ContentDatabase* content = session->content_.get();
         const std::string era_id = request.era_id;
         const std::uint32_t test_map_size = request.test_map_size;
-        session->runner_->configure([content, era_id, test_map_size](core::Simulation& simulation) {
-            time::install_calendar(simulation, *content, era_id);
-            if (test_map_size > 0) {
-                debug::WalkingSkeletonConfig skeleton;
-                skeleton.map_width = test_map_size;
-                skeleton.map_height = test_map_size;
-                debug::install(simulation, skeleton);
-            }
-        });
+        session->runner_->configure(
+            [content, era_id, test_map_size, world_config](core::Simulation& simulation) {
+                time::install_calendar(simulation, *content, era_id);
+                if (!world_config.map_id.empty()) {
+                    world::install(simulation, *content, world_config);
+                }
+                if (test_map_size > 0) {
+                    debug::WalkingSkeletonConfig skeleton;
+                    skeleton.map_width = test_map_size;
+                    skeleton.map_height = test_map_size;
+                    debug::install(simulation, skeleton);
+                }
+            });
         std::vector<SimulationRunner::PublishHook> all_hooks = request.publish_hooks;
+        if (!world_config.map_id.empty()) {
+            all_hooks.emplace_back(&world::publish_terrain_tiles);
+        }
         if (test_map_size > 0) {
             all_hooks.emplace_back(&debug::publish_agent_snapshot);
             all_hooks.emplace_back(debug::TestMapPublisher{});

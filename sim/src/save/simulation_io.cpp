@@ -196,6 +196,9 @@ LoadOutcome load_simulation_bytes(core::Simulation& simulation, std::span<const 
     }
 
     simulation.restore_loop_state(seed, tick, std::move(pending), std::move(log));
+    for (const core::Simulation::AfterLoadHook& hook : simulation.after_load_hooks()) {
+        hook(simulation, outcome.warnings);
+    }
     return outcome;
 }
 

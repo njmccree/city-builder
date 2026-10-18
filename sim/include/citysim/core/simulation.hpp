@@ -10,7 +10,9 @@
 #include "citysim/core/world.hpp"
 
 #include <cstdint>
+#include <functional>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -96,6 +98,15 @@ class Simulation {
                             std::vector<SequencedCommand> pending_commands,
                             std::vector<InputLogEntry> input_log);
 
+    // Rebuilds what a module derives from saved state instead of saving it (synthesized terrain tiles,
+    // caches), and reports what the player should know about the result as load warnings (the map package
+    // changed, say). save::load_simulation runs the hooks in the order added, after the World and the loop
+    // state are restored. A hook that throws fails the load. Modules add theirs at install time, so every
+    // Simulation that may load a save has them.
+    using AfterLoadHook = std::function<void(Simulation&, std::vector<std::string>& warnings)>;
+    void add_after_load_hook(AfterLoadHook hook) { after_load_hooks_.push_back(std::move(hook)); }
+    const std::vector<AfterLoadHook>& after_load_hooks() const { return after_load_hooks_; }
+
     CommandDispatcher& dispatcher() { return dispatcher_; }
     const InputLog& input_log() const { return input_log_; }
 
@@ -119,6 +130,7 @@ class Simulation {
     CommandDispatcher dispatcher_;
     InputLog input_log_;
     std::vector<SequencedCommand> pending_commands_;
+    std::vector<AfterLoadHook> after_load_hooks_;
     SystemObserver* observer_ = nullptr;
     JobSystem jobs_;
 };

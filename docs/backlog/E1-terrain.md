@@ -126,7 +126,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md; last task of S1.1.1, so op
 - `WorldTerrain` loads a package, synthesizes city tiles deterministically (golden hash), and answers height, slope and normal queries.
 - Terrain edits are sparse deltas that are hashed and saved. Saves never contain base heights.
 
-#### [ ] T1.1.2.1 ★ — WorldTerrain service, frames, tile cache
+#### [x] T1.1.2.1 ★ — WorldTerrain service, frames, tile cache
 - **Model:** **Opus** · **Session:** [Cloud] · **Depends on:** T1.1.1.2
 ```
 Task T1.1.2.1 (Story S1.1.2). Architecture-critical. Read docs/architecture.md §4, §5, §7.2, §7.3, §10 and
@@ -167,7 +167,7 @@ Update architecture §15 if any detail had to change (explain in the PR). Run al
 Follow the Task workflow in CLAUDE.md (branch story/S1.1.2-world-terrain).
 ```
 
-#### [ ] T1.1.2.2 — Deterministic terrain synthesis (upsampling + micro-detail)
+#### [x] T1.1.2.2 — Deterministic terrain synthesis (upsampling + micro-detail)
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.1.2.1
 ```
 Task T1.1.2.2 (Story S1.1.2). Read docs/architecture.md §4 and §15.4, and the TerrainSynth interface from
@@ -190,7 +190,7 @@ Replace the placeholder TerrainSynth with the real generator (k_terrain_generato
 Run all tests. Follow the Task workflow in CLAUDE.md (same story branch).
 ```
 
-#### [ ] T1.1.2.3 — Terrain edit deltas
+#### [x] T1.1.2.3 — Terrain edit deltas
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.1.2.2
 ```
 Task T1.1.2.3 (Story S1.1.2, last task). Read docs/architecture.md §4, §10 and §15.4.
