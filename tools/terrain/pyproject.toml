@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "citysim-terrain"
+version = "1.0.0"
+description = "Offline terrain pipeline: builds map packages for the city builder (docs/architecture.md section 15.5)"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy==2.5.4",
+    "rasterio==1.5.2",
+    "pyproj==3.8.0",
+    "shapely==2.2.0",
+    "zstandard==0.25.0",
+    "xxhash==4.0.1",
+    "requests==2.34.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.1.1"]
+
+[tool.setuptools]
+packages = ["terrain"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

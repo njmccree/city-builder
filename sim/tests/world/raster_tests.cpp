@@ -178,3 +178,47 @@ TEST_CASE("empty and mismatched rasters are refused", "[world][raster]") {
     CHECK_THROWS_WITH(decode_csr<std::uint8_t>(bytes, "x"),
                       Catch::Matchers::ContainsSubstring("does not match"));
 }
+
+// The files in fixtures/maps/ were written by the Python pipeline
+// (tools/terrain/scripts/make_cpp_fixture.py). The patterns below are the ones that script writes; change
+// both together, and only with a format version bump.
+TEST_CASE("a .csr written by the Python pipeline reads in C++", "[world][raster]") {
+    const std::filesystem::path dir = std::filesystem::path(CITYSIM_TEST_FIXTURES_DIR) / "maps";
+
+    const RasterHeader header = read_csr_header(dir / "python_i16.csr");
+    CHECK(header.width == 20);
+    CHECK(header.height == 11);
+    CHECK(header.type == RasterType::I16);
+    CHECK(header.scale == 0.25F);
+    CHECK(header.offset == -5.0F);
+    REQUIRE(header.nodata.has_value());
+    CHECK(*header.nodata == -32768.0);
+
+    const Raster<std::int16_t> i16 = read_csr<std::int16_t>(dir / "python_i16.csr"); // checksum verified too
+    for (std::uint32_t y = 0; y < 11; ++y) {
+        for (std::uint32_t x = 0; x < 20; ++x) {
+            const bool missing = (x == 0 && y == 0) || (x == 19 && y == 10);
+            if (missing) {
+                CHECK(i16.is_nodata(x, y));
+                CHECK(std::isnan(i16.value(x, y)));
+            } else {
+                const int raw = static_cast<int>((x * 7 + y * 13) % 200) - 100;
+                REQUIRE(i16.at(x, y) == raw);
+                REQUIRE(i16.value(x, y) == static_cast<float>(raw) * 0.25F - 5.0F);
+            }
+        }
+    }
+
+    const Raster<float> f32 = read_csr<float>(dir / "python_f32.csr");
+    REQUIRE(f32.width() == 7);
+    REQUIRE(f32.height() == 5);
+    for (std::uint32_t y = 0; y < 5; ++y) {
+        for (std::uint32_t x = 0; x < 7; ++x) {
+            if (x == 3 && y == 2) {
+                CHECK(f32.is_nodata(x, y)); // NaN is the no-data value
+            } else {
+                REQUIRE(f32.at(x, y) == static_cast<float>(x) * 0.5F - static_cast<float>(y));
+            }
+        }
+    }
+}
