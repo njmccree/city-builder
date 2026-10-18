@@ -44,7 +44,7 @@ func _run() -> void:
 			_notices.append({"tag": tag, "key": key, "text": text, "subject": subject})
 	)
 	var content_roots: PackedStringArray = [_root_dir, ProjectSettings.globalize_path("res://content")]
-	var result: Dictionary = _sim.new_game(1, "base:era.ancient", content_roots, ["base", "test"], 0, MAP_ID)
+	var result: Dictionary = _sim.new_game(1, "base:era.ancient", content_roots, ["base", "test"], 0, MAP_ID, true)
 	_check(bool(result["ok"]), "a game with a map starts (%s)" % str(result["errors"]))
 	_check((_sim.get_cities() as Array).is_empty(), "there are no cities at first")
 	_check(_sim.get_active_city_id() == 0, "and no active city")
@@ -84,6 +84,18 @@ func _run() -> void:
 		keys.append(str(notice["key"]))
 	_check("city.found.error.overlap" in keys, "an overlapping site is refused")
 	_check("city.active.error.unknown" in keys, "an unknown city cannot be made active")
+
+	# Debug agents walk on the real terrain of the active city: spawned on its walkable ground, published with
+	# their height. (The walk grid is built in the tick after the city was founded, so this waits a little.)
+	await _wait_for(func() -> bool: return _sim.get_active_city_id() == 1)
+	_check(_sim.submit_command({"type": "spawn_agents", "count": 40}), "spawn_agents is accepted in a world game")
+	await _wait_for(func() -> bool: return _sim.core.get_channel("agents.xform").size() >= 4 * 40)
+	var agents: PackedFloat32Array = _sim.core.get_channel("agents.xform")
+	_check(agents.size() == 4 * 40, "40 agents are published with x, y, z and yaw: %d floats" % agents.size())
+	var above_ground: int = 0
+	for i: int in range(0, agents.size(), 4):
+		above_ground += 1 if agents[i + 1] > 0.5 else 0
+	_check(above_ground > 0, "and they stand on the terrain, not at y = 0: %d of 40 are above 0.5 m" % above_ground)
 
 	# The river level debug command: an unknown reach is refused with its reason, a known one is accepted.
 	_notices.clear()

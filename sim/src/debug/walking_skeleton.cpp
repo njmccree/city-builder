@@ -5,9 +5,14 @@
 #include "citysim/debug/agent_components.hpp"
 #include "citysim/debug/debug_serialize.hpp"
 #include "citysim/debug/movement_system.hpp"
+#include "citysim/debug/terrain_walk_grid.hpp"
+#include "citysim/debug/terrain_walk_system.hpp"
 #include "citysim/debug/test_map.hpp"
+#include "citysim/debug/walk_grid.hpp"
 #include "citysim/save/bind_serializer.hpp"
 #include "citysim/time/time_defines.hpp"
+#include "citysim/world/city_registry.hpp"
+#include "citysim/world/world_terrain.hpp"
 
 #include <entt/entt.hpp>
 #include <memory>
@@ -68,7 +73,7 @@ void register_singleton(core::World& world, const char* name, void (*hash)(core:
 }
 
 void spawn_agents(core::TickContext& context, const SpawnDebugAgents& command) {
-    const TestMap* map = context.world.ctx().find<TestMap>();
+    const WalkGrid* map = find_walk_grid(context.world);
     auto* counter = context.world.ctx().find<DebugAgentCounter>();
     if (map == nullptr || counter == nullptr) {
         return;
@@ -111,16 +116,32 @@ WalkingSkeleton install(core::Simulation& simulation, const WalkingSkeletonConfi
         throw std::logic_error("debug::install needs time::install() to run first");
     }
 
-    register_singleton<TestMap>(world, "debug.TestMap", &hash_map);
     register_singleton<DebugAgentCounter>(world, "debug.AgentCounter", &hash_counter);
     register_component<Position>(world, "debug.Position", &hash_position);
     register_component<Heading>(world, "debug.Heading", &hash_heading);
     register_component<PathFollower>(world, "debug.PathFollower", &hash_follower);
     register_component<DebugWanderer>(world, "debug.Wanderer", &hash_wanderer);
 
-    world.ctx().emplace<TestMap>(
-        make_test_map(simulation.world_seed(), config.map_width, config.map_height, config.cell_size));
     world.ctx().emplace<DebugAgentCounter>();
+    if (config.source == WalkGridSource::Terrain) {
+        if (world.ctx().find<world::WorldTerrain>() == nullptr ||
+            world.ctx().find<world::ActiveCity>() == nullptr) {
+            throw std::logic_error(
+                "debug::install with the terrain as its walk grid needs world::install() to run first");
+        }
+        // Derived from the terrain, the water and the floods; not registered, so neither hashed nor saved.
+        world.ctx().emplace<TerrainWalkGrid>();
+        simulation.add_system(core::Phase::PostUpdate, std::make_unique<TerrainWalkSystem>());
+        // A loaded game builds its grid at once, so its first tick plans and moves the agents like the tick
+        // of the game it was saved from did.
+        simulation.add_after_load_hook([](core::Simulation& loaded, std::vector<std::string>&) {
+            follow_active_city(loaded.world(), loaded.jobs());
+        });
+    } else {
+        register_singleton<TestMap>(world, "debug.TestMap", &hash_map);
+        world.ctx().emplace<TestMap>(
+            make_test_map(simulation.world_seed(), config.map_width, config.map_height, config.cell_size));
+    }
 
     auto planner =
         std::make_unique<WanderPlannerSystem>(config.max_searches_per_tick, config.path_node_budget);

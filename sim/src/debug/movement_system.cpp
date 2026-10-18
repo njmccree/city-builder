@@ -2,7 +2,7 @@
 
 #include "citysim/core/tick_context.hpp"
 #include "citysim/debug/agent_components.hpp"
-#include "citysim/debug/test_map.hpp"
+#include "citysim/debug/walk_grid.hpp"
 #include "citysim/profiling/profile.hpp"
 #include "citysim/time/game_clock.hpp"
 #include "citysim/time/time_defines.hpp"
@@ -18,7 +18,7 @@ namespace {
 constexpr std::size_t k_chunk_size = 1024;
 
 // Walks one agent for `seconds` of simulated time.
-void advance(const TestMap& map, Position& position, Heading& heading, PathFollower& follower,
+void advance(const WalkGrid& map, Position& position, Heading& heading, PathFollower& follower,
              float seconds) {
     float budget = follower.speed_mps * seconds;
     while (budget > 0.0F && !follower.finished()) {
@@ -46,9 +46,9 @@ void advance(const TestMap& map, Position& position, Heading& heading, PathFollo
 
 void MovementSystem::update(core::TickContext& context) {
     CS_PROFILE_ZONE("debug.movement");
-    const TestMap* map = context.world.ctx().find<TestMap>();
+    const WalkGrid* map = find_walk_grid(context.world);
     const time::TimeDefines* defines = context.world.ctx().find<time::TimeDefines>();
-    if (map == nullptr || defines == nullptr) {
+    if (map == nullptr || map->cell_count() == 0 || defines == nullptr) {
         return;
     }
     const float seconds = time::movement_seconds_per_tick(*defines);

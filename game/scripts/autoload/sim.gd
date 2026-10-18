@@ -59,8 +59,9 @@ func new_game(
 	enabled_mods: PackedStringArray = DEFAULT_MODS,
 	test_map_size: int = DEFAULT_TEST_MAP_SIZE,
 	map_id: String = "",
+	world_agents: bool = false,
 ) -> Dictionary:
-	var result: Dictionary = core.new_game(seed, content_roots, enabled_mods, era_id, test_map_size, map_id)
+	var result: Dictionary = core.new_game(seed, content_roots, enabled_mods, era_id, test_map_size, map_id, world_agents)
 	for message: String in result["warnings"]:
 		push_warning("Sim.new_game: " + message)
 	for message: String in result["errors"]:

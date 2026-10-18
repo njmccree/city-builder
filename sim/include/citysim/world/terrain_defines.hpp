@@ -25,6 +25,9 @@ struct TerrainDefines {
     // (0..1000000; reported only until the treasury exists, E4).
     float terraform_step_m = 1.0F;
     float terraform_cost_per_m3 = 0.1F;
+    // The steepest ground the walking skeleton's agents will walk on, as rise over run (0.7 is about 35
+    // degrees; a tangent rather than an angle so the number needs no trigonometry), 0.05..5.
+    float walk_max_slope = 0.7F;
 };
 
 } // namespace citysim::world

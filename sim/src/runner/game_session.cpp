@@ -73,8 +73,10 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
         const content::ContentDatabase* content = session->content_.get();
         const std::string era_id = request.era_id;
         const std::uint32_t test_map_size = request.test_map_size;
+        // The test map wins; a world game gets agents on its terrain only when it asks for them.
+        const bool world_agents = request.world_agents && !world_config.map_id.empty() && test_map_size == 0;
         session->runner_->configure(
-            [content, era_id, test_map_size, world_config](core::Simulation& simulation) {
+            [content, era_id, test_map_size, world_agents, world_config](core::Simulation& simulation) {
                 time::install_calendar(simulation, *content, era_id);
                 if (!world_config.map_id.empty()) {
                     world::install(simulation, *content, world_config);
@@ -84,6 +86,10 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
                     skeleton.map_width = test_map_size;
                     skeleton.map_height = test_map_size;
                     debug::install(simulation, skeleton);
+                } else if (world_agents) {
+                    debug::WalkingSkeletonConfig skeleton;
+                    skeleton.source = debug::WalkGridSource::Terrain;
+                    debug::install(simulation, skeleton);
                 }
             });
         std::vector<SimulationRunner::PublishHook> all_hooks = request.publish_hooks;
@@ -92,6 +98,9 @@ NewGameOutcome start_new_game(const NewGameRequest& request) {
             all_hooks.emplace_back(&world::publish_cities);
             all_hooks.emplace_back(&world::publish_flood_extents);
             all_hooks.emplace_back(&world::publish_terraform_report);
+        }
+        if (world_agents) {
+            all_hooks.emplace_back(&debug::publish_agent_snapshot);
         }
         if (test_map_size > 0) {
             all_hooks.emplace_back(&debug::publish_agent_snapshot);

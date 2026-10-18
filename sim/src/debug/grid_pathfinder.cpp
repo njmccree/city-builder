@@ -30,7 +30,7 @@ bool later(const PathScratch::Node& a, const PathScratch::Node& b) {
 }
 
 // Octile distance in the integer costs above.
-std::uint32_t heuristic(const TestMap& map, std::uint32_t cell, std::uint32_t goal) {
+std::uint32_t heuristic(const WalkGrid& map, std::uint32_t cell, std::uint32_t goal) {
     const auto dx = static_cast<std::uint32_t>(
         std::abs(static_cast<std::int64_t>(map.x_of(cell)) - static_cast<std::int64_t>(map.x_of(goal))));
     const auto dy = static_cast<std::uint32_t>(
@@ -42,7 +42,7 @@ std::uint32_t heuristic(const TestMap& map, std::uint32_t cell, std::uint32_t go
 
 } // namespace
 
-PathResult find_path(const TestMap& map, std::uint32_t start, std::uint32_t goal, PathScratch& scratch,
+PathResult find_path(const WalkGrid& map, std::uint32_t start, std::uint32_t goal, PathScratch& scratch,
                      std::uint32_t node_budget) {
     PathResult result;
     if (start == goal) {
@@ -125,6 +125,69 @@ PathResult find_path(const TestMap& map, std::uint32_t start, std::uint32_t goal
         }
     }
     return result; // the open list ran dry: no path
+}
+
+PathResult find_escape_path(const WalkGrid& map, std::uint32_t start, PathScratch& scratch,
+                            std::uint32_t node_budget) {
+    PathResult result;
+    if (map.walkable(start)) {
+        result.found = true;
+        return result;
+    }
+    const std::uint32_t cells = map.cell_count();
+    if (scratch.g.size() != cells) {
+        scratch.g.assign(cells, 0);
+        scratch.parent.assign(cells, 0);
+        scratch.open_gen.assign(cells, 0);
+        scratch.closed_gen.assign(cells, 0);
+        scratch.generation = 0;
+    }
+    if (++scratch.generation == 0) {
+        std::fill(scratch.open_gen.begin(), scratch.open_gen.end(), 0);
+        std::fill(scratch.closed_gen.begin(), scratch.closed_gen.end(), 0);
+        scratch.generation = 1;
+    }
+    const std::uint32_t generation = scratch.generation;
+
+    // A plain first-in first-out queue, kept in the scratch's open list (its nodes are only cells here).
+    std::vector<PathScratch::Node>& queue = scratch.open;
+    queue.clear();
+    queue.push_back({0, 0, start});
+    scratch.parent[start] = start;
+    scratch.open_gen[start] = generation;
+    for (std::size_t head = 0; head < queue.size(); ++head) {
+        const std::uint32_t cell = queue[head].cell;
+        if (cell != start && map.walkable(cell)) {
+            for (std::uint32_t at = cell; at != start; at = scratch.parent[at]) {
+                result.cells.push_back(at);
+            }
+            std::reverse(result.cells.begin(), result.cells.end());
+            result.found = true;
+            return result;
+        }
+        if (++result.expanded > node_budget) {
+            result.budget_exceeded = true;
+            return result;
+        }
+        const auto x = static_cast<std::int64_t>(map.x_of(cell));
+        const auto y = static_cast<std::int64_t>(map.y_of(cell));
+        for (const Step step : k_steps) {
+            const std::int64_t nx = x + step.dx;
+            const std::int64_t ny = y + step.dy;
+            if (!map.in_bounds(nx, ny)) {
+                continue;
+            }
+            const std::uint32_t next =
+                map.index_of(static_cast<std::uint32_t>(nx), static_cast<std::uint32_t>(ny));
+            if (scratch.open_gen[next] == generation) {
+                continue;
+            }
+            scratch.open_gen[next] = generation;
+            scratch.parent[next] = cell;
+            queue.push_back({0, 0, next});
+        }
+    }
+    return result; // nowhere to go
 }
 
 } // namespace citysim::debug

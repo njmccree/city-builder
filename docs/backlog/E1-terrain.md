@@ -903,7 +903,7 @@ Follow the Task workflow in CLAUDE.md; last task of S1.8.1, so open the PR.
 - Agents are placed on the terrain height.
 - End-to-end PC verification and performance are recorded.
 
-#### [ ] T1.9.1.1 — Terrain walkability for the walking skeleton
+#### [x] T1.9.1.1 — Terrain walkability for the walking skeleton
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.3.1.2, T1.8.1.1
 ```
 Task T1.9.1.1 (Story S1.9.1). Read docs/architecture.md §4, §15 and sim/include/citysim/debug/*.

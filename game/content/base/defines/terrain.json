@@ -3,5 +3,6 @@
   "bank_width_m": 24.0,
   "flood_samples_per_tick": 250000,
   "terraform_step_m": 1.0,
-  "terraform_cost_per_m3": 0.1
+  "terraform_cost_per_m3": 0.1,
+  "walk_max_slope": 0.7
 }

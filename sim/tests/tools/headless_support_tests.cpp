@@ -4,6 +4,7 @@
 #include "headless/input_log_text.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <cstdint>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -241,6 +242,37 @@ TEST_CASE("the bench option takes key=value pairs and keeps the other defaults",
     CHECK_FALSE(parse({"--bench"}).error.empty());
     CHECK_FALSE(parse({"--bench", "agents=1", "--replay", "x"}).error.empty());
     CHECK(usage().find("--bench") != std::string::npos);
+}
+
+TEST_CASE("the bench option can ask for the real terrain", "[headless][bench]") {
+    const auto world = parse({"--bench", "agents=10000,map=world"});
+    REQUIRE(world.error.empty());
+    CHECK(world.options.bench->world);
+    CHECK(world.options.bench->agents == 10000);
+    const auto flat = parse({"--bench", "map=world,map=64"}); // the last one wins
+    REQUIRE(flat.error.empty());
+    CHECK_FALSE(flat.options.bench->world);
+    CHECK(flat.options.bench->map == 64);
+    CHECK_FALSE(parse({"--bench", "map=worlds"}).error.empty());
+}
+
+TEST_CASE("the world bench runs agents on generated terrain, the same with any worker count",
+          "[headless][bench][world]") {
+    const auto run = [](std::uint32_t threads) {
+        BenchSpec spec;
+        spec.agents = 30;
+        spec.ticks = 30;
+        spec.threads = threads;
+        spec.world = true;
+        std::ostringstream out;
+        REQUIRE(run_bench(spec, 3, out) == 0);
+        return out.str();
+    };
+    const std::string one = run(1);
+    CHECK(one.find("map=world") != std::string::npos);
+    CHECK(one.find("agents: 30,") != std::string::npos);
+    const auto hash_of = [](const std::string& text) { return text.substr(text.find("final hash")); };
+    CHECK(hash_of(run(4)) == hash_of(one));
 }
 
 TEST_CASE("timing summaries use nearest-rank percentiles", "[headless][bench]") {
