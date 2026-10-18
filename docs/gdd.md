@@ -10,7 +10,8 @@
 | 1 | Vision & Identity | **Complete** |
 | 2 | Core Gameplay Loop & City Building | **Complete** (incl. rank follow-ups 26a–26f) |
 | 3 | Citizens & Society | **Complete** |
-| 4 | Economy, Industry & Trade | In progress (Q41–Q46 answered; Q47–Q52 open) |
+| 4 | Economy, Industry & Trade | **Complete** (follow-ups 46a, 51a open) |
+| 5 | Government, Politics, Diplomacy & War | In progress |
 | T | Technology & Workflow | **Complete** → `docs/architecture.md`, backlog E0 drafted |
 
 ---
@@ -450,8 +451,34 @@ One system that gains layers as **institutions are unlocked**. The unlocks are d
 - **Housing and prices (§12.2–12.3):** with no per-citizen wealth, affordability works **by income tier**. Each tier has an affordability band for rent and goods. Households that fall below their band move away, crowd together, or lose needs satisfaction.
 - **Hereditary class systems (§10.4):** _OPEN, see Round 4 follow-up 46a._
 
-### 12.7 Remaining Round 4 Questions — _OPEN_
-47 Natural resources · 48 Taxes and money flowing between ranks · 49 Debt and bankruptcy · 50 Corruption · 51 Trade routes · 52 Economic cycles
+### 12.7 Natural Resources (Q47)
+- **CS2-style resource overlays:** **soil fertility**, **stone deposits**, **ore deposits**, **oil deposits** (oil becomes relevant in later eras).
+- **Resources can be depleted.** Players can secure supply through **trade agreements** so they don't exhaust their own deposits.
+- **Seasons** are **mostly visual** for now and not a gameplay mechanic.
+- **Nile flooding is the test case for the natural disaster / event mechanic.** _Claude's note:_ the historical inundation was mostly *beneficial* (it deposited silt and renewed soil fertility). Low floods caused famine and high floods caused destruction. The event mechanic should support good outcomes as well as bad ones.
+- **Natural disasters can cause environmental damage** (lost fertility, destroyed forests, contamination, and so on).
+
+### 12.8 Taxes & Money Between Ranks (Q48)
+- **Every ruler collects taxes from their direct vassals** (title holders under them). The amount depends on **government type**, **whether the vassal's realm needs are being met**, and other factors (opinion, laws, the vassal's traits).
+- **Taxes can also be levied on citizens** (era- and government-appropriate tax types, as data).
+- Money flows up the vassal chain: ward → city → region → nation → empire, one link at a time (CK3-style). Each liege taxes only their *direct* vassals.
+
+### 12.9 Debt & Bankruptcy (Q49)
+- **Loans:** simple, modeled on the **CS2 loan framework** (fixed amount, interest rate, term).
+- **No** currency debasement and **no** bond issuing.
+- **Bankruptcy:** full handling is deferred. For now, a bankrupt player is **offered a loan**.
+
+### 12.10 Corruption (Q50)
+- **Officials and company leaders** can be corrupt (embezzlement, bribery, favoritism), influenced by their **traits**.
+
+### 12.11 Trade Routes (Q51)
+- **Routes don't require construction.** When a route is established, a **path is created** between origin and destination.
+- The path can be **upgraded to improve trade travel time.** _(Wording interpreted as "reduce travel time / increase throughput", see follow-up 51a.)_
+- **Trade beyond the map edge** with distant lands is supported (an abstracted off-map market).
+- **Disruptions:** war, piracy, embargoes, and natural disasters.
+
+### 12.12 Economic Cycles (Q52)
+- Booms, recessions, inflation, and crashes come from **both scripted history** (e.g., 1929) **and the simulation's own dynamics**.
 
 ## 6. Scope Notes & Risks (living)
 - **Content multiplication:** launch maps × launch eras × playable cultures. Because full playthroughs stay on one map (4n), the Middle East map needs Ancient, Colonial, and Modern content. _Launch scope decision OPEN._
