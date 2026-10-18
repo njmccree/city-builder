@@ -10,7 +10,7 @@
 | 1 | Vision & Identity | **Complete** |
 | 2 | Core Gameplay Loop & City Building | **Complete** (incl. rank follow-ups 26a–26f) |
 | 3 | Citizens & Society | **Complete** |
-| 4 | Economy, Industry & Trade | **Complete** (follow-ups 46a, 51a open) |
+| 4 | Economy, Industry & Trade | **Complete** |
 | 5 | Government, Politics, Diplomacy & War | In progress |
 | T | Technology & Workflow | **Complete** → `docs/architecture.md`, backlog E0 drafted |
 
@@ -449,7 +449,7 @@ One system that gains layers as **institutions are unlocked**. The unlocks are d
 
 **How this fits with other systems:**
 - **Housing and prices (§12.2–12.3):** with no per-citizen wealth, affordability works **by income tier**. Each tier has an affordability band for rent and goods. Households that fall below their band move away, crowd together, or lose needs satisfaction.
-- **Hereditary class systems (§10.4):** _OPEN, see Round 4 follow-up 46a._
+- **Hereditary class systems (§10.4) — 46a, option (c):** the balance depends on the era. **Birth or legal status dominates in Ancient and Colonial societies**, with income setting a citizen's standing *within* their status. **Income dominates in Modern societies.** **Laws and reform movements** can shift the balance. _Details to be decided later._
 
 ### 12.7 Natural Resources (Q47)
 - **CS2-style resource overlays:** **soil fertility**, **stone deposits**, **ore deposits**, **oil deposits** (oil becomes relevant in later eras).
@@ -473,7 +473,7 @@ One system that gains layers as **institutions are unlocked**. The unlocks are d
 
 ### 12.11 Trade Routes (Q51)
 - **Routes don't require construction.** When a route is established, a **path is created** between origin and destination.
-- The path can be **upgraded to improve trade travel time.** _(Wording interpreted as "reduce travel time / increase throughput", see follow-up 51a.)_
+- The path can be **upgraded** to **reduce travel time and/or increase how many goods it carries** (51a confirmed).
 - **Trade beyond the map edge** with distant lands is supported (an abstracted off-map market).
 - **Disruptions:** war, piracy, embargoes, and natural disasters.
 
