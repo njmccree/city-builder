@@ -3,6 +3,7 @@
 #include "citysim/world/city_tile.hpp"
 #include "citysim/world/frames.hpp"
 #include "citysim/world/loaded_map.hpp"
+#include "citysim/world/terrain_defines.hpp"
 #include "citysim/world/terrain_deltas.hpp"
 #include "citysim/world/terrain_synth.hpp"
 #include "citysim/world/tile_coord.hpp"
@@ -63,7 +64,7 @@ class WorldTerrain {
   public:
     // No map: what a load starts from before the saved data arrives. Queries need a map.
     WorldTerrain() = default;
-    WorldTerrain(std::shared_ptr<const LoadedMap> map, std::uint64_t map_seed);
+    WorldTerrain(std::shared_ptr<const LoadedMap> map, std::uint64_t map_seed, TerrainDefines defines = {});
 
     bool has_map() const { return map_ != nullptr; }
     const std::shared_ptr<const LoadedMap>& map() const { return map_; }
@@ -74,6 +75,8 @@ class WorldTerrain {
     std::uint32_t generator_version() const { return generator_version_; }
     // From the MapDef: drives micro-detail, so a map is the same in every game (never the game seed).
     std::uint64_t map_seed() const { return map_seed_; }
+    // The numbers that shape the synthesized terrain (channel profile), from defines/terrain.json.
+    const TerrainDefines& terrain_defines() const { return defines_; }
 
     // Synthesizes the tiles that are not active yet (TerrainSynth::make_tile) on `jobs`, one chunk per tile,
     // and adds them in TileCoord order once all are done (architecture §7.2), so the result is identical for
@@ -142,6 +145,7 @@ class WorldTerrain {
 
     std::shared_ptr<const LoadedMap> map_;
     std::uint64_t map_seed_ = 0;
+    TerrainDefines defines_;
     std::uint32_t generator_version_ = k_terrain_generator_version;
     std::map<TileCoord, std::shared_ptr<const CityTile>> tiles_;
     // Active tiles that have a delta layer, as synthesized: the heights before the edits. An active tile

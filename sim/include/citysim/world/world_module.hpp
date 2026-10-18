@@ -5,6 +5,7 @@
 #include "citysim/core/simulation.hpp"
 #include "citysim/world/city_defines.hpp"
 #include "citysim/world/loaded_map.hpp"
+#include "citysim/world/terrain_defines.hpp"
 #include "citysim/world/world_terrain.hpp"
 
 #include <memory>
@@ -23,6 +24,8 @@ struct WorldConfig {
     // Founding and activating cities (the demesne limit, the land needed, the ring of tiles). Content fills
     // it from defines/world.json; these are the built-in defaults.
     CityDefines cities{};
+    // The channel profile of the synthesized terrain (defines/terrain.json).
+    TerrainDefines terrain{};
 };
 
 // The MapDef with this id. Throws std::invalid_argument if the content has none.
@@ -34,9 +37,10 @@ const content::MapDef& find_map_def(const content::ContentDatabase& content, std
 std::shared_ptr<const LoadedMap> open_map(const content::ContentDatabase& content, std::string_view map_id);
 
 // Installs the world module (architecture §15) into a simulation: registers the WorldTerrain singleton as
-// "world.Terrain" (hashed and saved: map id, package hash, generator version, active tiles) and emplaces it
-// with the map and no active tiles, and adds an after-load hook that restores the terrain from a save
-// (restore_terrain). Call it on every simulation that may load a save made by one that called it.
+// "world.Terrain" (hashed and saved: map id, package hash, generator version, active tiles, terrain edits)
+// and "world.Water" (the river level offsets), emplaces them with the map and no active tiles, and adds an
+// after-load hook that restores the terrain from a save (restore_terrain). Call it on every simulation that
+// may load a save made by one that called it.
 //
 // `content` must outlive the simulation. Throws std::invalid_argument for an empty or unknown map id or a
 // `config.map` of another map, MapFormatError if the package cannot be opened.

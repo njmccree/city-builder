@@ -40,7 +40,8 @@ add_executable(citysim_tests
     world/raster_tests.cpp
     world/city_tests.cpp
     world/terrain_deltas_tests.cpp
-    world/terrain_synth_tests.cpp)
+    world/terrain_synth_tests.cpp
+    world/water_tests.cpp)
 target_include_directories(citysim_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(citysim_tests PRIVATE CITYSIM_TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
     CITYSIM_GAME_CONTENT_DIR="${CMAKE_SOURCE_DIR}/game/content"

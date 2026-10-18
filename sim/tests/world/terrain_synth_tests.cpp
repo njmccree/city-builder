@@ -33,10 +33,16 @@ std::uint64_t hash_of(const CityTile& tile) {
     return hasher.digest();
 }
 
+// True if a river channel (or its bank) could reach this point: terrain there is carved, not just upsampled.
+bool near_river(const LoadedMap& map, WorldPos pos) {
+    const double radius = map.rivers().max_half_width_m() + 64.0;
+    return map.rivers().any_near_box(pos.x, pos.z, pos.x, pos.z, radius);
+}
+
 } // namespace
 
-TEST_CASE("the generator version is 1", "[world][terrain][synth]") {
-    CHECK(k_terrain_generator_version == 1);
+TEST_CASE("the generator version is 2", "[world][terrain][synth]") {
+    CHECK(k_terrain_generator_version == 2);
 }
 
 // The golden values: the heights of the synthetic package (seed 1, 96 km) for a fixed map seed. Changing
@@ -47,7 +53,7 @@ TEST_CASE("synthesized heights match the recorded golden hashes", "[world][terra
     // it.
     CHECK(hash_of(*make(*map, TileCoord{3, 5})) == 0x447676E8BFFE1E39ULL);
     // Tile (23, 30) lies in the valley, with detail data.
-    CHECK(hash_of(*make(*map, TileCoord{23, 30})) == 0x5607B10FF960D094ULL);
+    CHECK(hash_of(*make(*map, TileCoord{23, 30})) == 0x8A223FA5611342B4ULL);
 }
 
 TEST_CASE("adjacent tiles agree on their shared edge, bit for bit",
@@ -125,6 +131,9 @@ TEST_CASE("the bicubic surface passes through the 32 m nodes within the detail a
         for (std::uint32_t sy = 0; sy < k_city_tile_samples; sy += 8) {
             for (std::uint32_t sx = 0; sx < k_city_tile_samples; sx += 8) {
                 const WorldPos pos{origin.x + sx * 4.0, origin.z + sy * 4.0};
+                if (near_river(*map, pos)) {
+                    continue; // carved
+                }
                 worst = std::max(worst, std::abs(tile->sample(sx, sy) - map->dem_height(pos)));
             }
         }
@@ -151,6 +160,9 @@ TEST_CASE("micro-detail is gentle on fertile flat ground and rougher on barren g
             for (std::uint32_t sy = 8; sy + 8 < k_city_tile_samples; sy += 8) {
                 for (std::uint32_t sx = 8; sx + 8 < k_city_tile_samples; sx += 8) {
                     const WorldPos pos{origin.x + sx * 4.0, origin.z + sy * 4.0};
+                    if (near_river(*map, pos)) {
+                        continue; // carved
+                    }
                     const float node = map->dem_height(pos);
                     const float deviation = std::abs(tile->sample(sx, sy) - node);
                     // flat: the 32 m neighbors in four directions are within 0.05 m of this node

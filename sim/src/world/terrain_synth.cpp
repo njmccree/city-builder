@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -97,10 +98,41 @@ struct Octave {
     std::vector<double> t;     // and its smoothed position in that cell
 };
 
+// The height of the ground after the river channels near `pos` are carved into it. `segments` are the
+// segments that can reach this point (RiverNetwork::segments_near_box), by index.
+float carve_channels(const RiverNetwork& rivers, std::span<const std::uint32_t> segments, WorldPos pos,
+                     const TerrainDefines& defines, float ground) {
+    const double edge_fraction = static_cast<double>(defines.channel_edge_depth_fraction);
+    const double bank = static_cast<double>(defines.bank_width_m);
+    float result = ground;
+    for (const std::uint32_t index : segments) {
+        const ChannelSample channel = rivers.measure_segment(index, pos);
+        const double half = static_cast<double>(channel.half_width_m);
+        const double distance = static_cast<double>(channel.distance_m);
+        if (distance >= half + bank) {
+            continue;
+        }
+        const double level = static_cast<double>(channel.level_m);
+        const double depth = static_cast<double>(channel.depth_m);
+        double bed = 0.0;
+        if (distance <= half) {
+            const double across = distance / half;
+            bed = level - depth * (1.0 - (1.0 - edge_fraction) * across * across);
+        } else {
+            const double edge_bed = level - depth * edge_fraction;
+            const double t = (distance - half) / bank;
+            bed = edge_bed + (static_cast<double>(ground) - edge_bed) * (t * t * (3.0 - 2.0 * t));
+        }
+        result = std::min(result, static_cast<float>(bed));
+    }
+    return result;
+}
+
 } // namespace
 
 std::shared_ptr<const CityTile> TerrainSynth::make_tile(const LoadedMap& map, TileCoord tile,
-                                                        std::uint64_t map_seed) {
+                                                        std::uint64_t map_seed,
+                                                        const TerrainDefines& defines) {
     CS_PROFILE_ZONE("world.synthesize_tile");
     if (!map.contains_tile(tile)) {
         throw std::out_of_range("tile (" + std::to_string(tile.tx) + ", " + std::to_string(tile.ty) +
@@ -212,6 +244,34 @@ std::shared_ptr<const CityTile> TerrainSynth::make_tile(const LoadedMap& map, Ti
     //    fertile, the rougher (0.3 m up to 3 m); water (at or below sea level, fading in over the first meter
     //    above it) gets none. Slope and fertility are functions of world position, so tiles still agree.
     const Raster<float>* fertility = map.region_layer("fertility");
+    // River channels (version 2). The segments that can reach this tile are picked once, and per block of 16
+    // x 16 samples again, so most samples (and every sample of a tile with no river) never look at the river
+    // data.
+    const RiverNetwork& rivers = map.rivers();
+    const double carve_radius = rivers.max_half_width_m() + static_cast<double>(defines.bank_width_m);
+    constexpr std::uint32_t k_block = 16;
+    constexpr std::uint32_t k_blocks = (k_samples + k_block - 1) / k_block;
+    std::vector<std::vector<std::uint32_t>> block_segments;
+    if (!rivers.empty()) {
+        const std::vector<RiverNetwork::SegmentBox> near_tile = rivers.segments_near_box(
+            origin.x, origin.z, origin.x + k_tile_size_m, origin.z + k_tile_size_m, carve_radius);
+        if (!near_tile.empty()) {
+            block_segments.resize(static_cast<std::size_t>(k_blocks) * k_blocks);
+            const double block_m = static_cast<double>(k_block) * k_city_sample_spacing_m;
+            for (std::uint32_t by = 0; by < k_blocks; ++by) {
+                for (std::uint32_t bx = 0; bx < k_blocks; ++bx) {
+                    const double x0 = origin.x + static_cast<double>(bx) * block_m;
+                    const double z0 = origin.z + static_cast<double>(by) * block_m;
+                    for (const RiverNetwork::SegmentBox& box : near_tile) {
+                        if (box.max_x >= x0 - carve_radius && box.min_x <= x0 + block_m + carve_radius &&
+                            box.max_z >= z0 - carve_radius && box.min_z <= z0 + block_m + carve_radius) {
+                            block_segments[static_cast<std::size_t>(by) * k_blocks + bx].push_back(box.index);
+                        }
+                    }
+                }
+            }
+        }
+    }
     std::vector<float> heights(CityTile::k_sample_count);
     for (std::uint32_t sy = 0; sy < k_samples; ++sy) {
         for (std::uint32_t sx = 0; sx < k_samples; ++sx) {
@@ -254,8 +314,17 @@ std::shared_ptr<const CityTile> TerrainSynth::make_tile(const LoadedMap& map, Ti
             }
             noise = 2.0 * (noise / k_octave_weight_sum) - 1.0; // -1 .. 1
 
-            heights[static_cast<std::size_t>(sy) * k_samples + sx] =
-                static_cast<float>(h + amplitude * noise);
+            float height = static_cast<float>(h + amplitude * noise);
+            if (!block_segments.empty()) {
+                const std::vector<std::uint32_t>& near_block =
+                    block_segments[static_cast<std::size_t>(sy / k_block) * k_blocks + sx / k_block];
+                if (!near_block.empty()) {
+                    const WorldPos pos{origin.x + static_cast<double>(sx) * k_city_sample_spacing_m,
+                                       origin.z + static_cast<double>(sy) * k_city_sample_spacing_m};
+                    height = carve_channels(rivers, near_block, pos, defines, height);
+                }
+            }
+            heights[static_cast<std::size_t>(sy) * k_samples + sx] = height;
         }
     }
     return std::make_shared<const CityTile>(tile, 1, std::move(heights));
