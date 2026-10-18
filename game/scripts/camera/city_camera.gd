@@ -96,6 +96,10 @@ func step(delta: float, pan: Vector2, rotate_input: float, fast: bool = false) -
 
 
 func _process(delta: float) -> void:
+	# Held keys are read directly here, so a focused text box (the developer console) cannot stop them; ask.
+	if UiInput.is_typing(self):
+		step(delta, Vector2.ZERO, 0.0)
+		return
 	var pan: Vector2 = Input.get_vector("cam_left", "cam_right", "cam_back", "cam_forward")
 	if pan == Vector2.ZERO and _can_edge_pan():
 		pan = _edge_pan_input()
