@@ -65,7 +65,7 @@ Cloud-only work (F1.1, F1.3–F1.5, the pipeline code) can be built and tested w
 - `package.json` is parsed and its checksums are verified.
 - `citysim_mapgen --synthetic` produces a valid small package that tests and cloud sessions use.
 
-#### [ ] T1.1.1.1 — MapDef, `.csr` rasters, package manifest
+#### [x] T1.1.1.1 — MapDef, `.csr` rasters, package manifest
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** E0
 ```
 Task T1.1.1.1 (Story S1.1.1). Read CLAUDE.md and docs/architecture.md §8, §15.1–§15.3 carefully.

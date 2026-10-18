@@ -13,6 +13,7 @@ add_executable(citysim_tests
     save/world_io_tests.cpp
     content/layering_tests.cpp
     content/localization_tests.cpp
+    content/map_def_tests.cpp
     core/commands_tests.cpp
     core/component_registry_tests.cpp
     core/determinism_harness_tests.cpp
@@ -33,7 +34,9 @@ add_executable(citysim_tests
     time/calendar_events_tests.cpp
     time/calendar_system_tests.cpp
     time/calendar_tests.cpp
-    time/clock_tests.cpp)
+    time/clock_tests.cpp
+    world/package_tests.cpp
+    world/raster_tests.cpp)
 target_include_directories(citysim_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(citysim_tests PRIVATE CITYSIM_TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
     CITYSIM_GAME_CONTENT_DIR="${CMAKE_SOURCE_DIR}/game/content")

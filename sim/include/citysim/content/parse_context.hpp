@@ -72,6 +72,8 @@ class ParseContext {
                                           bool required = true);
     std::optional<std::int32_t> read_i32(const nlohmann::json& object, std::string_view key,
                                          bool required = true);
+    std::optional<std::uint64_t> read_u64(const nlohmann::json& object, std::string_view key,
+                                          bool required = true);
     std::optional<double> read_number(const nlohmann::json& object, std::string_view key,
                                       bool required = true);
     std::optional<bool> read_bool(const nlohmann::json& object, std::string_view key, bool required = true);
