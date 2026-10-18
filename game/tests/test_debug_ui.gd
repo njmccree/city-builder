@@ -76,6 +76,26 @@ func _run() -> void:
 	_check(_sim.get_stats()["speed"] == 1 and controls.get_active_speed() == 1, "key 1: speed 1 is set and lit")
 	_check(absf(slow_tps - 20.0) < 3.0, "ticks per second is about 20 at 1x (%.1f)" % slow_tps)
 
+	# While a text box has the keyboard, the speed keys type into it instead of changing the speed.
+	var box: LineEdit = LineEdit.new()
+	root.add_child(box)
+	box.grab_focus()
+	await process_frame
+	var speed_before: int = _sim.get_stats()["speed"]
+	var wanted: int = 2 if speed_before != 2 else 3
+	_push_key(KEY_1 + wanted - 1)
+	await create_timer(0.4).timeout
+	_check(_sim.get_stats()["speed"] == speed_before, "a speed key typed into a text box does not change the speed")
+	_check(box.text == str(wanted), "...and it is typed into the box (%s)" % box.text)
+	box.release_focus()
+	await process_frame
+	_push_key(KEY_1 + wanted - 1)
+	await create_timer(0.4).timeout
+	_check(_sim.get_stats()["speed"] == wanted, "the same key changes the speed once the box lets go")
+	box.queue_free()
+	await _press("time_speed_1")
+	await create_timer(0.4).timeout
+
 	# Pause stops the clock and lights Pause only.
 	await _press("time_pause")
 	await create_timer(0.5).timeout
@@ -107,6 +127,17 @@ func _press(action: String) -> void:
 	Input.parse_input_event(release)
 	# Unhandled input is delivered on the next frame.
 	await process_frame
+
+
+## Sends a real key press through the whole input pipeline (text boxes first, then game shortcuts).
+func _push_key(keycode: Key) -> void:
+	for pressed: bool in [true, false]:
+		var event: InputEventKey = InputEventKey.new()
+		event.keycode = keycode
+		event.physical_keycode = keycode
+		event.unicode = keycode
+		event.pressed = pressed
+		root.push_input(event)
 
 
 func _check(condition: bool, what: String) -> void:

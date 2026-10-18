@@ -33,6 +33,8 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if UiInput.is_typing(self):
+		return
 	if event.is_action_pressed("time_pause"):
 		request_toggle_pause()
 	elif event.is_action_pressed("time_speed_1"):
