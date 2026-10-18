@@ -297,7 +297,7 @@ All of these values are **tunable through content data** (`game/content/base/def
   - Godot Y-up
   - the simulation uses `(x, z)` on the ground plane plus a height `y`
   - angles in radians
-  - world origin at the south-west corner of the city map
+  - simulation positions inside a city use that city's **local frame**, with its origin at the south-west corner of the city area (§15.3); region-level positions use world coordinates (§15.3)
 
 ## 12. Simulation Level of Detail (forward-looking)
 
@@ -327,3 +327,112 @@ All of these values are **tunable through content data** (`game/content/base/def
 - **Simulation at 4× (80 tps):** ≤ 12.5 ms per tick average on the simulation thread plus workers, including 50,000 simulated agents in the walking skeleton.
 - **VRAM:** ≤ 4.5 GB in normal play, leaving headroom.
 - These budgets are reviewed in `docs/perf.md` at the end of each milestone.
+
+## 15. World & Terrain
+
+The world is **one continuous terrain per map**: a continent-scale region built from real data. Cities are 8 × 8 km areas cut out of it, and **neighboring cities share the same terrain** (GDD §13). Terrain is detailed only where it is needed.
+
+### 15.1 Two resolutions
+| Layer | Resolution | Extent | Source | Lives in |
+|---|---|---|---|---|
+| **Region rasters** | 1,000 m cells (set per map) | the whole map (e.g., Egypt → Mesopotamia) | offline pipeline (§15.5) | map package, always loaded |
+| **Package detail DEM** | 32 m samples, in 2,048 m tiles | only **detail regions** (polygons in the map definition: the Nile Delta and valley, the Mesopotamian alluvium, …) | offline pipeline | map package, loaded per tile on demand |
+| **City terrain** | **4 m** samples, in 2,048 m tiles (513 × 513 samples; edge samples are shared with the neighbor) | the city areas being simulated in detail, plus a 1-tile ring | **synthesized at run time** from the package detail DEM (§15.4) | memory only; never saved |
+
+- A **city area** is exactly **4 × 4 detail tiles = 8,192 m square**, aligned to the tile grid. City areas never overlap but may touch. A city can only be founded where every one of its tiles lies inside a detail region.
+- Outside the active city's tiles and ring, the renderer uses region rasters and the 32 m DEM.
+
+### 15.2 Map packages
+- A **`MapDef`** (content type `"map"`) holds:
+  - `id`, `name_key`
+  - geographic bounds (lon/lat)
+  - projection parameters
+  - region cell size
+  - detail-region polygons
+  - the river regime ids it uses (§15.6)
+  - the package folder name
+- A **map package** is generated data in `game/content/<mod>/maps/<map>/`. **It is not committed** (it is gitignored and rebuilt by the pipeline). It contains:
+  - `package.json`: the map id, pipeline version, source dataset versions, projection, raster sizes, the tile list, an XXH3 checksum per file, and the overall **package hash**
+  - `region/<layer>.csr`: elevation, land mask, fertility, vegetation, wetness, one layer per resource deposit
+  - `detail/<tx>_<ty>.csr`: 65 × 65 samples, 32 m spacing, 2,048 m tiles
+  - `rivers.json`: polylines with per-vertex width, depth and base water level, plus order and discharge
+  - `lakes.json`
+- **`.csr` raster format** (one format for every raster):
+  - magic `CSRA`, u16 version
+  - u32 width, u32 height
+  - dtype (u8 / u16 / i16 / f32), f32 scale, f32 offset, nodata value
+  - zstd-compressed row-major payload, with row 0 at the south
+  - XXH3 checksum at the end
+- **Sources** that *are* committed live in `tools/terrain/maps/<map>/`: the map definition input, authored GeoJSON (historical corrections, deposits, fertility overrides) and their source notes.
+- Tests and cloud sessions use a **synthetic package** made by `citysim_mapgen --synthetic` (a procedural valley, river, delta and coast). Real packages need the PC pipeline.
+
+### 15.3 Coordinate frames
+- **Map projection:** Lambert azimuthal equal-area centered on the map's center, in meters. Distortion is acceptable at continental scale.
+- **World frame:** meters from the south-west corner of the projected map bounds. Stored as `double` (`WorldPos {double x, z}`). Used for region-level things: city area origins, rivers, trade routes, armies.
+- **City-local frame:** meters from the south-west corner of a city area, stored as `float`. Everything in the city simulation (agents, buildings, roads) uses it, because an 8 km frame gives float positions millimeter precision. Conversions go through `CityArea::origin` (double). Neighboring cities appear in the active city's frame through that offset.
+- **Godot:**
+  - The **city view** renders in the active city's local frame.
+  - The **region view** renders world-frame meters relative to the map center (float precision there is ~0.25 m, plenty at that zoom).
+  - The standard (single-precision) Godot build is enough. No double-precision engine build is needed.
+
+### 15.4 Run-time terrain synthesis and edits
+- `TerrainSynth` turns package detail tiles into 4 m city tiles. **It is deterministic and versioned** (`k_terrain_generator_version`):
+  1. Bicubic upsampling of the 32 m DEM.
+  2. Seeded micro-detail noise. The seed comes from `rng::hash64(map_seed, stream("terrain.detail"), tx, ty)`, where `map_seed` comes from the MapDef, **not** from the game seed. The same map therefore gives the same terrain in every game.
+  3. River channels carved along `rivers.json` (§15.6).
+  4. Historical corrections, which were already applied by the pipeline.
+- **Terrain is a function of the package hash and the generator version.** Saves store the map id, package hash and generator version, never base heights. A mismatch on load is a warning: the terrain may differ.
+- **Edits** (terraforming, building pads) are **sparse per-tile delta layers** (`float` offsets) on top of the synthesized base. Deltas are hashed and saved.
+- A tile's data is **immutable**. An edit produces a new tile version (copy-on-write) and publishes a new shared pointer, the same pattern as `SnapshotGrid` (§7.3). The renderer rebuilds a chunk only when its pointer changes.
+- Height queries: `WorldTerrain::height_at(city, x, z)` samples bilinearly from base + delta. Normals, slope and water depth are derived from it.
+- Synthesizing a city's 16 + ring tiles runs on the `JobSystem` when a city becomes active (a new game, founding, a load, or switching cities), with one chunk per tile.
+
+### 15.5 Offline pipeline (`tools/terrain/`, Python)
+- `python -m terrain.build_map tools/terrain/maps/<map>/map.json` → map package. Downloads are cached in `~/.cache/citysim/terrain/` and checked against checksums.
+- Datasets. Licenses are verified and recorded in `docs/licenses.md` before use; attribution goes in the credits.
+  - **Copernicus DEM GLO-30** for elevation
+  - **HydroRIVERS / HydroLAKES** (HydroSHEDS) for rivers and lakes
+  - **Natural Earth** for coastlines and the land/sea mask
+  - **ESA WorldCover** for vegetation and wetland
+  - If a license is unsuitable, fall back to Natural Earth or OpenStreetMap, as the license review in T1.2.1.1 decides.
+- Steps:
+  1. fetch
+  2. mosaic
+  3. reproject (pyproj / rasterio)
+  4. apply **historical corrections** (§15.7)
+  5. build the region rasters
+  6. build the detail tiles for the detail regions
+  7. extract and simplify rivers and lakes
+  8. derive fertility and vegetation, then rasterize the authored deposit and fertility overrides
+  9. write the package with checksums
+- It has its own tests (pytest, with tiny fixture rasters) that run in CI.
+
+### 15.6 Water
+- **Fixed rivers with variable water levels** (GDD §13): river courses never move during play.
+- Each river **reach** has a water-level offset in meters. It is singleton state that is hashed and saved.
+- **Sea level** is 0 m, with a per-map offset (reserved for later).
+- **Flood extent:** cells whose terrain lies below the reach's current water level, flood-filled outward from the channel and limited to the reach's floodplain polygon (derived by the pipeline). It is recomputed incrementally and time-sliced when a level changes, and it emits `WaterChanged` events.
+- **River regimes** (`RiverRegimeDef`) define an annual level curve over the calendar year plus yearly variance (low, normal and high years drawn with `citysim::rng`). They run on **calendar time** (§6). The **Nile inundation** is the first regime and the test case for the event mechanic: high floods emit damage events, low floods emit shortage events, and receding water renews fertility (§15.8).
+
+### 15.7 Historical corrections ("light")
+- Authored **GeoJSON overlays**, applied in order by the pipeline, with these operations:
+  - `set_water`, `set_land`
+  - `elevation_offset`, `flatten_to`
+  - `remove_river`, `river_path`, which adds or reroutes a polyline using per-vertex width and depth
+- Every feature carries `source` and `confidence` properties. The designer reviews every correction.
+- Corrections are specific to a map and an era. A map package is built for one starting era. A full playthrough keeps the terrain of its starting era, and later-era change (canals, dams) happens through gameplay.
+
+### 15.8 Resources & fertility
+- Each city has **resource fields** at 4 m: fertility (0–1), vegetation density, wetness, and one deposit amount per `ResourceDef`. They are sampled from the region and detail layers plus seeded detail noise. Like terrain, the base is regenerable and only **deltas** (depletion, silt renewal, disaster damage) are hashed and saved.
+- `ResourceDef` (content type `"resource"`): id, `name_key`, kind (soil / stone / ore / fuel / vegetation), overlay color ramp, `renewable` flag and renewal rule.
+- The extraction API reduces a deposit, and depletion is permanent unless the resource is renewable. Trade agreements (E4) exist so a realm doesn't have to exhaust its own deposits.
+
+### 15.9 Rendering
+- **City terrain:** `TerrainRenderer`, a GDExtension node. It uses a CDLOD-style quadtree of chunks per tile, with skirts at LOD seams. It builds meshes from the shared immutable tile data and draws the ring and horizon from the 32 m and region data.
+- **Shading:** splat blending by slope, height, fertility, vegetation and wetness. Triplanar mapping on steep slopes.
+- **Water:** river surfaces are built from polylines and current levels. There is a sea plane, and flood extents are shown as water surfaces.
+- **Vegetation:** instanced (MultiMesh) scatter, deterministic and driven by the vegetation layer. It is culled and LOD'd by distance.
+- **Overlays:** a shared data-overlay system (CS2-style) for fertility, deposits, elevation contours, slope and water depth. Each overlay reads a resource field through a texture and shows a legend.
+- **Region view:** the same chunked renderer fed with region rasters. **A map-style shader blends from shaded 3D terrain into a "paper map" look as the camera rises**, with hillshade, inked coasts and rivers, and labels from `LabelDef` content (historical names per era).
+- City view ↔ region view: zooming out past a threshold switches to the region view, and clicking a city area returns to the city view. The switch is a short cross-fade. A seamless zoom is a later improvement.
+- **Budgets (reference machine):** terrain + water + vegetation ≤ 6 ms GPU at 1080p in the city view. Terrain VRAM ≤ 1 GB.

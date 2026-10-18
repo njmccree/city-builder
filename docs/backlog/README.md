@@ -37,7 +37,7 @@ Every Task lists:
 | Epic | Title | Milestone | Status |
 |---|---|---|---|
 | **E0** | **Foundation & Walking Skeleton** → [E0-foundation.md](E0-foundation.md) | M0 | **Drafted** |
-| E1 | Terrain & World: real-data pipeline, region map, city terrain, water | M1 | Awaiting design rounds |
+| **E1** | **Terrain & World** → [E1-terrain.md](E1-terrain.md) | M1 | **Drafted** |
 | E2 | City Building: roads/paths, zoning, ploppables, construction, logistics | M1 | Awaiting design rounds |
 | E3 | Citizens: agents, needs, life cycle, traits, households, simulation LOD | M1 | Awaiting design rounds |
 | E4 | Economy, Industry & Trade | M1–M2 | Round 4 paused |
@@ -52,7 +52,7 @@ Every Task lists:
 
 **Milestones (draft):**
 - **M0:** walking skeleton (E0).
-- **M1:** one playable city in one era (sandbox).
+- **M1:** one playable city in one era (sandbox): **the Nile Delta in the Ancient era**.
 - **M2:** government and society.
 - **M3:** multiple cities, realms and eras.
 - **M4:** launch content and release.

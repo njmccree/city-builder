@@ -11,7 +11,8 @@
 | 2 | Core Gameplay Loop & City Building | **Complete** (incl. rank follow-ups 26a–26f) |
 | 3 | Citizens & Society | **Complete** |
 | 4 | Economy, Industry & Trade | **Complete** |
-| 5 | Government, Politics, Diplomacy & War | In progress |
+| E1 | World & Terrain follow-ups (E1-a…f) | **Complete** → backlog E1 drafted |
+| 5 | Government, Politics, Diplomacy & War | In progress (questions sent; Rounds 6–7 recommended first) |
 | T | Technology & Workflow | **Complete** → `docs/architecture.md`, backlog E0 drafted |
 
 ---
@@ -479,6 +480,15 @@ One system that gains layers as **institutions are unlocked**. The unlocks are d
 
 ### 12.12 Economic Cycles (Q52)
 - Booms, recessions, inflation, and crashes come from **both scripted history** (e.g., 1929) **and the simulation's own dynamics**.
+
+## 13. World & Terrain (E1 decisions)
+- **E1-a:** **M1 is the Nile Delta in the Ancient era.**
+- **E1-b:** a city area is **8 × 8 km** for now (technically 8,192 m: 4 × 4 terrain tiles).
+- **E1-c:** the region map is **both** 3D terrain and a stylized paper map, **blending as the camera zooms out**.
+- **E1-d:** **light historical corrections** to the modern terrain data (e.g., remove the Suez Canal, Lake Nasser and modern reservoirs; approximate ancient Nile branches and the ancient Gulf shoreline), every one sourced and reviewed by the designer.
+- **E1-e:** **fixed rivers whose water level can change** (the Nile inundation); no flowing-water simulation for now.
+- **E1-f:** **neighboring cities share one continuous terrain.**
+- Technical design: `docs/architecture.md` §15. Backlog: `docs/backlog/E1-terrain.md`.
 
 ## 6. Scope Notes & Risks (living)
 - **Content multiplication:** launch maps × launch eras × playable cultures. Because full playthroughs stay on one map (4n), the Middle East map needs Ancient, Colonial, and Modern content. _Launch scope decision OPEN._
