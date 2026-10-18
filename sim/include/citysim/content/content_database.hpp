@@ -8,6 +8,7 @@
 #include "citysim/content/mod_load_order.hpp"
 #include "citysim/time/time_defines.hpp"
 #include "citysim/world/city_defines.hpp"
+#include "citysim/world/terrain_defines.hpp"
 
 #include <cstdint>
 #include <filesystem>
@@ -112,6 +113,8 @@ class ContentDatabase {
     const time::TimeDefines& time_defines() const { return time_defines_; }
     // The city numbers from defines/world.json (later mods override earlier ones field by field).
     const world::CityDefines& city_defines() const { return city_defines_; }
+    // The terrain shaping numbers from defines/terrain.json.
+    const world::TerrainDefines& terrain_defines() const { return terrain_defines_; }
 
   private:
     // One definition as read from files, layered but not parsed yet.
@@ -129,6 +132,8 @@ class ContentDatabase {
                            const std::string& display_name, std::vector<ContentIssue>& issues);
     void load_world_defines(const std::filesystem::path& path, const std::string& mod_root,
                             const std::string& display_name, std::vector<ContentIssue>& issues);
+    void load_terrain_defines(const std::filesystem::path& path, const std::string& mod_root,
+                              const std::string& display_name, std::vector<ContentIssue>& issues);
     void finish(std::vector<ContentIssue>& issues);
     void collect_loc_files(const ModInfo& mod, std::vector<ContentIssue>& issues);
     void check_loc_keys(const std::vector<ModInfo>& mods, const RawDefs& raw,
@@ -149,6 +154,7 @@ class ContentDatabase {
     std::map<std::type_index, IDefKind*> by_type_;
     time::TimeDefines time_defines_;
     world::CityDefines city_defines_;
+    world::TerrainDefines terrain_defines_;
     Localizer localizer_;
     // Where each loaded string came from, by (language, key): mod root and file, for messages.
     std::map<std::pair<std::string, std::string>, std::pair<std::string, std::string>> loc_origins_;
