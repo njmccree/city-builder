@@ -2,6 +2,7 @@
 
 #include "citysim/content/json_merge_patch.hpp"
 #include "citysim/content/map_def.hpp"
+#include "citysim/content/resource_def.hpp"
 #include "citysim/core/state_hasher.hpp"
 
 #include <algorithm>
@@ -122,6 +123,7 @@ void add_if_new(std::vector<std::string>& mods, const std::string& id) {
 ContentDatabase::ContentDatabase() {
     register_def_type<EraDef>("era", parse_era_def, resolve_era_def, validate_era_def);
     register_def_type<MapDef>("map", parse_map_def, nullptr, validate_map_def);
+    register_def_type<ResourceDef>("resource", parse_resource_def, nullptr, validate_resource_def);
 }
 
 std::string ContentDatabase::type_name_of(std::type_index type) const {

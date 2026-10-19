@@ -34,7 +34,7 @@ F1.1  T1.1.1.1 → T1.1.1.2 → T1.1.2.1★ → T1.1.2.2 → T1.1.2.3
 F1.2  T1.2.1.1 → T1.2.5.1 → T1.2.2.1(PC) → T1.2.3.1(PC) → T1.2.4.1 → T1.2.4.2 → T1.2.5.2 → T1.2.6.1(PC)
 F1.5  T1.5.1.1                                    (after T1.1.2.1)
 F1.3  T1.3.1.1 → T1.3.1.2 → T1.3.2.1                (after T1.1.2.2)
-F1.4  T1.4.1.2 → T1.4.1.1                            (after T1.1.2.2)
+F1.4  T1.4.1.1 → T1.4.1.2                            (after T1.1.2.2; the "resource" def type comes first, then the data)
 F1.6  T1.6.1.1★(PC) → T1.6.1.2(PC) → T1.6.1.3(PC) → T1.6.1.4(PC) → T1.6.2.1(PC)
 F1.7  T1.7.1.3 · T1.7.1.1(PC) → T1.7.1.2(PC) → T1.7.2.1(PC)
 F1.8  T1.8.1.1 → T1.8.1.2(PC)
@@ -552,8 +552,8 @@ Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S1.3.2-inunda
 - Per-city 4 m resource fields are sampled deterministically from the package.
 - The extraction and renewal API works, and deltas are hashed and saved.
 
-#### [ ] T1.4.1.1 — Resource fields, extraction and renewal
-- **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.1.2.3, T1.4.1.2
+#### [x] T1.4.1.1 — Resource fields, extraction and renewal
+- **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.1.2.3
 ```
 Task T1.4.1.1 (Story S1.4.1). Read docs/architecture.md §15.8 and §15.4 (the same base+delta pattern).
 
@@ -571,17 +571,23 @@ Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S1.4.1-resour
 ```
 
 #### [ ] T1.4.1.2 — Author base ResourceDefs (data entry)
-- **Model:** **Haiku** · **Session:** [Cloud] · **Depends on:** T1.1.1.1
+- **Model:** **Haiku** · **Session:** [Cloud] · **Depends on:** T1.4.1.1
 ```
-Task T1.4.1.2 (Story S1.4.1). Data entry only — do not change C++ code. If the "resource" def type does not
-exist yet, create the JSON anyway and run the validator after T1.4.1.1 lands (note this in the PR).
+Task T1.4.1.2 (Story S1.4.1). Data entry only — do not change C++ code. The "resource" def type exists
+(T1.4.1.1); its format is documented in game/content/README.md ("Resource definitions") and
+sim/include/citysim/content/resource_def.hpp. Run the validator before you commit:
+build/linux-debug/sim/tools/validate/citysim_validate game/content --strict
 
 Create game/content/base/defs/resources.json with type "resource" defs (ids base:resource.<name>):
 fertile_soil (soil, renewable silt), clay (soil), vegetation_reeds (vegetation, regrowth),
 vegetation_palms (vegetation, regrowth), timber (vegetation, regrowth), stone_limestone, stone_sandstone,
 stone_granite, stone_travertine (all stone), ore_copper, ore_tin, ore_gold, ore_silver, ore_lead, ore_iron
-(all ore), natron (stone), bitumen (fuel), oil (fuel). Region layer names = the part after "resource." .
-Give each an overlay color ramp (3 stops, readable on terrain; distinct hues per kind) and name/desc keys.
+(all ore), natron (stone), bitumen (fuel), oil (fuel). The region layer is the part of the id after
+"resource." (leave "layer" out) EXCEPT: fertile_soil uses "layer": "fertility", and vegetation_reeds,
+vegetation_palms and timber all use "layer": "vegetation" (the package has one vegetation layer; they share it).
+Give each a "ramp" of 3 stops, strings "#rrggbb" from little to much, readable on terrain, distinct hues per
+kind, and name_key/desc_key. Also set "renewable" ("none"|"silt"|"regrowth") and, for renewable ones,
+"renewal_per_year" (0..1): fertile_soil silt 0.5; reeds, palms and timber regrowth 0.2, 0.05 and 0.02.
 Add game/content/base/loc/en/resources.json with plain, grounded English names and one-sentence
 descriptions (e.g., natron: "A natural salt from desert lake beds, used in mummification and glassmaking.").
 Follow the Task workflow in CLAUDE.md (branch story/S1.4.1-resources).
