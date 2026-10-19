@@ -31,4 +31,13 @@ void publish_flood_extents(core::Simulation& simulation, runner::RenderSnapshot&
 // only reads the World. Does nothing before the first stroke or if terraforming is not installed.
 void publish_terraform_report(core::Simulation& simulation, runner::RenderSnapshot& snapshot);
 
+// Another publish hook: adds one SnapshotGrid per resource field and active tile that has anything in it,
+// named "resource.<field>.<tx>_<ty>" (<field> is the package layer: "fertility", "ore_copper", ...), 512 x
+// 512 cells of 4 m, one byte each (255 is the richest; cell (x, y) is the sample at tile origin + 4 m * (x,
+// y)). The `cells` pointer is the ResourceFields' own and changes only when that tile's values do, so a
+// renderer rebuilds an overlay only when the pointer differs from the last one it saw. A field with no grid
+// for a tile has nothing there. Runs on the runner thread after a tick; it makes the bases of tiles that have
+// none yet. Does nothing if the resource fields are not installed.
+void publish_resource_grids(core::Simulation& simulation, runner::RenderSnapshot& snapshot);
+
 } // namespace citysim::world

@@ -3,6 +3,7 @@
 #include "citysim/profiling/profile.hpp"
 #include "citysim/world/city_registry.hpp"
 #include "citysim/world/flood_map.hpp"
+#include "citysim/world/resource_fields.hpp"
 #include "citysim/world/terraform_report.hpp"
 #include "citysim/world/world_terrain.hpp"
 
@@ -58,6 +59,25 @@ void publish_terraform_report(core::Simulation& simulation, runner::RenderSnapsh
                     static_cast<float>(report->volume_m3), static_cast<float>(report->cost),
                     static_cast<float>(report->total_cost)};
     snapshot.channels.push_back(std::move(channel));
+}
+
+void publish_resource_grids(core::Simulation& simulation, runner::RenderSnapshot& snapshot) {
+    CS_PROFILE_ZONE("world.publish_resources");
+    auto* fields = simulation.world().ctx().find<ResourceFields>();
+    const auto* terrain = simulation.world().ctx().find<WorldTerrain>();
+    if (fields == nullptr || terrain == nullptr) {
+        return;
+    }
+    for (const auto& entry : terrain->tiles()) { // sorted by TileCoord
+        for (FieldId field = 0; field < fields->fields().size(); ++field) {
+            if (std::shared_ptr<const ResourceFields::Grid> grid = fields->grid(field, entry.first)) {
+                snapshot.grids.push_back(runner::SnapshotGrid{
+                    "resource." + fields->fields()[field].name + "." + std::to_string(entry.first.tx) + "_" +
+                        std::to_string(entry.first.ty),
+                    ResourceFields::k_tile_cells, ResourceFields::k_tile_cells, 4.0F, std::move(grid)});
+            }
+        }
+    }
 }
 
 } // namespace citysim::world

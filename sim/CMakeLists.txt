@@ -6,6 +6,7 @@ add_library(citysim_core STATIC
     src/content/json_merge_patch.cpp
     src/content/localizer.cpp
     src/content/map_def.cpp
+    src/content/resource_def.cpp
     src/content/mod_discovery.cpp
     src/content/mod_load_order.cpp
     src/content/mod_manifest.cpp
@@ -60,6 +61,8 @@ add_library(citysim_core STATIC
     src/world/loaded_map.cpp
     src/world/map_package.cpp
     src/world/raster.cpp
+    src/world/resource_fields.cpp
+    src/world/resource_module.cpp
     src/world/river_network.cpp
     src/world/terraform.cpp
     src/world/terraform_module.cpp
@@ -82,7 +85,8 @@ citysim_set_warnings(citysim_core)
 # synthesis never fuses a multiply and an add into one rounding.
 if(NOT MSVC)
     set_source_files_properties(src/world/terrain_synth.cpp src/world/terraform.cpp
-        src/debug/terrain_walk_grid.cpp PROPERTIES
+        src/debug/terrain_walk_grid.cpp src/world/resource_fields.cpp
+        src/world/loaded_map.cpp PROPERTIES
         COMPILE_OPTIONS -ffp-contract=off)
 endif()
 
