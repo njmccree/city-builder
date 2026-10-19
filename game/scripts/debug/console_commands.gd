@@ -163,7 +163,8 @@ func _register_builtins() -> void:
 	register("new_test_map", _cmd_new_test_map,
 		"Start a new game on a fresh test map: new_test_map <seed> <cells per side, 16-1024>.", ["int", "int"])
 	register("new_world", _cmd_new_world,
-		"Start a game on the synthetic map in res://content_dev and found a city on it: new_world [seed].", ["int?"])
+		"Start a game on the synthetic map in res://content_dev and found a city on it: new_world [seed] [tx ty] (the city's south-west tile; default: the middle of the detail terrain).",
+		["int?", "int?", "int?"])
 
 
 func _cmd_clear() -> String:
@@ -211,10 +212,10 @@ func _cmd_new_test_map(map_seed: int, size: int) -> String:
 	return "New game: seed %d, map %d x %d cells (%d m)." % [map_seed, size, size, size * 4]
 
 
-func _cmd_new_world(game_seed: int = Sim.DEFAULT_SEED) -> String:
+func _cmd_new_world(game_seed: int = Sim.DEFAULT_SEED, tx: int = -1, ty: int = -1) -> String:
 	if not Sim.has_dev_world():
 		return "There is no dev map. Build it once with:  citysim_mapgen --synthetic --mod game/content_dev"
-	var result: Dictionary = Sim.new_world(game_seed)
+	var result: Dictionary = Sim.new_world(game_seed, true, Vector2i(tx, ty))
 	if not bool(result["ok"]):
 		return "The game could not start: %s" % str(result["errors"])
 	return "New world game: seed %d on %s, city founded at tile %s." % [game_seed, Sim.DEV_MAP_ID, str(result["site"])]

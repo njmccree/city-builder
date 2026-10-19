@@ -5,7 +5,7 @@ extends SceneTree
 ##   <godot> --path game --resolution 1920x1080 -s res://tests/terrain_bench.gd
 ## For each camera view it waits until every wanted chunk is built, then averages 120 frames with the terrain
 ## shown and 120 with it hidden: the difference is the terrain's GPU cost. Screenshots go to
-## user://terrain_bench/<view>.png; the numbers are printed.
+## user://terrain_bench/<view>.png; the numbers are printed. CITYSIM_BENCH_SITE=tx,ty picks the city's site.
 
 const FRAMES: int = 120
 ## name, zoom distance (m), camera yaw (degrees)
@@ -34,7 +34,12 @@ func _run() -> void:
 		printerr("No dev map: run citysim_mapgen --synthetic --mod game/content_dev first")
 		quit(1)
 		return
-	var result: Dictionary = sim.new_world(1, false)
+	# CITYSIM_BENCH_SITE=tx,ty founds the city there instead of the middle of the detail terrain.
+	var site: Vector2i = Vector2i(-1, -1)
+	var site_text: String = OS.get_environment("CITYSIM_BENCH_SITE")
+	if site_text.contains(","):
+		site = Vector2i(int(site_text.get_slice(",", 0)), int(site_text.get_slice(",", 1)))
+	var result: Dictionary = sim.new_world(1, false, site)
 	if not result["ok"]:
 		printerr("new_world failed: ", result["errors"])
 		quit(1)

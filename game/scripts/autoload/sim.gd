@@ -80,8 +80,9 @@ func has_dev_world() -> bool:
 
 
 ## Starts a game on the developer map and founds a city on it (the first city is the active one, so its terrain
-## appears). Returns new_game's {ok, errors, warnings} plus "site": the city's south-west tile (Vector2i).
-func new_world(seed: int = DEFAULT_SEED, world_agents: bool = true) -> Dictionary:
+## appears). `site` is the city's south-west tile; the default (-1, -1) picks the middle of the detail terrain
+## (find_city_site). Returns new_game's {ok, errors, warnings} plus "site" (Vector2i).
+func new_world(seed: int = DEFAULT_SEED, world_agents: bool = true, site: Vector2i = Vector2i(-1, -1)) -> Dictionary:
 	var roots: PackedStringArray = DEFAULT_CONTENT_ROOTS.duplicate()
 	roots.append(DEV_CONTENT_ROOT)
 	var mods: PackedStringArray = DEFAULT_MODS.duplicate()
@@ -89,7 +90,8 @@ func new_world(seed: int = DEFAULT_SEED, world_agents: bool = true) -> Dictionar
 	var result: Dictionary = new_game(seed, DEFAULT_ERA, roots, mods, 0, DEV_MAP_ID, world_agents)
 	if not result["ok"]:
 		return result
-	var site: Vector2i = find_city_site()
+	if site.x < 0 or site.y < 0:
+		site = find_city_site()
 	result["site"] = site
 	found_city(site.x, site.y, "Dev City")
 	return result

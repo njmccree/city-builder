@@ -303,11 +303,22 @@ TEST_CASE("a ray finds the ground", "[world][terrain_mesh]") {
 TEST_CASE("terrain colors stay in range and turn to rock on steep slopes", "[world][terrain_mesh]") {
     for (const float h : {-20.0F, 0.0F, 40.0F, 200.0F}) {
         for (const float s : {0.0F, 0.3F, 2.0F}) {
-            for (const float c : terrain_color(h, s)) {
+            for (const float c : terrain_color(h, s, -s)) {
                 CHECK(c >= 0.0F);
                 CHECK(c <= 1.0F);
             }
         }
     }
-    CHECK(terrain_color(10.0F, 2.0F) != terrain_color(10.0F, 0.0F));
+    CHECK(terrain_color(10.0F, 2.0F, 0.0F) != terrain_color(10.0F, 0.0F, 0.0F));
+}
+
+TEST_CASE("the baked hillshade is neutral on flat ground and shows gentle slopes", "[world][terrain_mesh]") {
+    CHECK(relief_shade(0.0F, 0.0F) == Approx(1.0F));
+    // A 2 % slope rising to the east faces west, towards the light: brighter; rising to the west: darker.
+    const float towards = relief_shade(0.02F, 0.0F);
+    const float away = relief_shade(-0.02F, 0.0F);
+    CHECK(towards > 1.05F);
+    CHECK(away < 0.95F);
+    CHECK(relief_shade(50.0F, 0.0F) <= 1.35F);
+    CHECK(relief_shade(-50.0F, 0.0F) >= 0.45F);
 }

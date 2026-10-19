@@ -124,8 +124,17 @@ ChunkVertices build_chunk_vertices(const TileHeights& heights, ChunkKey key, flo
 // winding Godot treats as the front face.
 const std::vector<std::int32_t>& chunk_indices();
 
-// The placeholder terrain color (RGBA, 0..1) for a height in meters and a slope (rise over run).
-std::array<float, 4> terrain_color(float height_m, float slope);
+// The placeholder terrain color (RGBA, 0..1) for a height in meters and the slope towards east and north
+// (rise over run): a palette by height and steepness, times a baked hillshade so gentle relief shows (see
+// relief_shade).
+std::array<float, 4> terrain_color(float height_m, float slope_x, float slope_z);
+// The baked hillshade of the placeholder colors: 1 on flat ground, brighter on slopes facing the north-west,
+// darker on slopes facing away, with the slopes exaggerated k_relief_exaggeration times. Shading only: the
+// heights are not changed. The real lighting of a 2 % slope differs from flat ground by about 1 %, which the
+// eye cannot see; maps exaggerate relief the same way. Goes when the splat shader (T1.6.1.2) shades the
+// terrain.
+inline constexpr float k_relief_exaggeration = 6.0F;
+float relief_shade(float slope_x, float slope_z);
 
 // Choosing the chunks to draw: a chunk is split into its four children while its geometric error, seen from
 // the camera, covers more than `max_error_px` pixels, or while the camera is closer than

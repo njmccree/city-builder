@@ -256,7 +256,21 @@ TileChanges compare_tiles(const CityTile& before, const CityTile& after) {
     return changes;
 }
 
-std::array<float, 4> terrain_color(float height_m, float slope) {
+float relief_shade(float slope_x, float slope_z) {
+    // Light from the north-west (x west, z north) at 45 degrees, as the pipeline's hillshade previews.
+    constexpr float k_light_x = -0.5F;
+    constexpr float k_light_y = 0.70710678F;
+    constexpr float k_light_z = 0.5F;
+    float nx = -slope_x * k_relief_exaggeration;
+    float ny = 1.0F;
+    float nz = -slope_z * k_relief_exaggeration;
+    normalize3(nx, ny, nz);
+    const float lit = (nx * k_light_x + ny * k_light_y + nz * k_light_z) / k_light_y;
+    return std::clamp(lit, 0.45F, 1.35F);
+}
+
+std::array<float, 4> terrain_color(float height_m, float slope_x, float slope_z) {
+    const float slope = std::sqrt(slope_x * slope_x + slope_z * slope_z);
     // Placeholder palette until the splat shader (T1.6.1.2): mud below sea level, green low ground, olive and
     // then sand higher up, rock on steep slopes.
     const std::array<float, 3> mud = {0.36F, 0.33F, 0.26F};
@@ -274,7 +288,9 @@ std::array<float, 4> terrain_color(float height_m, float slope) {
     mix(olive, smoothstep(30.0F, 70.0F, height_m));
     mix(sand, smoothstep(60.0F, 120.0F, height_m));
     mix(rock, smoothstep(0.25F, 0.6F, slope));
-    return {color[0], color[1], color[2], 1.0F};
+    const float shade = relief_shade(slope_x, slope_z);
+    return {std::min(color[0] * shade, 1.0F), std::min(color[1] * shade, 1.0F),
+            std::min(color[2] * shade, 1.0F), 1.0F};
 }
 
 std::pair<float, float> build_chunk_vertices(const TileHeights& heights, ChunkKey key, float skirt_depth_m,
@@ -305,8 +321,7 @@ std::pair<float, float> build_chunk_vertices(const TileHeights& heights, ChunkKe
             normals[v * 3 + 0] = nx;
             normals[v * 3 + 1] = ny;
             normals[v * 3 + 2] = nz;
-            const std::array<float, 4> color =
-                terrain_color(h, std::sqrt(slope_x * slope_x + slope_z * slope_z));
+            const std::array<float, 4> color = terrain_color(h, slope_x, slope_z);
             std::copy(color.begin(), color.end(), colors.begin() + static_cast<std::ptrdiff_t>(v * 4));
             low = std::min(low, h);
             high = std::max(high, h);
@@ -406,8 +421,7 @@ ChunkVertices build_horizon_patch(const LoadedMap& map, WorldPos origin, std::ui
             out.normals[v * 3 + 0] = nx;
             out.normals[v * 3 + 1] = ny;
             out.normals[v * 3 + 2] = nz;
-            const std::array<float, 4> color =
-                terrain_color(h, std::sqrt(slope_x * slope_x + slope_z * slope_z));
+            const std::array<float, 4> color = terrain_color(h, slope_x, slope_z);
             std::copy(color.begin(), color.end(), out.colors.begin() + static_cast<std::ptrdiff_t>(v * 4));
             low = std::min(low, h);
             high = std::max(high, h);
