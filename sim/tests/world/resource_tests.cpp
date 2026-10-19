@@ -74,9 +74,12 @@ struct Setup {
         write_text(map.mod_dir() / "defs" / "resources.json", defs);
         write_text(map.mod_dir() / "loc" / "en" / "resources.json", k_loc);
         const auto result = db->load({map.mod_dir()});
+        std::string errors;
         for (const auto& issue : result.errors) {
-            FAIL(issue.format());
+            errors += issue.format() + "\n";
         }
+        INFO(errors);
+        REQUIRE(result.errors.empty());
         loaded = open_map(*db, MapContent::map_id());
         sim = make_simulation(2);
     }
@@ -515,9 +518,12 @@ TEST_CASE("a resource definition is read and checked", "[content][resources]") {
                    R"({ "mod.t.name": "T", "r.name": "R", "r.desc": "R." })");
         content::ContentDatabase db;
         const auto result = db.load({mod});
+        std::string errors;
         for (const auto& issue : result.errors) {
-            FAIL(issue.format());
+            errors += issue.format() + "\n";
         }
+        INFO(errors);
+        REQUIRE(result.errors.empty());
         const auto& defs = db.registry<ResourceDef>();
         REQUIRE(defs.size() == 1);
         const ResourceDef& def = defs.all()[0];
