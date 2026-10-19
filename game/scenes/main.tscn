@@ -79,4 +79,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1000, 0, 1000)
 
 [node name="TestMapView" type="TestMapView" parent="."]
 
+[node name="TerrainRenderer" type="TerrainRenderer" parent="."]
+
 [node name="AgentRenderer" type="AgentRenderer" parent="."]

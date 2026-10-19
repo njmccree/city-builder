@@ -13,6 +13,7 @@
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/array.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
+#include <godot_cpp/variant/vector2i.hpp>
 #include <string>
 
 namespace citysim::gdext {
@@ -77,6 +78,7 @@ void CitySim::_bind_methods() {
     godot::ClassDB::bind_method(godot::D_METHOD("get_channel", "name"), &CitySim::get_channel);
     godot::ClassDB::bind_method(godot::D_METHOD("get_cities"), &CitySim::get_cities);
     godot::ClassDB::bind_method(godot::D_METHOD("get_active_city_id"), &CitySim::get_active_city_id);
+    godot::ClassDB::bind_method(godot::D_METHOD("get_map_info"), &CitySim::get_map_info);
 
     ADD_SIGNAL(godot::MethodInfo("tick_advanced", godot::PropertyInfo(godot::Variant::INT, "tick")));
     ADD_SIGNAL(godot::MethodInfo("date_changed", godot::PropertyInfo(godot::Variant::STRING, "text")));
@@ -222,6 +224,29 @@ godot::Array CitySim::get_cities() const {
         result.push_back(entry);
     }
     return result;
+}
+
+std::shared_ptr<const world::LoadedMap> CitySim::loaded_map() const {
+    return session_ ? session_->map() : nullptr;
+}
+
+Dictionary CitySim::get_map_info() const {
+    Dictionary info;
+    const std::shared_ptr<const world::LoadedMap> map = loaded_map();
+    if (!map) {
+        return info;
+    }
+    info["map_id"] = to_godot(map->map_id());
+    info["width_m"] = map->width_m();
+    info["height_m"] = map->height_m();
+    info["tiles_x"] = static_cast<int64_t>(map->tiles_x());
+    info["tiles_y"] = static_cast<int64_t>(map->tiles_y());
+    godot::Array detail;
+    for (const world::TileCoord tile : map->manifest().detail.tiles) {
+        detail.push_back(godot::Vector2i(tile.tx, tile.ty));
+    }
+    info["detail_tiles"] = detail;
+    return info;
 }
 
 void CitySim::_process(double) {

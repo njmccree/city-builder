@@ -573,4 +573,24 @@ PackageManifest write_synthetic_package(const SyntheticSpec& spec, const std::fi
     return manifest;
 }
 
+PackageManifest write_synthetic_mod(const SyntheticSpec& spec, const std::filesystem::path& content_root) {
+    const std::filesystem::path mod = content_root / k_synthetic_mod_id;
+    PackageManifest manifest = write_synthetic_package(spec, mod / "maps" / k_synthetic_package_folder);
+    write_text(mod / "mod.json", json{{"id", k_synthetic_mod_id},
+                                      {"name_key", "mod.test.name"},
+                                      {"version", "1.0.0"},
+                                      {"depends_on", json::array({"base"})},
+                                      {"enabled_by_default", false}}
+                                         .dump(2) +
+                                     "\n");
+    write_text(mod / "defs" / "maps.json", synthetic_map_def_text(spec));
+    write_text(mod / "loc" / "en" / "maps.json",
+               json{{"mod.test.name", "Test"},
+                    {"map.synthetic.name", "Synthetic"},
+                    {"map.synthetic.desc", "A synthetic test map (citysim_mapgen --synthetic)."}}
+                       .dump(2) +
+                   "\n");
+    return manifest;
+}
+
 } // namespace citysim::mapgen

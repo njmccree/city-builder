@@ -42,11 +42,21 @@ std::string check_spec(const SyntheticSpec& spec);
 world::PackageManifest write_synthetic_package(const SyntheticSpec& spec,
                                                const std::filesystem::path& out_dir);
 
+// Writes a whole mod (`k_synthetic_mod_id`, depending on "base") holding the synthetic map into
+// `content_root`: <root>/test/mod.json, defs/maps.json (the definition), loc/en/maps.json (its text) and
+// maps/synthetic/ (the package). A game started with `content_root` among its content roots, the mod enabled
+// and map id `k_synthetic_map_id` plays on it; that is how the editor tries the terrain before a real package
+// exists (`citysim_mapgen --synthetic --mod game/content_dev`). Throws as write_synthetic_package does.
+world::PackageManifest write_synthetic_mod(const SyntheticSpec& spec,
+                                           const std::filesystem::path& content_root);
+
 // The text of that map definition file.
 std::string synthetic_map_def_text(const SyntheticSpec& spec);
 
 // The id of the generated map definition, and the folder name its package goes in under `maps/`.
 inline constexpr const char* k_synthetic_map_id = "test:map.synthetic";
 inline constexpr const char* k_synthetic_package_folder = "synthetic";
+// The mod write_synthetic_mod() makes.
+inline constexpr const char* k_synthetic_mod_id = "test";
 
 } // namespace citysim::mapgen

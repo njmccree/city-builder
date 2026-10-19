@@ -43,6 +43,7 @@ add_executable(citysim_tests
     world/terraform_tests.cpp
     debug/terrain_walk_tests.cpp
     world/terrain_deltas_tests.cpp
+    world/terrain_mesh_tests.cpp
     world/terrain_synth_tests.cpp
     world/water_tests.cpp)
 target_include_directories(citysim_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

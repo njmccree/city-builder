@@ -65,6 +65,7 @@ add_library(citysim_core STATIC
     src/world/terraform_module.cpp
     src/world/terrain_publisher.cpp
     src/world/terrain_deltas.cpp
+    src/world/terrain_mesh.cpp
     src/world/terrain_synth.cpp
     src/world/water_queries.cpp
     src/world/water_state.cpp

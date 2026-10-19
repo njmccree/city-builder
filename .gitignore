@@ -39,3 +39,6 @@ venv/
 
 # Local dependency downloads (cmake -DFETCHCONTENT_BASE_DIR=.fetchcontent, as CI does)
 .fetchcontent/
+
+# The developer map content root (citysim_mapgen --synthetic --mod game/content_dev); generated, not committed.
+game/content_dev/

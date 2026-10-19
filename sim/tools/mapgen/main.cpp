@@ -11,9 +11,11 @@
 namespace {
 
 std::string usage() {
-    return "usage: citysim_mapgen --synthetic --out DIR [--seed N] [--size-km N]\n"
+    return "usage: citysim_mapgen --synthetic (--out DIR | --mod ROOT) [--seed N] [--size-km N]\n"
            "  --synthetic    make a synthetic map package (a valley, river, delta and coast; no real data)\n"
            "  --out DIR      the folder to write the package into (created if needed)\n"
+           "  --mod ROOT     write a whole mod 'test' with the map (test:map.synthetic) into ROOT/test,\n"
+           "                 for a content root a game can start on (e.g. game/content_dev)\n"
            "  --seed N       the map seed (default 1); one seed always gives the same files\n"
            "  --size-km N    the map is N x N km, whole number from 16 to 1000 (default 96)\n";
 }
@@ -30,6 +32,7 @@ int main(int argc, char** argv) {
     const std::vector<std::string_view> args(argv + 1, argv + argc);
     bool synthetic = false;
     std::string out;
+    std::string mod_root;
     citysim::mapgen::SyntheticSpec spec;
     for (std::size_t i = 0; i < args.size(); ++i) {
         const std::string_view arg = args[i];
@@ -45,6 +48,8 @@ int main(int argc, char** argv) {
             synthetic = true;
         } else if (arg == "--out") {
             out = std::string(value());
+        } else if (arg == "--mod") {
+            mod_root = std::string(value());
         } else if (arg == "--seed") {
             if (!parse_number(value(), number)) {
                 std::cerr << "--seed needs a whole number\n" << usage();
@@ -62,8 +67,8 @@ int main(int argc, char** argv) {
             return 2;
         }
     }
-    if (!synthetic || out.empty()) {
-        std::cerr << "--synthetic and --out are both required\n" << usage();
+    if (!synthetic || out.empty() == mod_root.empty()) {
+        std::cerr << "--synthetic and one of --out or --mod are required\n" << usage();
         return 2;
     }
     if (const std::string problem = citysim::mapgen::check_spec(spec); !problem.empty()) {
@@ -71,8 +76,12 @@ int main(int argc, char** argv) {
         return 2;
     }
     try {
-        const citysim::world::PackageManifest manifest = citysim::mapgen::write_synthetic_package(spec, out);
-        std::cout << "wrote " << out << ": " << manifest.detail.tiles.size() << " detail tiles, "
+        const citysim::world::PackageManifest manifest =
+            mod_root.empty() ? citysim::mapgen::write_synthetic_package(spec, out)
+                             : citysim::mapgen::write_synthetic_mod(spec, mod_root);
+        const std::string written =
+            mod_root.empty() ? out : mod_root + "/" + citysim::mapgen::k_synthetic_mod_id;
+        std::cout << "wrote " << written << ": " << manifest.detail.tiles.size() << " detail tiles, "
                   << manifest.files.size() << " files, package hash "
                   << citysim::world::hash_to_hex(manifest.package_hash) << "\n";
     } catch (const std::exception& error) {

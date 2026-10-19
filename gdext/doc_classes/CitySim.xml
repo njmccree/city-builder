@@ -22,6 +22,12 @@
 				Returns the snapshot channel called [param name] as a flat array of records, or an empty array if there is none. For debugging: the fast renderers read channels in C++ without copying. The built-in channel [code]debug.clock[/code] has one record of three numbers: tick, speed and paused (0 or 1).
 			</description>
 		</method>
+		<method name="get_map_info" qualifiers="const">
+			<return type="Dictionary" />
+			<description>
+				Returns the game's map as [code]{map_id, width_m, height_m, tiles_x, tiles_y, detail_tiles}[/code] ([code]detail_tiles[/code] is an [Array] of [Vector2i]); empty without a map.
+			</description>
+		</method>
 		<method name="get_interpolation_alpha" qualifiers="const">
 			<return type="float" />
 			<description>

@@ -3,6 +3,7 @@
 #include "citysim/content/content_database.hpp"
 #include "citysim/runner/clock.hpp"
 #include "citysim/runner/simulation_runner.hpp"
+#include "citysim/world/loaded_map.hpp"
 
 #include <cstdint>
 #include <filesystem>
@@ -58,6 +59,10 @@ class GameSession {
     const content::ContentDatabase& content() const { return *content_; }
     // The runner's clock now, in the seconds that RenderSnapshot::published_at uses.
     double now_seconds() { return clock_->now_seconds(); }
+    // The game's map (opened once from NewGameRequest::map_id and shared, immutable, by every Simulation of
+    // the session), or null for a game without a map. Renderers read its rasters (the horizon beyond the
+    // active tiles) from any thread.
+    const std::shared_ptr<const world::LoadedMap>& map() const { return map_; }
     // Hands out a snapshot; one consumer thread only (see SimulationRunner::latest_snapshot).
     RenderSnapshot latest_snapshot() { return runner_->latest_snapshot(); }
 
@@ -68,6 +73,7 @@ class GameSession {
     std::unique_ptr<content::ContentDatabase> content_;
     std::unique_ptr<IClock> owned_clock_;
     IClock* clock_ = nullptr;
+    std::shared_ptr<const world::LoadedMap> map_;
     // Declared last so it is destroyed first: the runner thread uses everything above.
     std::unique_ptr<SimulationRunner> runner_;
 };

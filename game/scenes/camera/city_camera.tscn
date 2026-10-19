@@ -13,5 +13,5 @@ settings = ExtResource("2_settings")
 
 [node name="Camera3D" type="Camera3D" parent="Yaw/Pitch"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 150)
-far = 6000.0
+far = 60000.0
 current = true

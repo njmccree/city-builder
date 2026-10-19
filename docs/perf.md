@@ -160,3 +160,39 @@ Release, gcc, a 4-core cloud machine (indicative; the PC run, T1.9.1.2, is autho
 - The walk grid keeps up with floods and edits by recomputing 512 x 512-cell tiles; the regions of the grid
   (`update_regions`, a flood fill over 4.2 million cells) are made when the planner has agents to plan and the
   grid has changed.
+
+## City-view terrain rendering (T1.6.1.1), PC reference machine (authoritative)
+
+Budget (architecture §15.9 and the Task): active city + ring + horizon at 1080p, terrain at most 4 ms GPU, at least
+60 FPS overall; terrain VRAM at most 1 GB.
+
+How: `game/tests/terrain_bench.gd` (see `game/tests/README.md`), release build of the extension
+(`windows-release-gdext`), developer map (`citysim_mapgen --synthetic --mod game/content_dev`, 96 km, seed 1, city
+founded at the middle of the detail terrain), V-Sync off, the real main scene (sun with shadows, sky, HUD). The
+camera looks at the city's center from the zoom distance given, 30 degrees of yaw, pitch from the camera's curve.
+Each row averages 120 frames. "Terrain GPU" is the GPU time with the terrain shown minus with it hidden (shadow
+pass included). Triangles: "terrain" counts the chosen chunks (skirts included) and the horizon; "frame" is
+Godot's count of everything drawn, shadow passes included.
+
+### 2026-10-18, branch `story/S1.6.1-terrain-render`, GTX 1660 Ti, Windows 10, window 1920 x 1061
+
+| View | Zoom (m) | GPU all (ms) | GPU without terrain (ms) | Terrain GPU (ms) | FPS | Chunks drawn | Triangles terrain | Triangles frame | Draw calls | VRAM total (MB) | Chunk meshes | Chunk mesh memory (MB) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| close | 120 | 2.26 | 0.23 | 2.03 | 350 | 174 | 1,914,840 | 2,568,400 | 264 | 206 | 244 | 33.0 |
+| street | 400 | 2.43 | 0.23 | 2.20 | 330 | 162 | 1,810,392 | 2,507,474 | 257 | 208 | 252 | 34.1 |
+| district | 1,500 | 2.39 | 0.23 | 2.16 | 335 | 120 | 1,444,824 | 1,471,698 | 138 | 208 | 252 | 34.1 |
+| city | 4,500 | 2.11 | 0.23 | 1.87 | 373 | 36 | 713,688 | 662,228 | 45 | 208 | 252 | 34.1 |
+| overview | 9,000 | 2.27 | 0.23 | 2.04 | 352 | 36 | 713,688 | 714,452 | 51 | 208 | 252 | 34.1 |
+
+Reading it:
+
+- **Terrain costs about 2 ms of GPU time in every view, half the 4 ms budget, and the game runs at 330-370 FPS.**
+  The horizon (two meshes, about 64,500 triangles on the 16 km test map and more on this 96 km one) and the shadow
+  pass are a fixed part of that; the chunk count follows the view (36 when far away, about 170 close up).
+- **Memory is small:** 252 chunk meshes are about 34 MB (8,449 triangles and 4,485 vertices each); the whole
+  game uses about 208 MB of video memory. The cache keeps at most 1,200 chunk meshes (about 160 MB).
+- The window's client area was 1,061 pixels high (the title bar takes the rest of 1,080); a borderless 1080p window
+  would be about 2% more pixels.
+- The "frame" triangle count can be lower than the terrain's own count because Godot culls chunks outside the
+  view; the terrain count is what the LOD selection chose.
+

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="TerrainRenderer" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Draws the active city's terrain: its 4 m tiles and ring as LOD chunks, and a coarse horizon beyond them.
+	</brief_description>
+	<description>
+		Reads the [code]terrain.tiles[/code] snapshot data and the active city from [CitySim] every frame. Each 2,048 m tile is a quadtree of chunks chosen by their geometric error on screen; meshes are built on worker threads and only chunks of tiles that changed are built again. Beyond the active tiles it draws the map's 32 m DEM and then its region raster out to [member horizon_radius]. Everything is in the active city's local frame (meters from its south-west corner; x east, z north). Keep the node at the origin.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_city_id" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the id of the city whose terrain is shown, or 0.
+			</description>
+		</method>
+		<method name="get_city_origin_tile" qualifiers="const">
+			<return type="Vector2i" />
+			<description>
+				Returns the south-west tile of the active city's area, the origin of its local frame.
+			</description>
+		</method>
+		<method name="get_height_at" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="x" type="float" />
+			<param index="1" name="z" type="float" />
+			<description>
+				Returns the ground height at a point of the local frame: the active tiles where they are, else the map's 32 m DEM or region raster. NaN without a map.
+			</description>
+		</method>
+		<method name="get_stats" qualifiers="const">
+			<return type="Dictionary" />
+			<description>
+				Returns [code]{tiles, chunks_drawn, chunk_meshes, triangles_drawn, horizon_triangles, jobs_pending, mesh_bytes, ready}[/code]. [code]ready[/code] is true once every chunk the view wants is built.
+			</description>
+		</method>
+		<method name="has_terrain" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns true while an active city's terrain is shown.
+			</description>
+		</method>
+		<method name="pick_terrain" qualifiers="const">
+			<return type="Variant" />
+			<param index="0" name="screen_pos" type="Vector2" />
+			<description>
+				Returns the ground point under a screen position as a [Vector3] in the local frame (x, height, z), or [code]null[/code] where the ray misses the active tiles.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="cast_shadows" type="bool" setter="set_cast_shadows" getter="get_cast_shadows" default="true">
+			Whether the active tiles cast shadows. The horizon never does.
+		</member>
+		<member name="dem_horizon_tiles" type="int" setter="set_dem_horizon_tiles" getter="get_dem_horizon_tiles" default="4">
+			How many tiles around the active tiles are drawn from the 32 m DEM (at 64 m) before the region raster takes over.
+		</member>
+		<member name="horizon_radius" type="float" setter="set_horizon_radius" getter="get_horizon_radius" default="40000.0">
+			How far from the city's center the horizon reaches, in meters.
+		</member>
+		<member name="max_chunk_meshes" type="int" setter="set_max_chunk_meshes" getter="get_max_chunk_meshes" default="1200">
+			How many chunk meshes are kept; the ones unseen for longest are freed beyond this.
+		</member>
+		<member name="max_screen_error" type="float" setter="set_max_screen_error" getter="get_max_screen_error" default="2.0">
+			A chunk is split while its geometric error covers more than this many pixels.
+		</member>
+		<member name="ring_min_lod" type="int" setter="set_ring_min_lod" getter="get_ring_min_lod" default="1">
+			The finest LOD for ring tiles (outside the city's area): 1 means 8 m.
+		</member>
+		<member name="sim_path" type="NodePath" setter="set_sim_path" getter="get_sim_path" default="NodePath(&quot;/root/Sim/CitySim&quot;)">
+			Where the [CitySim] node is.
+		</member>
+		<member name="split_distance_factor" type="float" setter="set_split_distance_factor" getter="get_split_distance_factor" default="1.5">
+			A chunk is also split while the camera is closer than this many times its size.
+		</member>
+		<member name="upload_budget_ms" type="float" setter="set_upload_budget_ms" getter="get_upload_budget_ms" default="3.0">
+			Main-thread milliseconds per frame spent handing finished chunk meshes to the renderer.
+		</member>
+	</members>
+	<signals>
+		<signal name="terrain_changed">
+			<param index="0" name="city_id" type="int" />
+			<param index="1" name="origin_tile" type="Vector2i" />
+			<description>
+				Emitted when another city's terrain starts to be shown (or none: id 0).
+			</description>
+		</signal>
+	</signals>
+</class>

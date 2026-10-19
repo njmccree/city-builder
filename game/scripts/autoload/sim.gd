@@ -23,6 +23,11 @@ const DEFAULT_ERA: String = "base:era.ancient"
 const DEFAULT_SEED: int = 1
 ## Cells per side of the debug test map the walking-skeleton agents walk on (4 m per cell).
 const DEFAULT_TEST_MAP_SIZE: int = 256
+## The developer content root with the synthetic map, until a real map package exists. Not committed: build it
+## with `citysim_mapgen --synthetic --mod game/content_dev` (see game/README.md).
+const DEV_CONTENT_ROOT: String = "res://content_dev"
+const DEV_MOD: String = "test"
+const DEV_MAP_ID: String = "test:map.synthetic"
 
 var core: CitySim
 
@@ -67,6 +72,61 @@ func new_game(
 	for message: String in result["errors"]:
 		push_error("Sim.new_game: " + message)
 	return result
+
+
+## True when the developer map (DEV_CONTENT_ROOT) has been built.
+func has_dev_world() -> bool:
+	return FileAccess.file_exists(DEV_CONTENT_ROOT.path_join(DEV_MOD).path_join("mod.json"))
+
+
+## Starts a game on the developer map and founds a city on it (the first city is the active one, so its terrain
+## appears). Returns new_game's {ok, errors, warnings} plus "site": the city's south-west tile (Vector2i).
+func new_world(seed: int = DEFAULT_SEED, world_agents: bool = true) -> Dictionary:
+	var roots: PackedStringArray = DEFAULT_CONTENT_ROOTS.duplicate()
+	roots.append(DEV_CONTENT_ROOT)
+	var mods: PackedStringArray = DEFAULT_MODS.duplicate()
+	mods.append(DEV_MOD)
+	var result: Dictionary = new_game(seed, DEFAULT_ERA, roots, mods, 0, DEV_MAP_ID, world_agents)
+	if not result["ok"]:
+		return result
+	var site: Vector2i = find_city_site()
+	result["site"] = site
+	found_city(site.x, site.y, "Dev City")
+	return result
+
+
+## A 4 x 4 tile city area that lies entirely in the detail terrain, as near the middle of it as possible
+## (Vector2i(-1, -1) if there is none). The simulation still checks land and overlap when the city is founded.
+func find_city_site() -> Vector2i:
+	var info: Dictionary = core.get_map_info()
+	if info.is_empty():
+		return Vector2i(-1, -1)
+	var detail: Dictionary = {}
+	var low: Vector2i = Vector2i(1 << 30, 1 << 30)
+	var high: Vector2i = Vector2i(-(1 << 30), -(1 << 30))
+	for tile: Vector2i in info["detail_tiles"]:
+		detail[tile] = true
+		low = Vector2i(mini(low.x, tile.x), mini(low.y, tile.y))
+		high = Vector2i(maxi(high.x, tile.x), maxi(high.y, tile.y))
+	var middle: Vector2 = Vector2(low + high) * 0.5 - Vector2(1.5, 1.5)
+	var best: Vector2i = Vector2i(-1, -1)
+	var best_distance: float = INF
+	for ty: int in range(low.y, high.y - 2):
+		for tx: int in range(low.x, high.x - 2):
+			var fits: bool = true
+			for dy: int in 4:
+				for dx: int in 4:
+					fits = fits and detail.has(Vector2i(tx + dx, ty + dy))
+			var distance: float = Vector2(tx, ty).distance_to(middle)
+			if fits and distance < best_distance:
+				best = Vector2i(tx, ty)
+				best_distance = distance
+	return best
+
+
+## The map's {map_id, width_m, height_m, tiles_x, tiles_y, detail_tiles}; empty without a map.
+func get_map_info() -> Dictionary:
+	return core.get_map_info()
 
 
 func shutdown() -> void:

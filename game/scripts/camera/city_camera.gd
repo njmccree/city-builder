@@ -7,6 +7,9 @@ extends Node3D
 ## Runs on render time (`_process`), never on the simulation clock.
 
 @export var settings: CameraSettings
+## Optional: the ground height (meters) at a point (x, z), so the pivot rides on the terrain. Returns NaN where
+## it does not know; then the pivot stays at height 0. Unset on the flat test map.
+var ground_height: Callable
 
 var _target_pivot: Vector3 = Vector3.ZERO
 var _target_yaw: float = 0.0
@@ -55,6 +58,7 @@ func get_target_yaw() -> float:
 ## Moves the pivot to a ground point, keeping the current angle (for "jump to" features).
 func focus_on(point: Vector3) -> void:
 	_target_pivot = _clamp_to_bounds(Vector3(point.x, 0.0, point.z))
+	_target_pivot.y = _ground_at(_target_pivot)
 
 
 ## Sets the rectangle (x, z meters) the pivot may move in, and widens the zoom range so the whole of it fits.
@@ -85,12 +89,13 @@ func step(delta: float, pan: Vector2, rotate_input: float, fast: bool = false) -
 	if fast:
 		speed *= settings.fast_multiplier
 	_target_pivot = _clamp_to_bounds(_target_pivot + move * speed * delta)
+	_target_pivot.y = _ground_at(_target_pivot)
 	_target_yaw = wrapf(_target_yaw + rotate_input * deg_to_rad(settings.rotate_speed_deg) * delta, -PI, PI)
 	_yaw = _chase(_yaw, _target_yaw, settings.rotation_smoothing, delta, true)
 	_zoom = _chase(_zoom, _target_zoom, settings.zoom_smoothing, delta, false)
 	position = Vector3(
 		_chase(position.x, _target_pivot.x, settings.position_smoothing, delta, false),
-		0.0,
+		_chase(position.y, _target_pivot.y, settings.position_smoothing, delta, false),
 		_chase(position.z, _target_pivot.z, settings.position_smoothing, delta, false))
 	_apply()
 
@@ -159,6 +164,13 @@ func _apply() -> void:
 	_yaw_node.rotation.y = _yaw
 	_pitch_node.rotation_degrees.x = -pitch_for_zoom(_zoom)
 	_camera.position = Vector3(0.0, 0.0, _zoom)
+
+
+func _ground_at(point: Vector3) -> float:
+	if not ground_height.is_valid():
+		return 0.0
+	var height: float = ground_height.call(point.x, point.z)
+	return 0.0 if is_nan(height) else height
 
 
 func _clamp_to_bounds(point: Vector3) -> Vector3:

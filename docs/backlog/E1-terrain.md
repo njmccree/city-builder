@@ -638,7 +638,7 @@ Run all tests. Follow the Task workflow in CLAUDE.md (branch story/S1.5.1-city-a
 - Instanced vegetation.
 - Budgets from architecture §15.9 met and recorded in `docs/perf.md`.
 
-#### [ ] T1.6.1.1 ★ — TerrainRenderer (CDLOD chunks, ring, horizon)
+#### [x] T1.6.1.1 ★ — TerrainRenderer (CDLOD chunks, ring, horizon)
 - **Model:** **Opus** · **Session:** [PC] · **Depends on:** T1.5.1.1, T1.1.2.3
 ```
 Task T1.6.1.1 (Story S1.6.1). Architecture-critical rendering. Read docs/architecture.md §7.3, §11, §14,

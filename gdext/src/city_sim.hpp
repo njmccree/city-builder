@@ -64,6 +64,13 @@ class CitySim : public godot::Node {
     godot::Array get_cities() const;
     int64_t get_active_city_id() const { return static_cast<int64_t>(last_.active_city_id); }
 
+    // The game's map for GDScript: {map_id, width_m, height_m, tiles_x, tiles_y, detail_tiles: Array of
+    // Vector2i}; empty without a map. Read once (a menu, the dev console), not per frame.
+    godot::Dictionary get_map_info() const;
+    // For C++ renderer nodes: the game's immutable map (rasters, 32 m detail tiles, rivers), shared with the
+    // simulation and safe to read from any thread; null without a running game or without a map.
+    std::shared_ptr<const world::LoadedMap> loaded_map() const;
+
     // For C++ renderer nodes: the previous and current snapshot, and the alpha to blend them with.
     const runner::SnapshotView& snapshot_view() const { return view_; }
 

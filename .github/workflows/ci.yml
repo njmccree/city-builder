@@ -107,6 +107,10 @@ jobs:
         run: |
           CITYSIM_MAPGEN="$PWD/build/ci-linux-gdext/sim/tools/mapgen/citysim_mapgen" \
             tools/godot.sh --headless --path game -s res://tests/test_cities.gd
+      - name: Godot terrain test (the terrain renderer on a synthetic map)
+        run: |
+          CITYSIM_MAPGEN="$PWD/build/ci-linux-gdext/sim/tools/mapgen/citysim_mapgen" \
+            tools/godot.sh --headless --path game -s res://tests/test_terrain.gd
 
   windows:
     runs-on: windows-latest

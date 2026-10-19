@@ -42,6 +42,7 @@ add_library(citysim_gdext SHARED
     src/city_sim.cpp
     src/command_marshal.cpp
     src/register_types.cpp
+    src/terrain_renderer.cpp
     src/test_map_view.cpp)
 target_link_libraries(citysim_gdext PRIVATE citysim_core godot-cpp)
 target_compile_features(citysim_gdext PRIVATE cxx_std_20)

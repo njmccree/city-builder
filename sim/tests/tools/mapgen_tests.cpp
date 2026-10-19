@@ -120,6 +120,26 @@ TEST_CASE("the generated map definition loads and finds its package", "[mapgen]"
     CHECK(manifest.map_id == map.id.str());
 }
 
+TEST_CASE("a mod written by mapgen loads next to the base game", "[mapgen]") {
+    const TempDir dir("mapgen_mod");
+    const world::PackageManifest written = mapgen::write_synthetic_mod(small_spec(), dir / "content_dev");
+
+    content::ContentDatabase db;
+    content::ModLoadRequest request;
+    request.roots = {std::filesystem::path(CITYSIM_GAME_CONTENT_DIR), dir / "content_dev"};
+    request.order.enabled = {"base", mapgen::k_synthetic_mod_id};
+    request.order.require_base = true;
+    const content::LoadResult result = db.load_mods(request); // localization keys checked too
+    INFO((result.errors.empty() ? std::string() : result.errors.front().format_full()));
+    REQUIRE(result.ok());
+    const auto handle = db.registry<content::MapDef>().find(mapgen::k_synthetic_map_id);
+    REQUIRE(handle.has_value());
+    const content::MapDef& map = db.registry<content::MapDef>().get(*handle);
+    const world::PackageManifest manifest =
+        world::verify_package(content::map_package_dir(db.origin(*handle), map));
+    CHECK(manifest.package_hash == written.package_hash);
+}
+
 namespace {
 
 // Checks that hold for any synthetic package, and that the full-size one makes easy to see.
