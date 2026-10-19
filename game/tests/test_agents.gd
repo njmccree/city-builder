@@ -68,7 +68,8 @@ func _run() -> void:
 		var origin_x: float = buffer[i * 12 + 3]
 		var origin_y: float = buffer[i * 12 + 7]
 		var origin_z: float = buffer[i * 12 + 11]
-		if absf(origin_y - 0.9) > 0.001 or origin_x < -1.0 or origin_x > 1025.0 or origin_z < -1.0 or origin_z > 1025.0:
+		# North is -z in the scene (Sim.to_view), so the map's instances have z from 0 down to -1024.
+		if absf(origin_y - 0.9) > 0.001 or origin_x < -1.0 or origin_x > 1025.0 or origin_z < -1025.0 or origin_z > 1.0:
 			good = false
 	_check(good, "every instance sits on the ground inside the map")
 

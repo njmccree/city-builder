@@ -31,9 +31,10 @@ func _on_terrain_changed(city_id: int, _origin_tile: Vector2i) -> void:
 	if not world:
 		_camera.ground_height = Callable()
 		return
-	_camera.ground_height = func(x: float, z: float) -> float: return _terrain.get_height_at(x, z)
-	_camera.set_bounds(Rect2(Vector2.ZERO, Vector2(CITY_AREA_M, CITY_AREA_M)))
-	_camera.focus_on(Vector3(CITY_AREA_M * 0.5, 0.0, CITY_AREA_M * 0.5))
+	# The camera works in scene coordinates (north is -z); the terrain answers in city-local ones.
+	_camera.ground_height = func(x: float, z: float) -> float: return _terrain.get_height_at(x, -z)
+	_camera.set_bounds(Rect2(Vector2(0.0, -CITY_AREA_M), Vector2(CITY_AREA_M, CITY_AREA_M)))
+	_camera.focus_on(Sim.to_view(Vector3(CITY_AREA_M * 0.5, 0.0, CITY_AREA_M * 0.5)))
 	_camera.set_zoom_distance(1500.0)
 
 
@@ -41,6 +42,7 @@ func _on_map_changed(size: Vector2) -> void:
 	_ground.visible = true
 	_map_view.visible = true
 	_camera.ground_height = Callable()
-	_camera.set_bounds(Rect2(Vector2.ZERO, size))
-	_camera.focus_on(Vector3(size.x * 0.5, 0.0, size.y * 0.5))
+	# The map runs east along x and north along -z (Sim.to_view).
+	_camera.set_bounds(Rect2(Vector2(0.0, -size.y), size))
+	_camera.focus_on(Sim.to_view(Vector3(size.x * 0.5, 0.0, size.y * 0.5)))
 	_camera.set_zoom_distance(maxf(size.x, size.y) * 0.6)

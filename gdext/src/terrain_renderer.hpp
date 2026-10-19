@@ -27,8 +27,8 @@ namespace citysim::gdext {
 
 // Draws the active city's terrain (architecture §15.9, §15.3): the 4 m tiles of the active city and its
 // ring from the "terrain.tiles" snapshot data, and a coarse horizon beyond them from the map's 32 m DEM and
-// region raster. Everything is in the active city's local frame (meters from its south-west corner, Godot
-// x = east, z = north, y = height).
+// region raster. Everything is in the active city's local frame (meters from its south-west corner), drawn
+// through the view frame (view_frame.hpp): Godot x = east, y = height, z = -north.
 //
 // Each tile is a quadtree of 85 chunks (world::terrain_mesh.hpp). Every frame the chunks are chosen by their
 // geometric error seen from the camera; the meshes are built on WorkerThreadPool threads from the tile's
@@ -73,11 +73,12 @@ class TerrainRenderer : public godot::Node3D {
     int64_t get_city_id() const { return city_id_; }
     godot::Vector2i get_city_origin_tile() const;
 
-    // The ground under a point of the screen, in the active city's local frame (x, height, z), or null where
-    // the ray misses the active tiles.
+    // The ground under a point of the screen in the active city's local frame, as (east, height, north)
+    // meters from its south-west corner (what commands such as terraform take; Godot's position of it is (x,
+    // y, -z)), or null where the ray misses the active tiles.
     godot::Variant pick_terrain(const godot::Vector2& screen_pos) const;
-    // The ground height at a local point: the active tiles, else the map's 32 m DEM / region raster; NaN
-    // without a map.
+    // The ground height at a city-local point (east, north meters from the south-west corner): the active
+    // tiles, else the map's 32 m DEM / region raster; NaN without a map.
     double get_height_at(double x, double z) const;
     // {tiles, chunks_drawn, chunk_meshes, triangles_drawn, horizon_triangles, jobs_pending, mesh_bytes,
     //  ready}: what is on screen, for the perf overlay and tests. `ready` is true when every wanted chunk is

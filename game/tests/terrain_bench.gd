@@ -55,7 +55,7 @@ func _run() -> void:
 	print("resolution: ", root.get_visible_rect().size, "  GPU: ", RenderingServer.get_video_adapter_name())
 	print("view      zoom_m  gpu_ms_all  gpu_ms_no_terrain  terrain_gpu_ms  cpu_frame_ms  fps   chunks  tris_terrain  tris_frame  draw_calls  vram_mb  chunk_meshes  mesh_mb")
 	for view: Array in VIEWS:
-		camera.focus_on(Vector3(4096.0, 0.0, 4096.0))
+		camera.focus_on(Vector3(4096.0, 0.0, -4096.0))  # the city's middle; north is -z
 		camera.set_zoom_distance(float(view[1]))
 		camera.snap()
 		await _wait_ready(terrain, 600)

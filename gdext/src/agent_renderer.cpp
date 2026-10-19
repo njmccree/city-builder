@@ -2,6 +2,7 @@
 
 #include "city_sim.hpp"
 #include "citysim/debug/agent_snapshot.hpp"
+#include "view_frame.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -63,7 +64,7 @@ void AgentRenderer::_ready() {
 
     // The engine cannot know where the instances are, so give it a box that is always in view.
     set_custom_aabb(
-        godot::AABB(godot::Vector3(-100.0F, -10.0F, -100.0F), godot::Vector3(8192.0F, 40.0F, 8192.0F)));
+        godot::AABB(godot::Vector3(-100.0F, -10.0F, -8292.0F), godot::Vector3(8392.0F, 400.0F, 8392.0F)));
     set_process(true);
 }
 
@@ -120,8 +121,9 @@ void AgentRenderer::_process(double) {
                 yaw = before[3] + shortest_arc(before[3], now[3]) * alpha;
             }
         }
-        const float sine = std::sin(yaw);
-        const float cosine = std::cos(yaw);
+        // In the view frame (view_frame.hpp): north is -z, and the heading turns the other way round.
+        const float sine = std::sin(view_yaw(yaw));
+        const float cosine = std::cos(view_yaw(yaw));
         float* row = out + i * k_floats_per_instance;
         // Rotation about the vertical axis; the origin is lifted by half the height so the feet touch the
         // ground.
@@ -136,7 +138,7 @@ void AgentRenderer::_process(double) {
         row[8] = -sine;
         row[9] = 0.0F;
         row[10] = cosine;
-        row[11] = z;
+        row[11] = view_z(z);
     }
     multimesh_->set_buffer(buffer_);
     multimesh_->set_visible_instance_count(static_cast<int32_t>(agents));

@@ -1,6 +1,7 @@
 #include "terrain_renderer.hpp"
 
 #include "city_sim.hpp"
+#include "view_frame.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -62,25 +63,46 @@ godot::Array surface_arrays(const godot::PackedVector3Array& positions,
     return arrays;
 }
 
-// Appends one horizon patch to a layer's arrays, moved by `offset` (the patch origin in the local frame).
+// Turns vertex data made in the simulation's frame (z north) into the view frame (view_frame.hpp: z south),
+// in place. Mirroring turns every triangle over, so the triangle lists are flipped too (flipped_winding).
+void mirror_into_view(godot::PackedVector3Array& positions, godot::PackedVector3Array& normals) {
+    godot::Vector3* p = positions.ptrw();
+    godot::Vector3* n = normals.ptrw();
+    for (int64_t i = 0; i < positions.size(); ++i) {
+        p[i].z = view_z(p[i].z);
+        n[i].z = view_z(n[i].z);
+    }
+}
+
+// The same triangles with the opposite winding, which mirrored vertices need to stay front-facing.
+godot::PackedInt32Array flipped_winding(const std::vector<std::int32_t>& indices, std::int32_t base = 0) {
+    godot::PackedInt32Array out;
+    out.resize(static_cast<int64_t>(indices.size()));
+    std::int32_t* write = out.ptrw();
+    for (std::size_t t = 0; t + 2 < indices.size(); t += 3) {
+        write[t] = base + indices[t];
+        write[t + 1] = base + indices[t + 2];
+        write[t + 2] = base + indices[t + 1];
+    }
+    return out;
+}
+
+// Appends one horizon patch to a layer's arrays, its origin moved to (east, north) meters from the city's
+// south-west corner, in the view frame.
 void append_patch(const world::ChunkVertices& patch, const std::vector<std::int32_t>& patch_indices,
-                  godot::Vector3 offset, godot::PackedVector3Array& positions,
+                  float east, float north, godot::PackedVector3Array& positions,
                   godot::PackedVector3Array& normals, godot::PackedColorArray& colors,
                   godot::PackedInt32Array& indices) {
     const auto base = static_cast<std::int32_t>(positions.size());
     const std::size_t count = patch.positions.size() / 3;
     for (std::size_t v = 0; v < count; ++v) {
-        positions.push_back(
-            godot::Vector3(patch.positions[v * 3], patch.positions[v * 3 + 1], patch.positions[v * 3 + 2]) +
-            offset);
-        normals.push_back(
-            godot::Vector3(patch.normals[v * 3], patch.normals[v * 3 + 1], patch.normals[v * 3 + 2]));
+        positions.push_back(to_view(patch.positions[v * 3] + east, patch.positions[v * 3 + 1],
+                                    patch.positions[v * 3 + 2] + north));
+        normals.push_back(to_view(patch.normals[v * 3], patch.normals[v * 3 + 1], patch.normals[v * 3 + 2]));
         colors.push_back(godot::Color(patch.colors[v * 4], patch.colors[v * 4 + 1], patch.colors[v * 4 + 2],
                                       patch.colors[v * 4 + 3]));
     }
-    for (const std::int32_t index : patch_indices) {
-        indices.push_back(base + index);
-    }
+    indices.append_array(flipped_winding(patch_indices, base));
 }
 
 bool inside(world::TileCoord tile, world::TileCoord low, world::TileCoord high) {
@@ -147,9 +169,7 @@ void TerrainRenderer::_ready() {
     material_->set_flag(godot::BaseMaterial3D::FLAG_ALBEDO_FROM_VERTEX_COLOR, true);
     material_->set_flag(godot::BaseMaterial3D::FLAG_SRGB_VERTEX_COLOR, true);
     material_->set_roughness(1.0F);
-    const std::vector<std::int32_t>& indices = world::chunk_indices();
-    chunk_indices_.resize(static_cast<int64_t>(indices.size()));
-    std::copy(indices.begin(), indices.end(), chunk_indices_.ptrw());
+    chunk_indices_ = flipped_winding(world::chunk_indices());
     set_process(true);
 }
 
@@ -234,6 +254,7 @@ void TerrainRenderer::run_job(int64_t id) {
         const float skirt = job->info ? job->info->error_m[0] + 2.0F : 10.0F;
         world::build_chunk_vertices(heights, world::chunk_key(job->chunk), skirt, floats(job->positions),
                                     floats(job->normals), floats(job->colors));
+        mirror_into_view(job->positions, job->normals);
         break;
     }
     case JobKind::Horizon:
@@ -272,17 +293,17 @@ void TerrainRenderer::build_horizon(Job& job) {
                 continue;
             }
             const world::WorldPos origin = world::tile_origin(tile);
-            const godot::Vector3 offset(static_cast<float>(origin.x - city_origin.x), 0.0F,
-                                        static_cast<float>(origin.z - city_origin.z));
+            const auto east = static_cast<float>(origin.x - city_origin.x);
+            const auto north = static_cast<float>(origin.z - city_origin.z);
             if (inside(tile, dem_low, dem_high)) {
                 const world::ChunkVertices patch = world::build_horizon_patch(
                     map, origin, k_dem_patch_quads, k_tile_m / k_dem_patch_quads, k_dem_skirt_m);
-                append_patch(patch, dem_indices, offset, job.layer_positions[0], job.layer_normals[0],
+                append_patch(patch, dem_indices, east, north, job.layer_positions[0], job.layer_normals[0],
                              job.layer_colors[0], job.layer_indices[0]);
             } else {
                 const world::ChunkVertices patch = world::build_horizon_patch(
                     map, origin, k_region_patch_quads, k_tile_m / k_region_patch_quads, k_region_skirt_m);
-                append_patch(patch, region_indices, offset, job.layer_positions[1], job.layer_normals[1],
+                append_patch(patch, region_indices, east, north, job.layer_positions[1], job.layer_normals[1],
                              job.layer_colors[1], job.layer_indices[1]);
             }
         }
@@ -544,8 +565,9 @@ void TerrainRenderer::apply_horizon(Job& job) {
 }
 
 godot::Transform3D TerrainRenderer::tile_transform(world::TileCoord coord) const {
-    const godot::Vector3 origin(static_cast<float>((coord.tx - city_first_tile_.tx) * k_tile_m), 0.0F,
-                                static_cast<float>((coord.ty - city_first_tile_.ty) * k_tile_m));
+    const godot::Vector3 origin =
+        to_view(static_cast<float>((coord.tx - city_first_tile_.tx) * k_tile_m), 0.0F,
+                static_cast<float>((coord.ty - city_first_tile_.ty) * k_tile_m));
     return get_global_transform() * godot::Transform3D(godot::Basis(), origin);
 }
 
@@ -590,7 +612,7 @@ void TerrainRenderer::select_and_request() {
         world::LodCamera lod = base;
         lod.x = static_cast<double>(eye.x) - ox;
         lod.y = static_cast<double>(eye.y);
-        lod.z = static_cast<double>(eye.z) - oz;
+        lod.z = static_cast<double>(north_of_view(eye.z)) - oz;
         lod.min_lod = tile.ring ? static_cast<std::uint32_t>(std::clamp<int64_t>(ring_min_lod_, 0, 3)) : 0U;
         world::select_chunks(
             *tile.info, lod, [&tile](std::uint32_t i) { return tile.chunks[i].mesh.is_valid(); }, selection);
@@ -754,8 +776,9 @@ godot::Variant TerrainRenderer::pick_terrain(const godot::Vector2& screen_pos) c
         low[1] = std::min(low[1], static_cast<double>(*min_h) - 1.0);
         high[1] = std::max(high[1], static_cast<double>(*max_h) + 1.0);
     }
-    const double origin[3] = {from.x, from.y, from.z};
-    const double dir[3] = {direction.x, direction.y, direction.z};
+    // The ray in the simulation's frame (z north), where the tiles are.
+    const double origin[3] = {from.x, from.y, north_of_view(from.z)};
+    const double dir[3] = {direction.x, direction.y, north_of_view(direction.z)};
     double t0 = 0.0;
     double t1 = 1.0e7;
     for (int axis = 0; axis < 3; ++axis) {

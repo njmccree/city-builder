@@ -131,6 +131,18 @@ func get_map_info() -> Dictionary:
 	return core.get_map_info()
 
 
+## A city-local position (east, height, north meters from the city's south-west corner, the frame commands and
+## snapshots use) as a position in the scene. Godot's +z points south when seen from above with x to the east,
+## so north is -z; otherwise the world would be drawn as its mirror image (docs/architecture.md section 11).
+static func to_view(local: Vector3) -> Vector3:
+	return Vector3(local.x, local.y, -local.z)
+
+
+## A scene position as a city-local one (east, height, north): the inverse of to_view().
+static func from_view(view: Vector3) -> Vector3:
+	return Vector3(view.x, view.y, -view.z)
+
+
 func shutdown() -> void:
 	core.shutdown()
 

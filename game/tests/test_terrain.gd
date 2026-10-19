@@ -39,7 +39,8 @@ func _run() -> void:
 	var camera: Camera3D = Camera3D.new()
 	camera.far = 60000.0
 	root.add_child(camera)
-	camera.look_at_from_position(Vector3(4096.0, 3000.0, 4096.0 - 1500.0), Vector3(4096.0, 0.0, 4096.0))
+	# Scene coordinates: north is -z (Sim.to_view); the camera stands south of the city's middle.
+	camera.look_at_from_position(Vector3(4096.0, 3000.0, -4096.0 + 1500.0), Vector3(4096.0, 0.0, -4096.0))
 	camera.make_current()
 	var terrain: Node3D = ClassDB.instantiate("TerrainRenderer")
 	root.add_child(terrain)

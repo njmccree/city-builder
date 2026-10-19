@@ -2,6 +2,7 @@
 
 #include "city_sim.hpp"
 #include "citysim/debug/agent_snapshot.hpp"
+#include "view_frame.hpp"
 
 #include <godot_cpp/classes/box_mesh.hpp>
 #include <godot_cpp/classes/multi_mesh.hpp>
@@ -76,7 +77,7 @@ void TestMapView::rebuild(uint32_t width, uint32_t height, float cell_size,
     plane.instantiate();
     plane->set_size(map_size_);
     ground_->set_mesh(plane);
-    ground_->set_position(godot::Vector3(map_size_.x * 0.5F, k_ground_lift, map_size_.y * 0.5F));
+    ground_->set_position(to_view(map_size_.x * 0.5F, k_ground_lift, map_size_.y * 0.5F));
 
     int64_t blocked = 0;
     for (const std::uint8_t cell : cells) {
@@ -114,7 +115,7 @@ void TestMapView::rebuild(uint32_t width, uint32_t height, float cell_size,
         row[8] = 0.0F;
         row[9] = 0.0F;
         row[10] = cell_size;
-        row[11] = z;
+        row[11] = view_z(z);
         ++written;
     }
     if (blocked > 0) {

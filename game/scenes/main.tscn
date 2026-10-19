@@ -57,7 +57,7 @@ tonemap_mode = 2
 script = ExtResource("1_main")
 
 [node name="Ground" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1000, 0, 1000)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1000, 0, -1000)
 mesh = SubResource("PlaneMesh_ground")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
@@ -69,7 +69,7 @@ directional_shadow_max_distance = 1500.0
 environment = SubResource("Environment_main")
 
 [node name="CityCamera" parent="." instance=ExtResource("2_camera")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1000, 0, 1000)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1000, 0, -1000)
 
 [node name="DebugOverlay" parent="." instance=ExtResource("3_overlay")]
 

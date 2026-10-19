@@ -48,7 +48,7 @@ func _run() -> void:
 	_console.execute("spawn_agents %d" % AGENTS)
 	_console.execute("speed 1")
 	_camera_node.set_zoom_distance(60.0)
-	_camera_node.focus_on(Vector3(256.0, 0.0, 256.0))
+	_camera_node.focus_on(Vector3(256.0, 0.0, -256.0))  # north is -z in the scene
 	await create_timer(12.0).timeout # every agent gets its first path
 	var cam: Camera3D = _camera_node.get_camera()
 	print("RESULT scale | day ticks | walk m/s | screen px/s | ticks/s | clock min/s | real s per day | h per km")
@@ -69,7 +69,7 @@ func _run() -> void:
 		var start_positions: PackedFloat32Array = _sim.core.get_channel("agents.xform")
 		var start_screen: Dictionary = {}
 		for i: int in start_positions.size() / 4:
-			var p: Vector3 = Vector3(start_positions[i * 4], 0.9, start_positions[i * 4 + 2])
+			var p: Vector3 = Vector3(start_positions[i * 4], 0.9, -start_positions[i * 4 + 2])
 			if cam.is_position_in_frustum(p):
 				start_screen[i] = cam.unproject_position(p)
 		var start_clock: int = _minutes(start_stats["time_text"])
@@ -89,7 +89,7 @@ func _run() -> void:
 				walk_sum += distance
 				walk_count += 1
 				if start_screen.has(i):
-					var p_end: Vector3 = Vector3(mid_positions[i * 4], 0.9, mid_positions[i * 4 + 2])
+					var p_end: Vector3 = Vector3(mid_positions[i * 4], 0.9, -mid_positions[i * 4 + 2])
 					if cam.is_position_in_frustum(p_end):
 						screen_sum += (cam.unproject_position(p_end) - (start_screen[i] as Vector2)).length()
 						screen_count += 1

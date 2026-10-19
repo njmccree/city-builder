@@ -4,7 +4,7 @@
 		Draws the active city's terrain: its 4 m tiles and ring as LOD chunks, and a coarse horizon beyond them.
 	</brief_description>
 	<description>
-		Reads the [code]terrain.tiles[/code] snapshot data and the active city from [CitySim] every frame. Each 2,048 m tile is a quadtree of chunks chosen by their geometric error on screen; meshes are built on worker threads and only chunks of tiles that changed are built again. Beyond the active tiles it draws the map's 32 m DEM and then its region raster out to [member horizon_radius]. Everything is in the active city's local frame (meters from its south-west corner; x east, z north). Keep the node at the origin.
+		Reads the [code]terrain.tiles[/code] snapshot data and the active city from [CitySim] every frame. Each 2,048 m tile is a quadtree of chunks chosen by their geometric error on screen; meshes are built on worker threads and only chunks of tiles that changed are built again. Beyond the active tiles it draws the map's 32 m DEM and then its region raster out to [member horizon_radius]. Positions are in the active city's local frame (meters from its south-west corner, x east and z north) and are drawn with Godot z = -north, so the map is not mirrored ([code]Sim.to_view()[/code] converts). Keep the node at the origin.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -26,7 +26,7 @@
 			<param index="0" name="x" type="float" />
 			<param index="1" name="z" type="float" />
 			<description>
-				Returns the ground height at a point of the local frame: the active tiles where they are, else the map's 32 m DEM or region raster. NaN without a map.
+				Returns the ground height at a city-local point ([param x] east, [param z] north of the city's south-west corner; Godot's z is the negative of it): the active tiles where they are, else the map's 32 m DEM or region raster. NaN without a map.
 			</description>
 		</method>
 		<method name="get_stats" qualifiers="const">
@@ -45,7 +45,7 @@
 			<return type="Variant" />
 			<param index="0" name="screen_pos" type="Vector2" />
 			<description>
-				Returns the ground point under a screen position as a [Vector3] in the local frame (x, height, z), or [code]null[/code] where the ray misses the active tiles.
+				Returns the ground point under a screen position as a [Vector3] in the city-local frame (east, height, north), the frame commands use, or [code]null[/code] where the ray misses the active tiles. Its position in the scene is [code]Sim.to_view()[/code] of it.
 			</description>
 		</method>
 	</methods>
