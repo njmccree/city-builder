@@ -396,7 +396,7 @@ rasters for each operation.
 Follow the Task workflow in CLAUDE.md (branch story/S1.2.5-corrections).
 ```
 
-#### [ ] T1.2.5.2 — Author light corrections for the Ancient Near East (~3000 BCE)
+#### [x] T1.2.5.2 — Author light corrections for the Ancient Near East (~3000 BCE)
 - **Model:** Sonnet · **Session:** [Cloud] · **Depends on:** T1.2.5.1, T1.2.3.1
 ```
 Task T1.2.5.2 (Story S1.2.5, last task). Content authoring with sources.
