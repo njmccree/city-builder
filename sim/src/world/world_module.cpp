@@ -6,6 +6,8 @@
 #include "citysim/save/save_format_error.hpp"
 #include "citysim/world/city_module.hpp"
 #include "citysim/world/flood_module.hpp"
+#include "citysim/world/resource_fields.hpp"
+#include "citysim/world/resource_module.hpp"
 #include "citysim/world/terraform_module.hpp"
 #include "citysim/world/terrain_serialize.hpp"
 
@@ -43,6 +45,13 @@ std::string tile_text(TileCoord tile) {
 
 void restore_after_load(core::Simulation& simulation, const content::ContentDatabase& content,
                         std::vector<std::string>& warnings) {
+    // Changes to resources this content does not have were dropped on load.
+    if (auto* resources = simulation.world().ctx().find<ResourceFields>(); resources != nullptr) {
+        for (std::string& warning : resources->take_load_warnings()) {
+            CS_LOG_WARN(Save, "load: {}", warning);
+            warnings.push_back(std::move(warning));
+        }
+    }
     auto* terrain = simulation.world().ctx().find<WorldTerrain>();
     if (terrain == nullptr) {
         return;
@@ -118,6 +127,7 @@ void install(core::Simulation& simulation, const content::ContentDatabase& conte
     install_cities(simulation, config.cities);
     install_flood(simulation);
     install_terraform(simulation);
+    install_resources(simulation, content);
 
     const content::ContentDatabase* database = &content;
     simulation.add_after_load_hook([database](core::Simulation& loaded, std::vector<std::string>& warnings) {

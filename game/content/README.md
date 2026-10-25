@@ -100,6 +100,26 @@ World-frame coordinates: meters from the south-west corner of the map, `x` east 
 - `name` (optional, reaches) is the reach's display name; `floodplain` (optional) lists closed outer rings `[x, z]` of the land beside the channel that can flood (written by the pipeline). The game reads it for the flood extents (architecture §15.6): a ring needs at least 3 different points, and a repeated last point (as in GeoJSON) is dropped. A reach without a floodplain never floods beyond its channel.
 - `lakes.json` is `{ "format": 1, "lakes": [ { "id": "lake_moeris", "name": "Lake Moeris", "water_level_m": -3.2, "area_km2": 214.5, "rings": [ [[x, z], ...], [[x, z], ...] ] } ] }`: `rings[0]` is the outer boundary and any others are islands (holes), each ring closed. The synthetic package has `"lakes": []`.
 
+## Resource definitions
+
+A resource (content type `"resource"`, `ResourceDef`) is something in the land that the player can look at and use up: soil, stone, ore, fuel, vegetation. Its amount at every 4 m sample of a city is a *resource field*, taken from the map package's region layer of the same name (architecture §15.8). In a defs file:
+
+```json
+{ "type": "resource", "id": "base:resource.ore_copper",
+  "name_key": "resource.ore_copper.name", "desc_key": "resource.ore_copper.desc",
+  "kind": "ore",
+  "layer": "ore_copper",
+  "ramp": ["#2e1f14", "#b87333", "#f2c58a"],
+  "renewable": "none",
+  "renewal_per_year": 0.0 }
+```
+
+- `kind`: `soil`, `stone`, `ore`, `fuel` or `vegetation`.
+- `layer` (optional): the package region layer. Default: the id's name without a leading `resource.` (`ore_copper`). Two resources may name one layer and then share a field (the fertile-soil resource uses the `fertility` layer; the package has one `vegetation` layer). `fertility`, `vegetation` and `wetness` fields exist whatever the definitions say. The offline pipeline names a deposit's layer after its resource the same way (`tools/terrain`: `layer_name`).
+- `ramp`: 2 to 8 colors `"#rrggbb"` from little to much, for the overlay.
+- `renewable` (`none`, `silt` or `regrowth`, default `none`) and `renewal_per_year` (0 to 1, default 0): how the resource comes back; read by the systems that renew it (silt: the flood).
+- Both keys (`name_key`, `desc_key`) need text in `en` like any definition.
+
 ## Defines
 
 `defines/*.json` files hold numbers the simulation reads. Later mods override earlier ones field by field.

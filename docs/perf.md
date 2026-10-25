@@ -160,3 +160,9 @@ Release, gcc, a 4-core cloud machine (indicative; the PC run, T1.9.1.2, is autho
 - The walk grid keeps up with floods and edits by recomputing 512 x 512-cell tiles; the regions of the grid
   (`update_regions`, a flood fill over 4.2 million cells) are made when the planner has agents to plan and the
   grid has changed.
+
+### Resource fields
+
+- Making the bases of a city's 36 active tiles for 5 fields (`ResourceFields::prepare`, the lattice noise tables made once
+  per tile): 147 ms on 4 workers (Release, gcc, cloud machine, indicative). The dense fields (fertility, vegetation,
+  wetness) cost about 5 ms per tile on one core; a field whose region layer is 0 around a tile costs nothing.
